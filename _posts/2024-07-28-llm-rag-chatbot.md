@@ -18,6 +18,7 @@ mathjax: false
 ### 1. Thông tin server
 - asdas
   
-![Crepe](/assets/img/crepe.jpg)
+![Crepe](/assets/img/2024-07-28-llm-rag-chatbot/01.png)
 
 
+/home/anhlx/Anhlx/GitHub.com/anhlx9/anhlx9.github.io/assets/img/2024-07-28-llm-rag-chatbot
