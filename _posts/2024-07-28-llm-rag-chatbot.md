@@ -109,7 +109,7 @@ docker-compose -f /opt/docker/docker-compose.yml up -d --force-recreate Ollama
 
 - Ollama đã chạy và API hoạt động tại 0.0.0.0:11434 
 
-![Crepe](/assets/img/2024-07-28-llm-rag-chatbot/01.png)
+![Crepe](/assets/img/2024-07-28-llm-rag-chatbot/02.png)
 
 
 ##### 3.4. Sử dụng LLM Meta Llama 3 model (bản 4.7 GB) trên Ollama
