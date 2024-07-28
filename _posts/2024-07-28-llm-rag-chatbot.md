@@ -82,9 +82,9 @@ touch /opt/docker/docker-compose.yml
 
 - docker-compose cho Ollama :
 
-> [!TIP]
 
-> dữ liệu được mount ra folder /opt/docker/ollama/ trên host để dễ quản lý
+
+> [!TIP] dữ liệu được mount ra folder /opt/docker/ollama/ trên host để dễ quản lý
 
 ```yml
 # /opt/docker/docker-compose.yml
@@ -161,11 +161,10 @@ root@49590f2f6645:/# ollama run llama3
 ```
 curl http://localhost:11434/api/generate -d '{"model": "llama3" , "prompt":"giới thiệu ngắn gọn tiểu sử Nguyễn Du" , "stream": false}' | jq
 ```
-> [!TIP]
 
-> sử dụng "stream": false để response là 1 chuổi json.
+> [!TIP] sử dụng "stream": false để response là 1 chuổi json.
 
-> Trong ví dụ này, thời gian trả về dữ liệu là hơn 1 phút, khá lâu :( 
+Trong ví dụ này, thời gian trả về dữ liệu là hơn 1 phút, khá lâu :( 
 
 ![Crepe](/assets/img/2024-07-28-llm-rag-chatbot/05.png)
 
