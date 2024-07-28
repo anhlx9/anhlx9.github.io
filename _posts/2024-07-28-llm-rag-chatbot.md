@@ -8,9 +8,9 @@ comments: false
 mathjax: false
 ---
 
-# Phát triển ứng dụng Chatbot với LLM 
+# Phát triển ứng dụng Chatbot AI với LLM 
 
-- [Phát triển ứng dụng Chatbot với LLM](#phát-triển-ứng-dụng-chatbot-với-llm)
+- [Phát triển ứng dụng Chatbot AI với LLM](#phát-triển-ứng-dụng-chatbot-ai-với-llm)
     - [1. Cài đặt Docker và Docker-compose trên server Ubuntu 22.04](#1-cài-đặt-docker-và-docker-compose-trên-server-ubuntu-2204)
         - [2.1. Thông tin server](#21-thông-tin-server)
         - [2.2. Cài đặt Docker service](#22-cài-đặt-docker-service)
@@ -20,8 +20,9 @@ mathjax: false
         - [3.2. LLaMA 3 là gì?](#32-llama-3-là-gì)
         - [3.3. Chạy Ollama với Docker-compose](#33-chạy-ollama-với-docker-compose)
         - [3.4. Sử dụng LLM Meta Llama 3 model (bản 4.7 GB) trên Ollama](#34-sử-dụng-llm-meta-llama-3-model-bản-47-gb-trên-ollama)
-    - [4. Làm việc với LangChain](#4-làm-việc-với-langchain)
+    - [4. Làm việc với LangChain với Python code](#4-làm-việc-với-langchain-với-python-code)
         - [4.1. LangChain là gì?](#41-langchain-là-gì)
+        - [4.2. ChromaDB là gì?](#42-chromadb-là-gì)
 
 
 
@@ -170,10 +171,40 @@ Trong ví dụ này, thời gian trả về dữ liệu là hơn 1 phút, khá l
 
 
 
-### 4. Làm việc với LangChain 
+### 4. Làm việc với LangChain với Python code
 
 ##### 4.1. LangChain là gì?
 
 LangChain là một khung mã nguồn mở để xây dựng các ứng dụng dựa trên các mô hình ngôn ngữ lớn (LLM). LLM là các mô hình học sâu lớn được đào tạo trước trên khối lượng lớn dữ liệu có thể tạo ra câu trả lời cho các câu hỏi của người dùng, ví dụ như trả lời câu hỏi hoặc tạo hình ảnh từ lời nhắc dựa trên văn bản. LangChain cung cấp các công cụ và yếu tố trừu tượng để cải thiện khả năng tùy chỉnh, độ chính xác và mức độ liên quan của thông tin do các mô hình tạo ra. Ví dụ: nhà phát triển có thể sử dụng các thành phần LangChain để xây dựng chuỗi nhắc mới hoặc tùy chỉnh các mẫu hiện có. LangChain cũng bao gồm các thành phần cho phép LLM truy cập các tập dữ liệu mới mà không cần đào tạo lại. 
+
+
+##### 4.2. ChromaDB là gì?
+
+ChromaDB: Là một cơ sơ dữ liệu vector mã nguồn mở dễ sử dụng và tích hợp sâu rộng với hệ sinh thái Python. 
+
+Trong bài viết này tôi sử dụng LangChain trích xuất văn bản từ các tài liệu (.pdf, .txt, .csv, .docx,..). Sau đó lưu vào ChromaDB phục vụ cho việc tăng cường thông tin trả về cho người dùng .
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
