@@ -1,6 +1,6 @@
 ---
 layout: post
-title: LLM RAG Chatbot
+title: LLM RAG Chatbot với LLaMA 3 model 
 subtitle: Chia sẻ về cách tạo chat bot AI sử dụng LLM và bổ sung thông tin trả lời qua các file tài liệu 
 tags: [AI, LLM, System, Linux]
 author: Anh Le
@@ -8,9 +8,9 @@ comments: false
 mathjax: false
 ---
 
-# Phát triển ứng dụng Chatbot AI với LLM 
+# Phát triển ứng dụng Chatbot AI với LLM Meta LLaMA 3
 
-- [Phát triển ứng dụng Chatbot AI với LLM](#phát-triển-ứng-dụng-chatbot-ai-với-llm)
+- [Phát triển ứng dụng Chatbot AI với LLM Meta LLaMA 3](#phát-triển-ứng-dụng-chatbot-ai-với-llm-meta-llama-3)
     - [1. Cài đặt Docker và Docker-compose trên server Ubuntu 22.04](#1-cài-đặt-docker-và-docker-compose-trên-server-ubuntu-2204)
         - [2.1. Thông tin server](#21-thông-tin-server)
         - [2.2. Cài đặt Docker service](#22-cài-đặt-docker-service)
