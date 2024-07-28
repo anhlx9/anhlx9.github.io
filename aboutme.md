@@ -4,7 +4,7 @@ title: About me
 subtitle: "'Stay hungry. Stay foolish'"
 ---
 
-My name is Anh Le, and I am a systems engineer.
+My name is Anh Le, and I am a Systems Engineer.
 <br>
 Born in 1990, I reside in Ho Chi Minh City, Vietnam.
 <br>
