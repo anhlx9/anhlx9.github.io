@@ -11,7 +11,7 @@ mathjax: false
 # Phát triển ứng dụng Chatbot với LLM 
 
 - [Phát triển ứng dụng Chatbot với LLM](#phát-triển-ứng-dụng-chatbot-với-llm)
-    - [1. Cài đặt Docker \& Docker-compose trên server Ubuntu 22.04](#1-cài-đặt-docker--docker-compose-trên-server-ubuntu-2204)
+    - [1. Cài đặt Docker và Docker-compose trên server Ubuntu 22.04](#1-cài-đặt-docker-và-docker-compose-trên-server-ubuntu-2204)
         - [2.1. Thông tin server](#21-thông-tin-server)
         - [2.2. Cài đặt Docker service](#22-cài-đặt-docker-service)
         - [2.3. Cài đặt Docker-compose](#23-cài-đặt-docker-compose)
@@ -26,7 +26,7 @@ mathjax: false
 
 
 
-### 1. Cài đặt Docker & Docker-compose trên server Ubuntu 22.04 
+### 1. Cài đặt Docker và Docker-compose trên server Ubuntu 22.04 
 
 - Trong bài viết này tôi triển khai các thành phần trên container qua docker-compose nhằm dễ quản lí cấu hình.
 
