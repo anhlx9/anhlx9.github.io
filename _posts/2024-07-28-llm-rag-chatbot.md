@@ -81,7 +81,9 @@ touch /opt/docker/docker-compose.yml
 ```
 
 - docker-compose cho Ollama :
-  
+
+> [!TIP]
+
 > dữ liệu được mount ra folder /opt/docker/ollama/ trên host để dễ quản lý
 
 ```yml
