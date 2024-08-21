@@ -81,7 +81,7 @@ Note:
 > Mỗi server đều có 2 file yaml để start container PostgresSQL Master và Slave. 
 
 
-- Tạo thư mục để mount PostgreSQL data trong cointainer ra host. 
+- Tạo thư mục để mount PostgreSQL data trong container ra host. 
 
 ```bash
 mkdir -p /opt/docker/postgresql/data
@@ -91,8 +91,7 @@ touch /opt/docker/postgresql/docker-compose-postgresql-master.yaml
 touch /opt/docker/postgresql/docker-compose-postgresql-slave.yaml
 
 ```
-
-
+<br>
 
 - Nội dung file docker-compose-postgresql-master.yaml trên server PostgreSQL-01
 
@@ -127,8 +126,7 @@ services:
            - postgresql-02:192.168.161.12
 ```
 
-
-
+<br>
 
 - Nội dung file docker-compose-postgresql-slave.yaml trên server PostgreSQL-01
 
@@ -162,6 +160,7 @@ services:
            - postgresql-02:192.168.161.12
 ```
 
+<br>
 
 - Nội dung file docker-compose-postgresql-master.yaml trên server PostgreSQL-02
 
@@ -197,6 +196,7 @@ services:
 
 ```
 
+<br>
 
 - Nội dung file docker-compose-postgresql-slave.yaml trên server PostgreSQL-02
 
@@ -230,6 +230,7 @@ services:
            - postgresql-02:192.168.161.12
 
 ```
+<br>
 
 <img src="../assets/img/2024-06-25-postgresql-high-availability-concept/02.png"/>
 <br>
@@ -261,6 +262,7 @@ psql -U postgres -p 5432
 
 postgres=# select usename,application_name,client_addr,backend_start,state,sync_state from pg_stat_replication ;
 ```
+<br>
 
 <img src="../assets/img/2024-06-25-postgresql-high-availability-concept/06.png"/>
 
@@ -268,6 +270,7 @@ postgres=# select usename,application_name,client_addr,backend_start,state,sync_
 
 - Trên server PostgreSQL-02 làm Slave kiểm tra database đã được đồng bộ : 
 
+<br>
 
 <img src="../assets/img/2024-06-25-postgresql-high-availability-concept/07.png"/>
 
