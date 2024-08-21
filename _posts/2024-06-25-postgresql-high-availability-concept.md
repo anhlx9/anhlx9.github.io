@@ -1,7 +1,7 @@
 ---
 layout: post
-title: PostgreSQL - High-Availability Concept
-subtitle: PostgreSQL - High-Availability Concept
+title: PostgreSQL - HA Concept
+subtitle: PostgreSQL - High Availability Concept
 # tags: [life, system, linux]
 author: Anh Le
 comments: false
