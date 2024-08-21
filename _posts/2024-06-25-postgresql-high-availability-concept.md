@@ -277,3 +277,198 @@ postgres=# select usename,application_name,client_addr,backend_start,state,sync_
 
 #### 4.3. Cài đặt và cấu hình Keepalived tự động chuyển đổi dự phòng cho PostgreSQL Replicate Master/Slave 
 
+Note:
+> Thực hiện trên cả 2 server. 
+
+```bash
+apt install keepalived -y 
+```
+
+- Tạo file keepalived_control_failover.sh trên server PostgreSQL-01
+
+```bash
+#!/bin/bash
+
+# /etc/keepalived/keepalived_control_failover.sh
+# keepalived_control_failover.sh On server PostgreSQL-01
+
+
+STATE=$3
+peer='192.168.161.12'
+ipaddr=`/sbin/ifconfig ens33 | awk -F ' *|:' '/inet /{print $3}'`
+logs='/etc/keepalived/keepalived_control_failover.log'
+echo "$(date +'%Y-%m-%d %H:%M:%S') $(hostname) $(hostname -I), STATE: ${STATE} " >>  $logs
+
+sendTelegram(){
+        curl -s -X POST --data chat_id=-xxxxx --data text="$1" "https://api.telegram.org/botxxxxxxx:Axxxxx/sendMessage" 
+}
+
+
+case $STATE in
+        "MASTER") echo "$(date +'%Y-%m-%d %H:%M:%S') trigger postgresql container to master" >>  $logs
+                  /usr/bin/docker exec postgresql touch /tmp/postgresql.trigger.5432
+                  echo "$(date +'%Y-%m-%d %H:%M:%S') recreate postgresql container with Master config" >>  $logs
+                  /usr/bin/docker-compose -f /opt/docker/postgresql/docker-compose-postgresql-master.yaml up -d --force-recreate postgresql
+                  sendTelegram "❗ PostgreSQL Failover Switching ❗ %0A alert on $(hostname) %0A - Hostname : $(hostname) %0A - STATE : ${STATE} %0A - IP : ${ipaddr} "
+                  exit 0
+                  ;;
+
+        "BACKUP") echo "$(date +'%Y-%m-%d %H:%M:%S') stop postgresql container" >>  $logs
+                  /usr/bin/docker stop postgresql
+                  echo "$(date +'%Y-%m-%d %H:%M:%S') rsync data from Master " >>  $logs
+                  echo 'xxxxx' | rsync -av root@$peer:/opt/docker/postgresql/data/ /opt/docker/postgresql/data/
+                  echo "$(date +'%Y-%m-%d %H:%M:%S') recreate postgresql container with Slave config" >>  $logs
+                  /usr/bin/docker-compose -f /opt/docker/postgresql/docker-compose-postgresql-slave.yaml up -d --force-recreate postgresql
+                  sendTelegram "❗ PostgreSQL Failover Switching ❗ %0A alert on $(hostname) %0A - Hostname : $(hostname) %0A - STATE : ${STATE} %0A - IP : ${ipaddr} "
+                  exit 0
+                  ;;
+
+        *)        echo "unknown state"
+                  echo "$(date +'%Y-%m-%d %H:%M:%S') unknown state to process!!!" >>  $logs
+                  exit 0
+                  ;;
+esac
+```
+
+- Tạo file keepalived_control_failover.sh trên server PostgreSQL-02
+
+```bash
+#!/bin/bash
+
+# /etc/keepalived/keepalived_control_failover.sh
+# keepalived_control_failover.sh On server PostgreSQL-02
+
+
+STATE=$3
+peer='192.168.161.11'
+ipaddr=`/sbin/ifconfig ens33 | awk -F ' *|:' '/inet /{print $3}'`
+logs='/etc/keepalived/keepalived_control_failover.log'
+echo "$(date +'%Y-%m-%d %H:%M:%S') $(hostname) $(hostname -I), STATE: ${STATE} " >>  $logs
+
+sendTelegram(){
+        curl -s -X POST --data chat_id=-xxxxx --data text="$1" "https://api.telegram.org/botxxxxxxx:Axxxxx/sendMessage" 
+}
+
+
+case $STATE in
+        "MASTER") echo "$(date +'%Y-%m-%d %H:%M:%S') trigger postgresql container to master" >>  $logs
+                  /usr/bin/docker exec postgresql touch /tmp/postgresql.trigger.5432
+                  echo "$(date +'%Y-%m-%d %H:%M:%S') recreate postgresql container with Master config" >>  $logs
+                  /usr/bin/docker-compose -f /opt/docker/postgresql/docker-compose-postgresql-master.yaml up -d --force-recreate postgresql
+                  sendTelegram "❗ PostgreSQL Failover Switching ❗ %0A alert on $(hostname) %0A - Hostname : $(hostname) %0A - STATE : ${STATE} %0A - IP : ${ipaddr} "
+                  exit 0
+                  ;;
+
+        "BACKUP") echo "$(date +'%Y-%m-%d %H:%M:%S') stop postgresql container" >>  $logs
+                  /usr/bin/docker stop postgresql
+                  echo "$(date +'%Y-%m-%d %H:%M:%S') rsync data from Master " >>  $logs
+                  echo 'xxxxx' | rsync -av root@$peer:/opt/docker/postgresql/data/ /opt/docker/postgresql/data/
+                  echo "$(date +'%Y-%m-%d %H:%M:%S') recreate postgresql container with Slave config" >>  $logs
+                  /usr/bin/docker-compose -f /opt/docker/postgresql/docker-compose-postgresql-slave.yaml up -d --force-recreate postgresql
+                  sendTelegram "❗ PostgreSQL Failover Switching ❗ %0A alert on $(hostname) %0A - Hostname : $(hostname) %0A - STATE : ${STATE} %0A - IP : ${ipaddr} "
+                  exit 0
+                  ;;
+
+        *)        echo "unknown state"
+                  echo "$(date +'%Y-%m-%d %H:%M:%S') unknown state to process!!!" >>  $logs
+                  exit 0
+                  ;;
+esac
+```
+
+- Tạo file cấu hình Keepalived trên server PostgreSQL-01
+
+```bash
+# /etc/keepalived/keepalived.conf 
+global_defs {
+  enable_script_security
+  script_user root 
+}
+
+vrrp_script chk_postgresql {
+    script "/usr/bin/nc -zv localhost 5432"
+    interval 2
+    weight 3
+}
+
+vrrp_instance VIP_1 {
+    interface ens33
+    state MASTER
+    virtual_router_id 60
+    priority 100
+    authentication {
+        auth_type PASS
+        auth_pass 3Bj1KiCoLBYbmUxy
+    }
+    virtual_ipaddress {
+        192.168.161.10/24
+    }
+    track_script {
+        chk_postgresql
+    }
+
+    notify "/etc/keepalived/keepalived_control_failover.sh"
+}
+```
+
+- Tạo file cấu hình Keepalived trên server PostgreSQL-02
+
+```bash
+# /etc/keepalived/keepalived.conf 
+
+global_defs {
+  enable_script_security
+  script_user root 
+}
+
+vrrp_script chk_postgresql {
+    script "/usr/bin/nc -zv localhost 5432"
+    interval 2
+    weight 3
+}
+
+vrrp_instance VIP_1 {
+    interface ens33
+    state BACKUP
+    virtual_router_id 60
+    priority 100
+    authentication {
+        auth_type PASS
+        auth_pass 3Bj1KiCoLBYbmUxy
+    }
+    virtual_ipaddress {
+        192.168.161.10/24
+    }
+    track_script {
+        chk_postgresql
+    }
+
+    notify "/etc/keepalived/keepalived_control_failover.sh"
+}
+```
+
+- Cấu quyền thực thi cho script và start Keepalived service 
+
+```bash
+chmod +x /etc/keepalived/keepalived_control_failover.sh
+
+systemctl enable keepalived.service
+systemctl restart keepalived.service
+
+journalctl -u keepalived | tail -n 100
+```
+
+
+- Thông báo khi hệ thống tự động chuyển đổi dự phòng qua Telegram : 
+
+<img src="../assets/img/2024-06-25-postgresql-high-availability-concept/08.png"/>
+
+
+- Bạn hãy Down/Up server để test failover và theo dõi quá trình tự động chuyển đổi dự phòng cho PostgreSQL Database.
+
+<img src="../assets/img/2024-06-25-postgresql-high-availability-concept/09.png"/>
+
+
+
+- Như vậy, tôi đã chia sẻ về cách chúng ta kết hợp các kỹ thuật khác nhau nhằm đem đến 1 giải pháp tổng thể. Có thể nói giải pháp này rất basic về mặt kỹ thuật nhưng đòi hỏi người quản trị phải tư duy và cần tùy chỉnh các cấu hình thủ công trước để phù hợp với hệ thống. Nhìn chung việc cấu hình của System Engineer càng phức tạp, chi tiết thì hệ thống dịch vụ chúng ta vận hành sẽ càng hoạt động ổn định. 
+  
