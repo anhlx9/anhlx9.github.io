@@ -264,15 +264,12 @@ psql -U postgres -p 5432
 
 postgres=# select usename,application_name,client_addr,backend_start,state,sync_state from pg_stat_replication ;
 ```
-<br>
 
 <img src="../assets/img/2024-06-25-postgresql-high-availability-concept/06.png"/>
 
 
 
 - Trên server PostgreSQL-02 làm Slave kiểm tra database đã được đồng bộ : 
-
-<br>
 
 <img src="../assets/img/2024-06-25-postgresql-high-availability-concept/07.png"/>
 
