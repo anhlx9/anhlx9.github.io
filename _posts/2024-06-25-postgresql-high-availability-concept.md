@@ -238,12 +238,14 @@ services:
 
 
 - Khởi chạy container PostgreSQL làm Master trên server PostgreSQL-01
+
 ```bash
 docker-compose -f /opt/docker/postgresql/docker-compose-postgresql-master.yaml up -d --force-recreate postgresql
 ```
 
 
 - Khởi chạy container PostgreSQL làm Slave trên server PostgreSQL-02
+  
 ```bash
 docker-compose -f /opt/docker/postgresql/docker-compose-postgresql-slave.yaml up -d --force-recreate postgresql
 ```
