@@ -45,59 +45,7 @@ Như danh sách trên có thể thấy, chúng ta sẽ kết hợp nhiều thàn
 ```bash
 #!/bin/bash
 
-TYPE=$1
-NAME=$2
-STATE=$3
-
-ipaddr=`/sbin/ifconfig ens160 | awk -F ' *|:' '/inet /{print $3}'`
-
-logs='/etc/keepalived/keepalived_control_failover.log'
-echo "$(date +'%Y-%m-%d %H:%M:%S') $(hostname) $(hostname -I), STATE: ${STATE} " >>  $logs
-
-sendTelegram(){
-        curl -s --proxy "http://10.60.2.254:3128" -X POST --data chat_id=-1001601164018 --data message_thread_id=11 --data text="$1" "https://api.telegram.org/bot5274837125:AAEU_d15Iw8M9jgRioBU7BIR0mwLneiuYzw/sendMessage" 
-}
-
-
-case $STATE in
-        "MASTER") echo "$(date +'%Y-%m-%d %H:%M:%S') trigger postgresql container to master" >>  $logs
-                  /usr/bin/docker exec postgresql touch /tmp/postgresql.trigger.5432
-
-                  echo "$(date +'%Y-%m-%d %H:%M:%S') recreate postgresql container with Master config" >>  $logs
-                  /usr/bin/docker-compose -f /opt/docker/postgresql/docker-compose-postgresql-master.yaml up -d --force-recreate postgresql
-
-                  echo "$(date +'%Y-%m-%d %H:%M:%S') restart gitlab container" >>  $logs
-                  /usr/bin/docker restart gitlab
-
-                  sendTelegram "❗ Gitlab Failover Switching ❗ %0A alert on $(hostname) %0A - Hostname : $(hostname) %0A - STATE : ${STATE} %0A - IP : ${ipaddr} "
-
-                  exit 0
-                  ;;
-
-        "BACKUP") echo "$(date +'%Y-%m-%d %H:%M:%S') stop postgresql container" >>  $logs
-                  /usr/bin/docker stop postgresql
-
-                  echo "$(date +'%Y-%m-%d %H:%M:%S') rsync data from Master " >>  $logs
-                  echo '85v00s2ouIFw' | rsync -av root@10.60.2.33:/opt/docker/postgresql/data/ /opt/docker/postgresql/data/
-
-                  echo "$(date +'%Y-%m-%d %H:%M:%S') recreate postgresql container with Slave config" >>  $logs
-                  /usr/bin/docker-compose -f /opt/docker/postgresql/docker-compose-postgresql-slave.yaml up -d --force-recreate postgresql
-
-                  echo "$(date +'%Y-%m-%d %H:%M:%S') stop gitlab container" >>  $logs
-                  /usr/bin/docker stop gitlab
-                  
-                  sendTelegram "❗ Gitlab Failover Switching ❗ %0A alert on $(hostname) %0A - Hostname : $(hostname) %0A - STATE : ${STATE} %0A - IP : ${ipaddr} "
-
-
-                  exit 0
-                  ;;
-
-        *)        echo "unknown state"
-                  echo "$(date +'%Y-%m-%d %H:%M:%S') unknown state to process!!!" >>  $logs
-                  exit 0
-                  ;;
-esac
-
+# updating..
 
 ```
 
