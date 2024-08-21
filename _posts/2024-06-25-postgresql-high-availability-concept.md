@@ -54,13 +54,13 @@ Như danh sách trên có thể thấy, chúng ta sẽ kết hợp nhiều thàn
 
 #### 4.1. Cài đặt Docker service và Docker-compose
 
-> <font color="green">:bulb: Note</font>
+Note:
 > Thực hiện trên cả 2 server 
 
 - Cài đặt Docker service
 ```bash
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
+add-apt-repository -y "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
 apt install docker.io -y 
 systemctl restart docker.service
 systemctl enable docker.service
