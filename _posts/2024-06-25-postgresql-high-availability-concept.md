@@ -75,6 +75,7 @@ chmod +x  /usr/bin/docker-compose
 docker-compose --version
 ```
 
+<img src="../assets/img/2024-06-25-postgresql-high-availability-concept/01.png"/>
 
 
 
