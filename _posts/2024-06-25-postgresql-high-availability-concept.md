@@ -14,6 +14,8 @@ mathjax: false
 - [3. Mô hình triển khai PostgreSQL Master-Slave](#3-mô-hình-triển-khai-postgresql-master-slave)
 - [4. Các bước cài đặt và cấu hình](#4-các-bước-cài-đặt-và-cấu-hình)
   - [4.1. Cài đặt Docker service và Docker-compose](#41-cài-đặt-docker-service-và-docker-compose)
+  - [4.2. Cấu hình PostgreSQL Replicate Master/Slave sử dụng Docker-compose](#42-cấu-hình-postgresql-replicate-masterslave-sử-dụng-docker-compose)
+  - [4.3. Cài đặt và cấu hình Keepalived tự động chuyển đổi dự phòng cho PostgreSQL Replicate Master/Slave](#43-cài-đặt-và-cấu-hình-keepalived-tự-động-chuyển-đổi-dự-phòng-cho-postgresql-replicate-masterslave)
 
 ### 1. Giới thiệu 
 
@@ -39,16 +41,7 @@ Như danh sách trên có thể thấy, chúng ta sẽ kết hợp nhiều thàn
 
 - Khi server hoặc instance PostgreSQL gặp sự cố  (cụ thể trong trường hợp này là server Down), sau khoảng 5 giây Keepalived sẽ tự động switch VIP từ Master sang Slave đồng thời tôi sử dụng option trong Keepalived là "notify" để gọi chạy 1 file Shell script thực hiện các công việc check STATE của Keepalive, start PostgreSQL container với cấu hình Master và trigger Slave lên làm Master. Khi server Up được ghi nhận trở thành Slave cũng sẽ dùng option "notify" chạy Shell script thực hiện start PostgreSQL container với cấu hình là Slave và đồng bộ data từ Master.
 
-- Như giải thích bên trên, Shell script được tôi sử dụng làm kịch bản control 2 server khi có sự cố, đảm bảo dịch vụ database luôn Up giảm tối đa Downtime. Có thể thấy khá thủ công và đơn giản, có thể có các ý tưởng hay hơn tuy nhiên ở trường hợp dịch vụ của tôi vận hành khá stable khi sử dụng thực tế, tôi không cần phải xử lý khi server gặp sự cố cứ để nó tự chuyển dự phòng. Logic basic như bên dưới đây : 
-
-
-```bash
-#!/bin/bash
-
-# updating..
-
-```
-
+- Như giải thích bên trên, Shell script được tôi sử dụng làm kịch bản control 2 server khi có sự cố, đảm bảo dịch vụ database luôn Up giảm tối đa Downtime. Có thể thấy khá thủ công và đơn giản, có thể có các ý tưởng hay hơn tuy nhiên ở trường hợp dịch vụ của tôi vận hành khá stable khi sử dụng thực tế, tôi không cần phải xử lý khi server gặp sự cố cứ để nó tự chuyển đổi dự phòng. 
 
 ### 4. Các bước cài đặt và cấu hình 
 
@@ -79,11 +72,206 @@ docker-compose --version
 
 
 
+#### 4.2. Cấu hình PostgreSQL Replicate Master/Slave sử dụng Docker-compose
+
+
+Note:
+> Thực hiện trên cả 2 server. 
+
+> Mỗi server đều có 2 file yaml để start container PostgresSQL Master và Slave. 
+
+
+- Tạo thư mục để mount PostgreSQL data trong cointainer ra host. 
+
+```bash
+mkdir -p /opt/docker/postgresql/data
+chown -R 1001.1001 /opt/docker/postgresql/
+
+touch /opt/docker/postgresql/docker-compose-postgresql-master.yaml
+touch /opt/docker/postgresql/docker-compose-postgresql-slave.yaml
+
+```
+
+
+
+- Nội dung file docker-compose-postgresql-master.yaml trên server PostgreSQL-01
+
+```yml
+# docker-compose-postgresql-master.yaml on PostgreSQL-01
+
+services:
+
+  postgresql:
+    image: bitnami/postgresql:latest
+    #image: bitnami/postgresql:12.4.0
+    container_name: postgresql
+    hostname: "postgresql"
+    restart: always
+    environment:
+
+      ##### start container as Master
+      - POSTGRESQL_REPLICATION_MODE=master
+      - POSTGRESQL_REPLICATION_USER=repl_user
+      - POSTGRESQL_REPLICATION_PASSWORD=replpwd
+      - POSTGRESQL_USERNAME=gitlab
+      - POSTGRESQL_PASSWORD=7JG9z9L*e*jy5
+      - POSTGRESQL_DATABASE=gitlab_production
+      - POSTGRESQL_POSTGRES_PASSWORD=5U2vE*18O52JVnpB
+
+    volumes:
+      - "/opt/docker/postgresql/data:/bitnami/postgresql/data"
+    ports:
+      - 5432:5432
+    extra_hosts:
+           - postgresql-01:192.168.161.11
+           - postgresql-02:192.168.161.12
+```
 
 
 
 
+- Nội dung file docker-compose-postgresql-slave.yaml trên server PostgreSQL-01
+
+```yml
+# docker-compose-postgresql-slave.yaml on PostgreSQL-01
+
+services:
+
+  postgresql:
+    image: bitnami/postgresql:latest
+    #image: bitnami/postgresql:12.4.0
+    container_name: postgresql
+    hostname: "postgresql"
+    restart: always
+    environment:
+
+      ##### start container as Slave
+      - POSTGRESQL_REPLICATION_MODE=slave
+      - POSTGRESQL_REPLICATION_USER=repl_user
+      - POSTGRESQL_REPLICATION_PASSWORD=replpwd
+      - POSTGRESQL_MASTER_HOST=postgresql-02
+      - POSTGRESQL_MASTER_PORT_NUMBER=5432
+      - POSTGRESQL_PASSWORD=5U2vE*18O52JVnpB
+
+    volumes:
+      - "/opt/docker/postgresql/data:/bitnami/postgresql/data"
+    ports:
+      - 5432:5432
+    extra_hosts:
+           - postgresql-01:192.168.161.11
+           - postgresql-02:192.168.161.12
+```
+
+
+- Nội dung file docker-compose-postgresql-master.yaml trên server PostgreSQL-02
+
+```yml
+# docker-compose-postgresql-master.yaml on PostgreSQL-02
+
+services:
+
+  postgresql:
+    image: bitnami/postgresql:latest
+    #image: bitnami/postgresql:12.4.0
+    container_name: postgresql
+    hostname: "postgresql"
+    restart: always
+    environment:
+
+      ##### start container as Master
+      - POSTGRESQL_REPLICATION_MODE=master
+      - POSTGRESQL_REPLICATION_USER=repl_user
+      - POSTGRESQL_REPLICATION_PASSWORD=replpwd
+      - POSTGRESQL_USERNAME=gitlab
+      - POSTGRESQL_PASSWORD=7JG9z9L*e*jy5
+      - POSTGRESQL_DATABASE=gitlab_production
+      - POSTGRESQL_POSTGRES_PASSWORD=5U2vE*18O52JVnpB
+
+    volumes:
+      - "/opt/docker/postgresql/data:/bitnami/postgresql/data"
+    ports:
+      - 5432:5432
+    extra_hosts:
+           - postgresql-01:192.168.161.11
+           - postgresql-02:192.168.161.12
+
+```
+
+
+- Nội dung file docker-compose-postgresql-slave.yaml trên server PostgreSQL-02
+
+```yml
+# docker-compose-postgresql-slave.yaml on PostgreSQL-02
+
+services:
+
+  postgresql:
+    image: bitnami/postgresql:latest
+    #image: bitnami/postgresql:12.4.0
+    container_name: postgresql
+    hostname: "postgresql"
+    restart: always
+    environment:
+
+      ##### start container as Slave
+      - POSTGRESQL_REPLICATION_MODE=slave
+      - POSTGRESQL_REPLICATION_USER=repl_user
+      - POSTGRESQL_REPLICATION_PASSWORD=replpwd
+      - POSTGRESQL_MASTER_HOST=postgresql-01
+      - POSTGRESQL_MASTER_PORT_NUMBER=5432
+      - POSTGRESQL_PASSWORD=5U2vE*18O52JVnpB
+
+    volumes:
+      - "/opt/docker/postgresql/data:/bitnami/postgresql/data"
+    ports:
+      - 5432:5432
+    extra_hosts:
+           - postgresql-01:192.168.161.11
+           - postgresql-02:192.168.161.12
+
+```
+
+<img src="../assets/img/2024-06-25-postgresql-high-availability-concept/02.png"/>
+<br>
+<img src="../assets/img/2024-06-25-postgresql-high-availability-concept/03.png"/>
+
+
+- Khởi chạy container PostgreSQL làm Master trên server PostgreSQL-01
+```bash
+docker-compose -f /opt/docker/postgresql/docker-compose-postgresql-master.yaml up -d --force-recreate postgresql
+```
+
+
+- Khởi chạy container PostgreSQL làm Slave trên server PostgreSQL-02
+```bash
+docker-compose -f /opt/docker/postgresql/docker-compose-postgresql-slave.yaml up -d --force-recreate postgresql
+```
+
+<img src="../assets/img/2024-06-25-postgresql-high-availability-concept/04.png"/>
+<br>
+<img src="../assets/img/2024-06-25-postgresql-high-availability-concept/05.png"/>
 
 
 
+
+- Trên server PostgreSQL-01 làm Master kiểm tra replicate : 
+
+```bash
+psql -U postgres -p 5432
+
+postgres=# select usename,application_name,client_addr,backend_start,state,sync_state from pg_stat_replication ;
+```
+
+<img src="../assets/img/2024-06-25-postgresql-high-availability-concept/06.png"/>
+
+
+
+- Trên server PostgreSQL-02 làm Slave kiểm tra database đã được đồng bộ : 
+
+
+<img src="../assets/img/2024-06-25-postgresql-high-availability-concept/07.png"/>
+
+
+
+#### 4.3. Cài đặt và cấu hình Keepalived tự động chuyển đổi dự phòng cho PostgreSQL Replicate Master/Slave 
 
