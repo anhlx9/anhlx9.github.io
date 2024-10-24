@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Setup VMware vSphere , vSan 
+title: Setup VMware vSphere, vSan 
 subtitle: Ảo hóa hạ tầng máy chủ và lưu trữ cho Tổ chức, Doanh nghiệp
 tags: [system, vmware]
 author: Anh Le
