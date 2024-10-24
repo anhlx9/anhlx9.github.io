@@ -8,7 +8,7 @@ comments: false
 mathjax: false
 ---
 
-
+ 
 - [1. Giới thiệu](#1-giới-thiệu)
 - [2. Các công nghệ sử dụng](#2-các-công-nghệ-sử-dụng)
 - [3. Mô hình triển khai PostgreSQL Master-Slave](#3-mô-hình-triển-khai-postgresql-master-slave)
