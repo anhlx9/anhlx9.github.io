@@ -67,7 +67,7 @@ collections:
     output: true
     description: "Technical articles & my random thoughts on life" # The post list page content
     feature_text: |
-      ### Welcome to Anhle's blog
+      ### Welcome
     feature_image: "/assets/banner.jpg"
 
 
