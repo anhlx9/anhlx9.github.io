@@ -26,7 +26,7 @@ Một thiết bị lưu trữ mạng Synology
 
 - Kiến trúc Ceph storage cluster:
   
-<img src="/assets/img/2024-10-27-ceph-storage-cluster/000-ceph-diagram.gif"/>
+<img src="./assets/img/2024-10-27-ceph-storage-cluster/000-ceph-diagram.gif"/>
 
 - Một mô hình ví dụ cho production:
 
