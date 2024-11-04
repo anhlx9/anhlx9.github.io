@@ -68,7 +68,7 @@ collections:
     description: "Technical articles & my random thoughts on life" # The post list page content
     feature_text: |
       ### Welcome to Anhle's blog
-    feature_image: "/assets/cloud-computing.jpg"
+    feature_image: "/assets/banner.jpg"
 
 
 # 6. Jekyll collections settings
