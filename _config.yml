@@ -121,22 +121,22 @@ favicons: # Favicons are also used in the manifest file. Syntax is 'size: path'
 
 # 9. Site navigation
 navigation_header:
+- title: Blog
+  url: /blog/
+- title: About Me
+  url: /about-me/
 - title: Home
   url: /
 - title: Elements
   url: /elements/
-- title: Blog
-  url: /blog/
 - title: Categories
   url: /categories/
 - title: Search
   url: /search/
-- title: Fork Alembic
-  url: https://github.com/daviddarnes/alembic
 
 navigation_footer:
-- title: Created by David Darnes
-  url: https://darn.es
+- title: AnhLe - anhle267@gmail.com
+  url: https://anhle.com.vn
 
 social_links: # Appears in sidebar. Set the urls then uncomment and comment out as desired
   Twitter: https://twitter.com/DavidDarnes
