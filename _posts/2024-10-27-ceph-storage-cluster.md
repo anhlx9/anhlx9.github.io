@@ -33,8 +33,6 @@ Một thiết bị lưu trữ mạng Synology
 
 <img src="/assets/img/2024-10-27-ceph-storage-cluster/01.png"/>
 
-
-
 - [1. Giới thiệu](#1-giới-thiệu)
 - [2. Các công nghệ sử dụng](#2-các-công-nghệ-sử-dụng)
 - [3. Mô hình triển khai](#3-mô-hình-triển-khai)

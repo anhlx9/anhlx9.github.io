@@ -4,18 +4,10 @@ categories:
 - Database
 - System
 - Linux
+feature_image: "/assets/post-banner.jpg"
 feature_text: |
-  PostgreSQL - High Availability Database Concept
+  ### PostgreSQL - High Availability Database Concept
 ---
-
- 
-- [1. Giới thiệu](#1-giới-thiệu)
-- [2. Các công nghệ sử dụng](#2-các-công-nghệ-sử-dụng)
-- [3. Mô hình triển khai PostgreSQL Master-Slave](#3-mô-hình-triển-khai-postgresql-master-slave)
-- [4. Các bước cài đặt và cấu hình](#4-các-bước-cài-đặt-và-cấu-hình)
-  - [4.1. Cài đặt Docker service và Docker-compose](#41-cài-đặt-docker-service-và-docker-compose)
-  - [4.2. Cấu hình PostgreSQL Replicate Master/Slave sử dụng Docker-compose](#42-cấu-hình-postgresql-replicate-masterslave-sử-dụng-docker-compose)
-  - [4.3. Cài đặt và cấu hình Keepalived tự động chuyển đổi dự phòng cho PostgreSQL Replicate Master/Slave](#43-cài-đặt-và-cấu-hình-keepalived-tự-động-chuyển-đổi-dự-phòng-cho-postgresql-replicate-masterslave)
 
 ### 1. Giới thiệu 
 
@@ -26,8 +18,17 @@ feature_text: |
 
 - PostgreSQL là 1 hệ cơ sở dữ liệu nguồn mở có tính ổn định cao. Các hướng dẫn cài đặt, quản trị,... đã có khá nhiều bài viết trên Internet. Giới hạn trong bài viết này, mình chỉ chia sẻ về cách mình triển khai 1 hệ cơ sở dữ liệu sử dụng PostgresSQL có khả năng chịu lỗi và rất đơn giản trong việc triển khai. Nếu cần đáp ứng CCU lớn, concept này hoàn toàn có thể được scale lớn hơn để phục vụ.
 
-<img src="../assets/img/2024-08-21-postgresql-high-availability-concept/postgresql-failover.gif"/>
+<img src="/assets/img/2024-08-21-postgresql-high-availability-concept/postgresql-failover.gif"/>
 
+
+ 
+- [1. Giới thiệu](#1-giới-thiệu)
+- [2. Các công nghệ sử dụng](#2-các-công-nghệ-sử-dụng)
+- [3. Mô hình triển khai PostgreSQL Master-Slave](#3-mô-hình-triển-khai-postgresql-master-slave)
+- [4. Các bước cài đặt và cấu hình](#4-các-bước-cài-đặt-và-cấu-hình)
+  - [4.1. Cài đặt Docker service và Docker-compose](#41-cài-đặt-docker-service-và-docker-compose)
+  - [4.2. Cấu hình PostgreSQL Replicate Master/Slave sử dụng Docker-compose](#42-cấu-hình-postgresql-replicate-masterslave-sử-dụng-docker-compose)
+  - [4.3. Cài đặt và cấu hình Keepalived tự động chuyển đổi dự phòng cho PostgreSQL Replicate Master/Slave](#43-cài-đặt-và-cấu-hình-keepalived-tự-động-chuyển-đổi-dự-phòng-cho-postgresql-replicate-masterslave)
  
 ### 2. Các công nghệ sử dụng
 - Server Ubuntu 22.04 
@@ -72,7 +73,7 @@ chmod +x  /usr/bin/docker-compose
 docker-compose --version
 ```
 
-<img src="../assets/img/2024-08-21-postgresql-high-availability-concept/01.png"/>
+<img src="/assets/img/2024-08-21-postgresql-high-availability-concept/01.png"/>
 
 
 
@@ -236,9 +237,9 @@ services:
 ```
 <br>
 
-<img src="../assets/img/2024-08-21-postgresql-high-availability-concept/02.png"/>
+<img src="/assets/img/2024-08-21-postgresql-high-availability-concept/02.png"/>
 <br>
-<img src="../assets/img/2024-08-21-postgresql-high-availability-concept/03.png"/>
+<img src="/assets/img/2024-08-21-postgresql-high-availability-concept/03.png"/>
 
 
 - Khởi chạy container PostgreSQL làm Master trên server PostgreSQL-01
@@ -254,9 +255,9 @@ docker-compose -f /opt/docker/postgresql/docker-compose-postgresql-master.yaml u
 docker-compose -f /opt/docker/postgresql/docker-compose-postgresql-slave.yaml up -d --force-recreate postgresql
 ```
 
-<img src="../assets/img/2024-08-21-postgresql-high-availability-concept/04.png"/>
+<img src="/assets/img/2024-08-21-postgresql-high-availability-concept/04.png"/>
 <br>
-<img src="../assets/img/2024-08-21-postgresql-high-availability-concept/05.png"/>
+<img src="/assets/img/2024-08-21-postgresql-high-availability-concept/05.png"/>
 
 
 
@@ -269,13 +270,13 @@ psql -U postgres -p 5432
 postgres=# select usename,application_name,client_addr,backend_start,state,sync_state from pg_stat_replication ;
 ```
 
-<img src="../assets/img/2024-08-21-postgresql-high-availability-concept/06.png"/>
+<img src="/assets/img/2024-08-21-postgresql-high-availability-concept/06.png"/>
 
 
 
 - Trên server PostgreSQL-02 làm Slave kiểm tra database đã được đồng bộ : 
 
-<img src="../assets/img/2024-08-21-postgresql-high-availability-concept/07.png"/>
+<img src="/assets/img/2024-08-21-postgresql-high-availability-concept/07.png"/>
 
 
 
@@ -465,10 +466,10 @@ journalctl -u keepalived | tail -n 100
 
 - Thông báo khi hệ thống tự động chuyển đổi dự phòng qua Telegram : 
 
-<img src="../assets/img/2024-08-21-postgresql-high-availability-concept/08.png"/>
+<img src="/assets/img/2024-08-21-postgresql-high-availability-concept/08.png"/>
 
 
 - Bạn hãy Down/Up server để test failover và theo dõi quá trình tự động chuyển đổi dự phòng cho PostgreSQL Database.
 
-<img src="../assets/img/2024-08-21-postgresql-high-availability-concept/09.png"/>
+<img src="/assets/img/2024-08-21-postgresql-high-availability-concept/09.png"/>
 
