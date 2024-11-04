@@ -126,10 +126,10 @@ navigation_header:
   url: /
 - title: About Me
   url: /aboutme
+- title: Blog
+  url: /blog/
 - title: Categories
   url: /categories/
-# - title: Blog
-#   url: /blog/
 # - title: Elements
 #   url: /elements/
 # - title: Search
