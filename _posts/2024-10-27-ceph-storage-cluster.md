@@ -5,7 +5,7 @@ categories:
 - Storage
 - Linux
 - Ceph
-feature_image: "/assets/post-banner.jpg"
+feature_image: "/assets/postbanner.jpg"
 feature_text: |
   ### Xây dựng cụm server lưu trữ dữ liệu cho doanh nghiệp với Ceph
 ---

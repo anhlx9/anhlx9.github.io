@@ -3,7 +3,7 @@ title: Setup VMware vSphere, vSan
 categories:
 - System
 - VMware
-feature_image: "/assets/post-banner.jpg"
+feature_image: "/assets/postbanner.jpg"
 feature_text: |
   ### Ảo hóa hạ tầng máy chủ và lưu trữ cho Tổ chức, Doanh nghiệp
 ---

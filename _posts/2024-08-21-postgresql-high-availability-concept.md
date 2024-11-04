@@ -4,7 +4,7 @@ categories:
 - Database
 - System
 - Linux
-feature_image: "/assets/post-banner.jpg"
+feature_image: "/assets/postbanner.jpg"
 feature_text: |
   ### PostgreSQL - High Availability Database Concept
 ---
