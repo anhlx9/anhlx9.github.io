@@ -18,9 +18,11 @@ feature_text: |
 - Có nhiều chủng loại thiết bị phần cứng vật lý được thiết kế dành riêng cho việc lưu trữ, các bạn hãy xem ví dụ ở 2 thiết bị bên dưới. 
     
 <img src="/assets/img/2024-10-27-ceph-storage-cluster/000-dell-server.jpg" />
+
 Một máy chủ storage với nhiều disk
   
 <img src="/assets/img/2024-10-27-ceph-storage-cluster/000-synology-storage.png"/>
+
 Một thiết bị lưu trữ mạng Synology
 
 - Có thể thấy các thiết bị đều sẽ có giới hạn về slot gắn disk, để có khả năng chịu lỗi khi 1 thiết bị hư hỏng linh kiện điện tử hoặc nâng tổng dung lượng cho cụm lên đến hàng Petabyte trong bài viết này mình sẽ chia sẻ về mô hình Ceph storage cluster.
