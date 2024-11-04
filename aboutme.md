@@ -16,10 +16,11 @@ feature_image: "/assets/anhle.png"
 > This blog is a curated space where I share my random thoughts on life and delve into technical articles that reflect my personal interests.
 
 <p style="text-align: center">
-<img src="/assets/logos/anhle-logo.png=" alt="drawing" style="width:270px;"/>
+<img src="/assets/logos/anhle-logo.png" alt="drawing" style="width:270px;"/>
 </p>
 
 ###### Experience
+
 - Physical Server
 - Windows/Linux System
 - VMware vSphere - vSan
