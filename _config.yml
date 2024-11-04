@@ -135,7 +135,7 @@ navigation_header:
 #   url: /search/
 
 navigation_footer:
-- title: AnhLe - Telegram: @anhle267
+- title: AnhLe - Telegram @anhle267
   url: https://anhle.com.vn
 
 social_links: # Appears in sidebar. Set the urls then uncomment and comment out as desired
