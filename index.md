@@ -26,5 +26,6 @@ feature_image: "/assets/anhle.png"
 - Veeam Backup
 - Openstack private cloud 
 - Network : routing & switching
+- Coding : Shell, Python, ...
 - ...
 
