@@ -1,13 +1,4 @@
 ---
-layout: post
-title: PostgreSQL - HA Concept
-subtitle: PostgreSQL - High Availability Database Concept
-tags: [database, system, linux]
-author: Anh Le
-comments: false
-mathjax: false
----
----
 title: PostgreSQL - HA Concept
 categories:
 - Database
@@ -18,14 +9,13 @@ feature_text: |
 ---
 
  
-- [PostgreSQL - High Availability Database Concept](#postgresql---high-availability-database-concept)
-  - [1. Giới thiệu](#1-giới-thiệu)
-  - [2. Các công nghệ sử dụng](#2-các-công-nghệ-sử-dụng)
-  - [3. Mô hình triển khai PostgreSQL Master-Slave](#3-mô-hình-triển-khai-postgresql-master-slave)
-  - [4. Các bước cài đặt và cấu hình](#4-các-bước-cài-đặt-và-cấu-hình)
-    - [4.1. Cài đặt Docker service và Docker-compose](#41-cài-đặt-docker-service-và-docker-compose)
-    - [4.2. Cấu hình PostgreSQL Replicate Master/Slave sử dụng Docker-compose](#42-cấu-hình-postgresql-replicate-masterslave-sử-dụng-docker-compose)
-    - [4.3. Cài đặt và cấu hình Keepalived tự động chuyển đổi dự phòng cho PostgreSQL Replicate Master/Slave](#43-cài-đặt-và-cấu-hình-keepalived-tự-động-chuyển-đổi-dự-phòng-cho-postgresql-replicate-masterslave)
+- [1. Giới thiệu](#1-giới-thiệu)
+- [2. Các công nghệ sử dụng](#2-các-công-nghệ-sử-dụng)
+- [3. Mô hình triển khai PostgreSQL Master-Slave](#3-mô-hình-triển-khai-postgresql-master-slave)
+- [4. Các bước cài đặt và cấu hình](#4-các-bước-cài-đặt-và-cấu-hình)
+  - [4.1. Cài đặt Docker service và Docker-compose](#41-cài-đặt-docker-service-và-docker-compose)
+  - [4.2. Cấu hình PostgreSQL Replicate Master/Slave sử dụng Docker-compose](#42-cấu-hình-postgresql-replicate-masterslave-sử-dụng-docker-compose)
+  - [4.3. Cài đặt và cấu hình Keepalived tự động chuyển đổi dự phòng cho PostgreSQL Replicate Master/Slave](#43-cài-đặt-và-cấu-hình-keepalived-tự-động-chuyển-đổi-dự-phòng-cho-postgresql-replicate-masterslave)
 
 ### 1. Giới thiệu 
 
