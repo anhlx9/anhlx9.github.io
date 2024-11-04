@@ -15,7 +15,8 @@ feature_image: "/assets/anhle.png"
 > <br>
 > This blog is a curated space where I share my random thoughts on life and delve into technical articles that reflect my personal interests.
 
----
+<img src="/assets/logos/anhle-logo.png#center" alt="drawing" style="width:250px;"/>
+
 ###### Experience
 
 - Physical Server
@@ -26,4 +27,3 @@ feature_image: "/assets/anhle.png"
 - Network : Routing & Switching
 - ...
 
-<img src="/assets/logos/anhle-logo.png#center" alt="drawing" style="width:250px;"/>
