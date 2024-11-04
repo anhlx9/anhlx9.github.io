@@ -25,6 +25,6 @@ feature_image: "/assets/anhle.png"
 - VMware vSphere - vSan
 - Veeam Backup
 - Openstack private cloud 
-- Network : Routing & Switching
+- Network : routing & switching
 - ...
 
