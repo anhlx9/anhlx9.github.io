@@ -11,9 +11,6 @@ feature_text: |
 
 ### 1. Giới thiệu 
 
-> Nếu bạn thấy bài viết bổ ích , vui lòng like và share tại : [trang Facebook này](https://www.facebook.com/profile.php?id=61567456205328&mibextid=ZbWKwL)
-, nó giúp cho tôi có thêm niềm vui khi chia sẻ các bài viết. Xin cảm ơn. 
-
 - Trong các bài viết khác, mình sử dụng PostgreSQL làm database do đó để giảm bớt nội dung kiến thức trong các bài viết, mình sẽ tách riêng bài viết xây dựng hệ thống database với PostgreSQL có tính sẵn sàng cao để khi tích hợp các hệ thống với nhau chúng ta có 1 mô hình lớn tổng thể các dịch vụ có độ ổn định và tính sẵn sàng cao phục vụ cho hoạt động của doanh nghiệp.
 
 - PostgreSQL là 1 hệ cơ sở dữ liệu nguồn mở có tính ổn định cao. Các hướng dẫn cài đặt, quản trị,... đã có khá nhiều bài viết trên Internet. Giới hạn trong bài viết này, mình chỉ chia sẻ về cách mình triển khai 1 hệ cơ sở dữ liệu sử dụng PostgresSQL có khả năng chịu lỗi và rất đơn giản trong việc triển khai. Nếu cần đáp ứng CCU lớn, concept này hoàn toàn có thể được scale lớn hơn để phục vụ.
@@ -472,4 +469,9 @@ journalctl -u keepalived | tail -n 100
 - Bạn hãy Down/Up server để test failover và theo dõi quá trình tự động chuyển đổi dự phòng cho PostgreSQL Database.
 
 <img src="/assets/img/2024-08-21-postgresql-high-availability-concept/09.png"/>
+
+
+> Nếu bạn thấy bài viết bổ ích , vui lòng like và share tại : [trang Facebook này](https://www.facebook.com/profile.php?id=61567456205328&mibextid=ZbWKwL)
+, nó giúp cho tôi có thêm niềm vui khi chia sẻ các bài viết. Xin cảm ơn. 
+
 
