@@ -96,7 +96,7 @@ encoding: utf-8 # Make sure the encoding is right
 lang: en-GB # Set the site language
 title: "AnhLe" # Site name or title, also used in jekyll-seo-tag
 logo: "/assets/logos/anhle-logo.png" # Site logo, also used in jekyll-seo-tag
-description: "Một dự án viết lách nhỏ. Nơi tôi chia sẻ những bài viết về kỹ thuật theo sở thích cá nhân và viết về những tâm trạng ngẫu nhiên trong cuộc sống." # Site description and default description, also used in jekyll-seo-tag
+description: "Posts" # Site description and default description, also used in jekyll-seo-tag
 url: "https://anhle.com.vn" # Site url, also used in jekyll-seo-tag
 baseurl: ""
 # repo: "https://github.com/daviddarnes/alembic"
