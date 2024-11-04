@@ -10,6 +10,30 @@ feature_text: |
 ---
 
 
+### 1. Giới thiệu 
+
+- Ảo hóa máy chủ và không gian lưu trữ dữ liệu lớn là hai nhu cầu cần thiết đối với các tổ chức, doanh nghiệp. 
+
+- Có nhiều chủng loại thiết bị phần cứng vật lý được thiết kế dành riêng cho việc lưu trữ, các bạn hãy xem ví dụ ở 2 thiết bị bên dưới. 
+    
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/000-dell-server.jpg " />
+Một máy chủ storage với nhiều disk
+  
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/000-synology-storage.png"/>
+Một thiết bị lưu trữ mạng Synology
+
+- Có thể thấy các thiết bị đều sẽ có giới hạn về slot gắn disk, để có khả năng chịu lỗi khi 1 thiết bị hư hỏng linh kiện điện tử hoặc nâng tổng dung lượng cho cụm lên đến hàng Petabyte trong bài viết này mình sẽ chia sẻ về mô hình Ceph storage cluster.
+
+- Kiến trúc Ceph storage cluster:
+  
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/000-ceph-diagram.gif"/>
+
+- Một mô hình ví dụ cho production:
+
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/01.png"/>
+
+
+
 - [1. Giới thiệu](#1-giới-thiệu)
 - [2. Các công nghệ sử dụng](#2-các-công-nghệ-sử-dụng)
 - [3. Mô hình triển khai](#3-mô-hình-triển-khai)
@@ -24,38 +48,11 @@ feature_text: |
   - [6.2. Sử dụng Ceph block storage trên Ubuntu server](#62-sử-dụng-ceph-block-storage-trên-ubuntu-server)
   - [6.3. Sử dụng Ceph block storage trên Windows server](#63-sử-dụng-ceph-block-storage-trên-windows-server)
 
-### 1. Giới thiệu 
-
-> Nếu bạn thấy bài viết bổ ích , vui lòng like và share tại : [trang Facebook này](https://www.facebook.com/profile.php?id=61567456205328&mibextid=ZbWKwL)
-, nó giúp cho tôi có thêm niềm vui khi chia sẻ các bài viết. Xin cảm ơn. 
-
-- Ảo hóa máy chủ và không gian lưu trữ dữ liệu lớn là hai nhu cầu cần thiết đối với các tổ chức, doanh nghiệp. 
-
-- Có nhiều chủng loại thiết bị phần cứng vật lý được thiết kế dành riêng cho việc lưu trữ, các bạn hãy xem ví dụ ở 2 thiết bị bên dưới. 
-    
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/000-dell-server.jpg " />
-Một máy chủ storage với nhiều disk
-  
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/000-synology-storage.png"/>
-Một thiết bị lưu trữ mạng Synology
-
-- Có thể thấy các thiết bị đều sẽ có giới hạn về slot gắn disk, để có khả năng chịu lỗi khi 1 thiết bị hư hỏng linh kiện điện tử hoặc nâng tổng dung lượng cho cụm lên đến hàng Petabyte trong bài viết này mình sẽ chia sẻ về mô hình Ceph storage cluster.
-
-- Kiến trúc Ceph storage cluster:
-  
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/000-ceph-diagram.gif"/>
-
-- Một mô hình ví dụ cho production:
-
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/01.png"/>
-
-
-
 ### 2. Các công nghệ sử dụng
 - Server Ubuntu 22.04 
 - Ceph version Squid-19.2.0
 
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/000-ceph-releases.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/000-ceph-releases.png"/>
 
 
 ### 3. Mô hình triển khai 
@@ -64,20 +61,20 @@ Một thiết bị lưu trữ mạng Synology
 
   - 3 x server mon quản lý cluster : 1 disk cài OS
   
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/02.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/02.png"/>
 
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/03.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/03.png"/>
 
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/04.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/04.png"/>
 
 
   - 3 x server ods làm storage node : 1 disk cài OS , các disk còn lại cấu hình làm ceph devices
 
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/05.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/05.png"/>
 
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/06.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/06.png"/>
 
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/07.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/07.png"/>
 
 
 
@@ -114,7 +111,7 @@ cephadm install ceph-common
 ceph -v
 ```
 
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/08.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/08.png"/>
 
 #### 4.2. Khởi tạo Ceph cluster
 
@@ -142,18 +139,18 @@ cephadm bootstrap \
 
 - Khởi tạo cluster thành công 
   
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/09.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/09.png"/>
 
 - Giao diện Web quản trị Ceph cluster 
 
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/10.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/10.png"/>
 
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/11.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/11.png"/>
 
 
 - Trạng thái hiện tại của cluster 
 
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/12.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/12.png"/>
 
 
 - Tiếp theo chúng ta sẽ add 2 node mon còn lại vào cluster. 
@@ -165,7 +162,7 @@ cephadm bootstrap \
 ssh-copy-id -f -i /etc/ceph/ceph.pub root@ceph-mon-12
 ssh-copy-id -f -i /etc/ceph/ceph.pub root@ceph-mon-13
 ```
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/13.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/13.png"/>
 
 
 - Add node vào cluster 
@@ -187,7 +184,7 @@ for i in 10.10.1.11 10.10.1.12 10.10.1.13 ; do rsync -av /etc/ceph/{ceph.conf,ce
 ceph orch host ls --detail
 ```
 
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/14.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/14.png"/>
 
 
 
@@ -209,7 +206,7 @@ ceph orch host label add ceph-mon-13 mgr
 ceph orch host ls --detail
 ```
 
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/15.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/15.png"/>
 
 - Deploy các deamon 
 
@@ -224,11 +221,11 @@ ceph orch ls
 ceph orch ps 
 ```
 
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/16.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/16.png"/>
 
 - Ceph dùng podman để chạy các deamon 
 
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/17.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/17.png"/>
 
 
 
@@ -257,7 +254,7 @@ ceph orch host label add ceph-osd-16 osd
 ceph orch host ls --detail
 ```
 
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/19.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/19.png"/>
 
 - Kiểm tra các disk có thể sử dụng cho cluster 
 
@@ -282,7 +279,7 @@ ceph orch device ls --refresh
 
 - Các disk trên các OSD node thỏa điều kiện để sử dụng trong Ceph cluster
   
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/20.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/20.png"/>
 
 
 - Cấu hình Ceph sử dụng các disk khả dụng  
@@ -302,11 +299,11 @@ ceph orch daemon add osd ceph-osd-16:/dev/sdc
 ceph orch daemon add osd ceph-osd-16:/dev/sdd
 ```
 
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/21.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/21.png"/>
 
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/21.1.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/21.1.png"/>
 
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/22.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/22.png"/>
 
 
 
@@ -315,15 +312,15 @@ ceph orch daemon add osd ceph-osd-16:/dev/sdd
 
 - Ceph orch triển khai các daemon bằng podman container, kiểm tra địa chỉ và port các service
     
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/25.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/25.png"/>
 
 - Ceph admin dashboard để quản lý Ceph cluster qua giao diện web 
    
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/23.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/23.png"/>
 
 - Grafana monitor dashboard để giám sát cluster 
   
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/24.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/24.png"/>
 
 
 ### 6. Ceph block storage
@@ -332,7 +329,7 @@ ceph orch daemon add osd ceph-osd-16:/dev/sdd
 
 - Mặc định Ceph có sẵn 1 pool replicate 3 
 
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/26.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/26.png"/>
 
 - Tạo RDB pool replicate 3 
 
@@ -342,9 +339,9 @@ ceph osd pool application enable production rbd
 rbd pool init -p production
 ```
 
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/27.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/27.png"/>
 
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/28.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/28.png"/>
 
 
 - Tạo RDB image 100 GB cho client 
@@ -355,9 +352,9 @@ rbd ls production
 rbd info production/file-share 
 ```
 
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/29.png"/>
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/30.png"/>
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/30.1.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/29.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/30.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/30.1.png"/>
 
 
 
@@ -437,7 +434,7 @@ root@ubuntu-server:~# ceph osd pool delete production production --yes-i-really-
 
 ```
 
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/31.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/31.png"/>
 
 
 #### 6.3. Sử dụng Ceph block storage trên Windows server  
@@ -448,9 +445,9 @@ root@ubuntu-server:~# ceph osd pool delete production production --yes-i-really-
 
 - Cài đặt và restart server 
 
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/32.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/32.png"/>
 
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/33.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/33.png"/>
 
 
 - Tạo file cấu hình Ceph : c:\%ProgramData%\Ceph\ceph.conf
@@ -477,19 +474,21 @@ root@ubuntu-server:~# ceph osd pool delete production production --yes-i-really-
 	key = AQBdPx5n0agJOxAACDY6rZbpJxFU5Ig7NjdZtw==
 ```
 
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/34.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/34.png"/>
 
 - Dùng Windows PowerShell map Ceph block device 
 
 ```powershell
  rbd.exe map -n client.admin  production/file-share
  ```
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/35.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/35.png"/>
 
 - Dùng Disk Manager trên Windows mount và sử dụng 
 
-<img src="../assets/img/2024-10-27-ceph-storage-cluster/36.png"/>
+<img src="/assets/img/2024-10-27-ceph-storage-cluster/36.png"/>
 
 
 
+> Nếu bạn thấy bài viết bổ ích , vui lòng like và share tại : [trang Facebook này](https://www.facebook.com/profile.php?id=61567456205328&mibextid=ZbWKwL)
+, nó giúp cho tôi có thêm niềm vui khi chia sẻ các bài viết. Xin cảm ơn. 
 
