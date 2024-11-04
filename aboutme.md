@@ -12,6 +12,8 @@ feature_image: "/assets/anhle.png"
 > <br>
 > This blog is a curated space where I share my random thoughts on life and delve into technical articles that reflect my personal interests.
 
+[Technical articles & my random thoughts on life](/blog/)
+
 <p style="text-align: center">
 <img src="/assets/logos/anhle-logo.png" alt="drawing" style="width:270px;"/>
 </p>
@@ -23,6 +25,7 @@ feature_image: "/assets/anhle.png"
 - VMware vSphere - vSan
 - Veeam Backup
 - Openstack private cloud 
-- Network : Routing & Switching
+- Network : routing & switching
+- Coding : Shell, Python, ...
 - ...
 
