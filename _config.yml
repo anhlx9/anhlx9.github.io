@@ -70,6 +70,7 @@ collections:
       ### Welcome to Anhle's blog
     feature_image: "/assets/cloud-computing.jpg"
 
+
 # 6. Jekyll collections settings
 defaults:
   -
