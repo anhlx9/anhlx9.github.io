@@ -26,4 +26,4 @@ feature_image: "/assets/anhle.png"
 - Network : Routing & Switching
 - ...
 
-<img src="/assets/logos/anhle-logo.png" alt="drawing" style="width:200px;"/>
+<img src="/assets/logos/anhle-logo.png" alt="drawing" style="width:500px;"/>
