@@ -4,7 +4,7 @@ feature_text: |
   
 # feature_image: "https://picsum.photos/1300/400?image=989"
 feature_image: "/assets/anhle.png"
-excerpt: "Alembic is a starting point for [Jekyll](https://jekyllrb.com/) projects. Rather than starting from scratch, this boilerplate is designed to get the ball rolling immediately. Install it, configure it, tweak it, push it."
+# excerpt: "Alembic is a starting point for [Jekyll](https://jekyllrb.com/) projects. Rather than starting from scratch, this boilerplate is designed to get the ball rolling immediately. Install it, configure it, tweak it, push it."
 ---
 
   My name is Anh Le, and I am a System Engineer.
