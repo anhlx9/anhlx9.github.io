@@ -18,12 +18,10 @@ This blog is a curated space where I share my random thoughts on life and delve 
 ---
 ###### Experience
 
+> Physical Server
+> Windows/Linux System
 > VMware vSphere - vSan
-> 
-> Openstack 
-> 
-> Windows/Linux Server
-> 
 > Veeam Backup
-> 
-> Routing, Switching
+> Openstack private cloud 
+> Network : Routing & Switching
+> ...
