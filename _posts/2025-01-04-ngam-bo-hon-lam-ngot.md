@@ -1,11 +1,7 @@
-
 ---
 title: Ngậm bồ hòn làm ngọt
 categories: 
 - Life
-feature_image: "/assets/postbanner.jpg"
-feature_text: |
-  ### đời...
 ---
 
  Trong các mỹ vị trên đời có lẽ vị đắng và vị cay của món ăn thức uống là thứ khó chấp nhận nhất.
