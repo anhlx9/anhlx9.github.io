@@ -385,7 +385,4 @@ feature_text: |
 - Trong bài viết trên mình chỉ demo một số tính năng cơ bản, các bạn có thể tìm hiểu sâu thêm về các thiết kế nâng cao qua Google.
 - VMware vSphere là công nghệ nổi tiếng trên thế giới được sử dụng rộng rãi trong các doanh nghiệp, có độ ổn định cao, nhược điểm là chi phí cao cho các loại license như mình sử dụng trong bài lab này.
 
-> Nếu bạn thấy bài viết bổ ích , vui lòng like và share tại : [trang Facebook này](https://www.facebook.com/profile.php?id=61567456205328&mibextid=ZbWKwL)
-, nó giúp cho tôi có thêm niềm vui khi chia sẻ các bài viết. Xin cảm ơn. 
-
 
