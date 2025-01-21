@@ -471,7 +471,4 @@ journalctl -u keepalived | tail -n 100
 <img src="/assets/img/2024-08-21-postgresql-high-availability-concept/09.png"/>
 
 
-> Nếu bạn thấy bài viết bổ ích , vui lòng like và share tại : [trang Facebook này](https://www.facebook.com/profile.php?id=61567456205328&mibextid=ZbWKwL)
-, nó giúp cho tôi có thêm niềm vui khi chia sẻ các bài viết. Xin cảm ơn. 
-
 
