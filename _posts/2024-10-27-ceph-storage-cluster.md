@@ -488,8 +488,3 @@ root@ubuntu-server:~# ceph osd pool delete production production --yes-i-really-
 
 <img src="/assets/img/2024-10-27-ceph-storage-cluster/36.png"/>
 
-
-
-> Nếu bạn thấy bài viết bổ ích , vui lòng like và share tại : [trang Facebook này](https://www.facebook.com/profile.php?id=61567456205328&mibextid=ZbWKwL)
-, nó giúp cho tôi có thêm niềm vui khi chia sẻ các bài viết. Xin cảm ơn. 
-
