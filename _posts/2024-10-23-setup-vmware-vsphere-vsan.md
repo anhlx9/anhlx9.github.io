@@ -5,7 +5,7 @@ categories:
 - VMware
 feature_image: "/assets/postbanner.jpg"
 feature_text: |
-  ### Ảo hóa hạ tầng máy chủ và lưu trữ cho Tổ chức, Doanh nghiệp
+  ### Ảo hóa hạ tầng máy chủ và lưu trữ cho Tổ chức, Doanh nghiệp với vSphere 7
 ---
 
 ### 1. Giới thiệu 
