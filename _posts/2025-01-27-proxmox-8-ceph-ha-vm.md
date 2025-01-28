@@ -53,50 +53,50 @@ feature_text: |
 <img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/02.png"/>
 
 
-- Chọn phân vùng ổ đĩa để cài đặt, trên thực tế chúng ta sẽ chọn cài đặt Proxmox lên phân vùng Raid 1 đã cấu hình sẵn của server vật lý : 
+- Chọn phân vùng ổ đĩa để cài đặt, trên thực tế chúng ta sẽ chọn cài đặt Proxmox lên phân vùng Raid 1 đã cấu hình sẵn của server vật lý.
   
 <img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/03.png"/>
 
-- Đặt location và time zone cho hệ thống : 
+- Đặt location và time zone cho hệ thống.
   
 <img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/04.png"/>
 
-- Đặt mật khẩu root của server PVE : 
+- Đặt mật khẩu root của server PVE.
   
 <img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/05.png"/>
 
-- Khai báo network để quản lý cho server PVE : 
+- Khai báo network để quản lý cho server PVE. 
   
 <img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/06.png"/>
 
-- Kiểm tra lại các thông tin cấu hình : 
+- Kiểm tra lại các thông tin cấu hình.
   
 <img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/07.png"/>
 
-- Quá trình cài đặt Proxmox VE bắt đầu : 
+- Quá trình cài đặt Proxmox VE bắt đầu.
   
 <img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/08.png"/>
 
-- Hoàn tất cài đặt Proxmox VE, khởi động lại PVE server : 
+- Hoàn tất cài đặt Proxmox VE, khởi động lại PVE server.
   
 <img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/09.png"/>
 
-- Giao diện console của PVE server : 
+- Giao diện console của PVE server.
   
 <img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/10.png"/>
 
 
 ### 3. WebUi quản lý Proxmox  
 
-- Đăng nhập WebUi của PVE host : 
+- Đăng nhập WebUi của PVE host.
   
 <img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/11.png"/>
 
-- Giao diện WebUi quản lý hệ thống ảo hóa Proxmox trên host PVE-1 : 
+- Giao diện WebUi quản lý hệ thống ảo hóa Proxmox trên host PVE-1.
   
 <img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/12.png"/>
 
-- Các thông số monitor cơ bản của host PVE-1 : 
+- Các thông số monitor cơ bản của host PVE-1.
   
 <img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/13.png"/>
 
@@ -104,28 +104,28 @@ feature_text: |
 
 ### 4. Khởi tạo Proxmox cluster 
 
-- Trên host PVE-1, tạo cluster để join các PVE-2, và PVE-3 : 
+- Trên host PVE-1, tạo cluster để join các PVE-2, và PVE-3.
   
 <img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/14.png"/>
 
-- Khởi tạo cluster thành công : 
+- Khởi tạo cluster thành công.
 
 <img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/15.png"/>
 
-- Lấy token để join các host PVE còn lại vào cluster : 
+- Lấy token để join các host PVE còn lại vào cluster.
 
 <img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/16.png"/>
 
 
-- Join host PVE-2 vào cluster : 
+- Join host PVE-2 vào cluster. 
 
 <img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/17.png"/>
 
-- Host PVE-2 đã join vào cluster thành công: 
+- Host PVE-2 đã join vào cluster thành công.
 
 <img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/18.png"/>
 
-- Tương tự, join host PVE-3 vào cluster : 
+- Tương tự, join host PVE-3 vào cluster.
 
 <img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/19.png"/>
 
@@ -133,14 +133,14 @@ feature_text: |
 
 <img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/20.png"/>
 
-- Capacity của Proxmox cluster với 3 node vừa khởi tạo : 
+- Capacity của Proxmox cluster với 3 node vừa khởi tạo.
 
 <img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/21.png"/>
 
 
 ### 5. Khởi tạo Ceph cluster làm shared storage cho Proxmox cluster
 
-- Cài đặt Ceph trên tất cả node PVE, các bước thực hiện trên PVE-1 : 
+- Cài đặt Ceph trên tất cả node PVE, các bước thực hiện trên PVE-1.
 
 <img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/22.png"/>
 
@@ -154,51 +154,51 @@ feature_text: |
 
 <img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/27.png"/>
 
-- Cài đặt Ceph trên PVE-2 : 
+- Cài đặt Ceph trên PVE-2. 
 
 <img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/28.png"/>
 
-- Tạo daemon Ceph Mon trên PVE-2 :
+- Tạo daemon Ceph Mon trên PVE-2.
   
 <img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/29.png"/>
 
-- Tạo daemon Ceph Mgr trên PVE-2 :
+- Tạo daemon Ceph Mgr trên PVE-2.
 
 <img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/30.png"/>
 
-- Cài đặt Ceph trên PVE-3 : 
+- Cài đặt Ceph trên PVE-3.
 
 <img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/31.png"/>
 
 
-- Tương tự, tạo daemon Ceph Mon và Ceph Mgr trên PVE-3 :
+- Tương tự, tạo daemon Ceph Mon và Ceph Mgr trên PVE-3.
 
 <img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/32.png"/>
 
 
 ### 6. Cấu hình các disk vật lý thành Ceph OSD.
 
-- Mình add các disk vào các PVE host để cấu hình làm Ceph OSD : 
+- Mình add các disk vào các PVE host để cấu hình làm Ceph OSD.
 
 <img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/33.png"/>
 
 
-- Các disk vừa thêm vào đã detect trên Proxmox WebUi : 
+- Các disk vừa thêm vào đã detect trên Proxmox WebUi.
 
 <img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/34.png"/>
 
-- Add các disk làm Ceph OSD trên tất cả các node PVE :
+- Add các disk làm Ceph OSD trên tất cả các node PVE.
 
 <img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/35.png"/>
 
-- Hoàn tất add Ceph OSD trên các PVE host :
+- Hoàn tất add Ceph OSD trên các PVE host.
 
 <img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/36.png"/>
 
 
 ### 7. Tạo Ceph Pool relicate chứa VM trên Proxmox cluster
 
-- Mình tạo pool HA-VM repicate 3 để chứa các VM : 
+- Mình tạo pool HA-VM repicate 3 để chứa các VM.
 
 <img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/37.png"/>
 
