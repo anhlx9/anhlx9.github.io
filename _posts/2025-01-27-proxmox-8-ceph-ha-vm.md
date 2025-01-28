@@ -33,7 +33,8 @@ feature_text: |
 - [9. Tạo VM Linux vả Windows trên Proxmox cluster](#9-tạo-vm-linux-vả-windows-trên-proxmox-cluster)
 - [10. Enable High Availability Virtual Machine (HA VM) trên Proxmox cluster](#10-enable-high-availability-virtual-machine-ha-vm-trên-proxmox-cluster)
 - [11. Live migrate VM giữa các node PVE trên Proxmox cluster](#11-live-migrate-vm-giữa-các-node-pve-trên-proxmox-cluster)
-- [12. Lời kết](#12-lời-kết)
+- [12. Scale-out Proxmox cluster - thêm PVE node vào cluster](#12-scale-out-proxmox-cluster---thêm-pve-node-vào-cluster)
+- [13. Lời kết](#13-lời-kết)
 
 <br>
 
@@ -315,8 +316,25 @@ feature_text: |
   
 <img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/66.png"/>
 
+### 12. Scale-out Proxmox cluster - thêm PVE node vào cluster
 
-### 12. Lời kết 
+- Trên PVE-1, copy token để join PVE-4 vào Proxmox cluster
+  
+<img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/67.png"/>
+
+
+- Trên PVE-4, paste token và nhập password để join PVE-4 vào Proxmox cluster
+  
+<img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/68.png"/>
+
+- Hoàn tất thêm node PVE-4 vào Proxmox cluster
+  
+<img src="/assets/img/2025-01-27-proxmox-8-ceph-ha-vm/69.png"/>
+
+- Cấu hình network và Ceph trên PVE-4 tương tự các node trước.
+
+
+### 13. Lời kết 
 
 - Như vậy mình đã chia sẻ về cách triển khai một hạ tầng ảo hóa sử dụng công nghệ Proxmox VE cho các doanh nghiệp, các tổ chức.
   
