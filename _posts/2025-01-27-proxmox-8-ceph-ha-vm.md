@@ -7,7 +7,7 @@ categories:
 - Ceph
 feature_image: "/assets/postbanner.jpg"
 feature_text: |
-  ### Ảo hóa hạ tầng máy chủ với Proxmox-v8.3 + Ceph-v19.2.0 Storage Cluster
+  ### Ảo hóa hạ tầng máy chủ với Proxmox-v8.3 + Ceph-v19.2.0
 ---
 
 ### 1. Giới thiệu 
