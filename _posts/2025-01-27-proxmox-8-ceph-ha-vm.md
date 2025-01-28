@@ -7,7 +7,7 @@ categories:
 - Ceph
 feature_image: "/assets/postbanner.jpg"
 feature_text: |
-  ### Ảo hóa hạ tầng máy chủ cho Tổ chức, Doanh nghiệp với Promox 8.3 + Ceph Storage Cluster
+  ### Ảo hóa hạ tầng máy chủ với Promox-v8.3 + Ceph-v19.2.0 Storage Cluster
 ---
 
 ### 1. Giới thiệu 
