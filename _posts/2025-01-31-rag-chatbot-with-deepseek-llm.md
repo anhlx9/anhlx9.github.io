@@ -35,6 +35,9 @@ Tôi sẽ tạo một Chatbot AI sử dụng kỹ thuật truy suất thông tin
 
 <img src="/assets/img/2025-01-31-rag-chatbot-with-deepseek-llm/15.png"/>
 
+<img src="/assets/img/2025-01-31-rag-chatbot-with-deepseek-llm/06.gif"/>
+
+
 Trong bài viết này, tôi dùng VM chạy Ubuntu server 22.04 với cấu hình như sau
 
 <img src="/assets/img/2025-01-31-rag-chatbot-with-deepseek-llm/01.png"/>
