@@ -22,7 +22,7 @@ feature_text: |
   - [2.6. Cài đặt Guacamole Web Application](#26-cài-đặt-guacamole-web-application)
   - [2.7. SSH Linux Server , RDP Windows Server qua Web](#27-ssh-linux-server--rdp-windows-server-qua-web)
   - [2.8. Xem lại record lịch sử truy cập của user](#28-xem-lại-record-lịch-sử-truy-cập-của-user)
-- [4. Lời kết](#4-lời-kết)
+- [3. Lời kết](#3-lời-kết)
 
 
 Thông thường trong các hệ thống doanh nghiệp, chúng ta triển khai 1 vài server chạy Windows server hoặc Linux server làm jump host, từ đó SSH hoặc RDP tới các server đằng sau, nhằm quản lý truy cập vào hệ thống để đảm bảo security. Với cách triển khai như vậy, chúng ta khó hoặc không thể ghi nhận các thao tác của user đối với hệ thống từ jump host, đặc biệt trên môi trường đồ họa như Windows Desktop hoặc Ubuntu Desktop không thể ghi nhận thao tác click chuột của user. 
@@ -402,7 +402,7 @@ guacenc -s 1280x720 -r 20000000 -f /var/lib/guacamole/recordings/1efef3b7-049e-3
 <img src="/assets/img/2025-05-01-guacamole-jump-host/28.png"/>
 
 
- ### 4. Lời kết 
+ ### 3. Lời kết 
 
 - Bài viết này mình đã chia sẻ về cách triển khai Apache Guacamole jump host mã nguồn mở , miễn phí, được sử dụng rộng rãi, phù hợp với doanh nghiệp. Cho phép quản lý truy cập và record các thao tác trên hệ thống nhằm đảm bảo security và trích suất lịch sử, evidence khi có sự cố xảy ra.
 - Trên đây chỉ là bài demo nên mình dùng VM và triển khai cơ bản môhình stand alone. Chúc bạn thành công. 
