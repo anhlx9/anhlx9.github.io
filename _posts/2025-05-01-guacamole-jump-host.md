@@ -29,8 +29,9 @@ Thông thường trong các hệ thống doanh nghiệp, chúng ta triển khai 
 
 Trong bài viết này, mình chia sẻ về cách triển khai Apache Guacamole làm jump host với các ưu điểm : 
 
-- <b>Thao tác trên nền Web.</b>
-- <b>Quản lý user.</b>
+- <b>Open source, miễm phí.</b>
+- <b>Thao tác SSH, RDP trên nền Web.</b>
+- <b>Quản lý user qua web.</b>
 - <b>Phân quyền truy cập cho user.</b>
 - <b>Record session remote của user và xem lại lịch sử truy cập.</b>
 
