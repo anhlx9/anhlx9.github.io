@@ -24,7 +24,6 @@ feature_text: |
   - [2.8. Xem lại record lịch sử truy cập của user](#28-xem-lại-record-lịch-sử-truy-cập-của-user)
 - [3. Lời kết](#3-lời-kết)
 
-
 Thông thường trong các hệ thống doanh nghiệp, chúng ta triển khai 1 vài server chạy Windows server hoặc Linux server làm jump host, từ đó SSH hoặc RDP tới các server đằng sau, nhằm quản lý truy cập vào hệ thống để đảm bảo security. Với cách triển khai như vậy, chúng ta khó hoặc không thể ghi nhận các thao tác của user đối với hệ thống từ jump host, đặc biệt trên môi trường đồ họa như Windows Desktop hoặc Ubuntu Desktop không thể ghi nhận thao tác click chuột của user. 
 
 Trong bài viết này, mình chia sẻ về cách triển khai Apache Guacamole làm jump host với các ưu điểm : 
