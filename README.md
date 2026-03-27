@@ -1,2 +1,0 @@
-
-## Anhle's blog

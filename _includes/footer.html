@@ -1,0 +1,112 @@
+<div class="page__footer-copyright">
+  © {{ site.time | date: "%Y" }} Anh Le • Built with ❤️
+</div>
+
+{% if page.collection == "posts" %}
+<button id="back-to-top" class="back-to-top" aria-label="Back to top" title="Back to top">
+  <span class="back-to-top__ring" aria-hidden="true"></span>
+  <svg class="back-to-top__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path d="M12 6.7L5.2 13.5a1 1 0 0 0 1.4 1.4l4.4-4.4V18a1 1 0 1 0 2 0v-7.5l4.4 4.4a1 1 0 1 0 1.4-1.4L12 6.7z" fill="currentColor"/>
+  </svg>
+</button>
+
+<style>
+  .back-to-top {
+    position: fixed;
+    right: 20px;
+    bottom: 24px;
+    width: 50px;
+    height: 50px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 9999px;
+    background: linear-gradient(145deg, #2563eb 0%, #0ea5e9 100%);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 14px 30px rgba(14, 165, 233, 0.35), 0 8px 20px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px) scale(0.95);
+    transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease, box-shadow 0.25s ease;
+    z-index: 1200;
+    overflow: hidden;
+  }
+
+  .back-to-top.is-visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+  }
+
+  .back-to-top:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 18px 34px rgba(14, 165, 233, 0.45), 0 10px 24px rgba(0, 0, 0, 0.28);
+  }
+
+  .back-to-top:active {
+    transform: translateY(0) scale(0.98);
+  }
+
+  .back-to-top:focus-visible {
+    outline: 2px solid #bae6fd;
+    outline-offset: 3px;
+  }
+
+  .back-to-top__icon {
+    width: 22px;
+    height: 22px;
+    position: relative;
+    z-index: 2;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
+  }
+
+  .back-to-top__ring {
+    position: absolute;
+    inset: 4px;
+    border-radius: 9999px;
+    background: radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0));
+    z-index: 1;
+  }
+
+  @media (max-width: 768px) {
+    .back-to-top {
+      right: 14px;
+      bottom: 18px;
+      width: 44px;
+      height: 44px;
+    }
+
+    .back-to-top__icon {
+      width: 20px;
+      height: 20px;
+    }
+  }
+</style>
+
+<script>
+  (function () {
+    var button = document.getElementById("back-to-top");
+    if (!button) {
+      return;
+    }
+
+    var toggleVisibility = function () {
+      if (window.scrollY > 320) {
+        button.classList.add("is-visible");
+      } else {
+        button.classList.remove("is-visible");
+      }
+    };
+
+    button.addEventListener("click", function () {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    window.addEventListener("scroll", toggleVisibility, { passive: true });
+    toggleVisibility();
+  })();
+</script>
+{% endif %}

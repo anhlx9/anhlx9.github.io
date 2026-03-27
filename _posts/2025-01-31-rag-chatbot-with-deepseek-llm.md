@@ -3,7 +3,6 @@ title: RAG Chatbot với DeepSeek-R1 LLM
 categories:
 - System
 - LLM
-- DeepSeek
   
 feature_image: "/assets/postbanner.jpg"
 feature_text: |

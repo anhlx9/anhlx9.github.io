@@ -1,0 +1,296 @@
+@import "minimal-mistakes";
+
+---
+@import "minimal-mistakes";
+
+/* ================================
+   GLOBAL
+================================ */
+
+body {
+  background: #f3f4f6;
+}
+
+/* ================================
+  body {
+    background: #f3f4f6;
+
+.sidebar {
+  background: #1f2937;
+
+.sidebar {
+  background: #f9fafb;
+  padding: 22px;
+  border-radius: 14px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.10);
+  color: #1f2937;
+}
+
+.author__name {
+  color: #1f2937;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.author__bio {
+  color: #64748b;
+  font-size: 14px;
+}
+
+/* Thẻ location, github, youtube, email */
+.author__urls li {
+  background: #e5e7eb;
+  border-radius: 8px;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  margin: 6px 0;
+}
+
+.author__urls li a {
+  color: #1f2937;
+  font-size: 15px;
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+.author__urls li a:hover {
+  color: #2563eb;
+}
+
+.author__urls i {
+  color: #2563eb;
+  width: 22px;
+}
+  width: 22px;
+  color: #38bdf8;
+}
+
+/* location icon */
+
+.fa-location-dot {
+  color: #f87171;
+}
+
+/* ================================
+   POST CARD
+================================ */
+
+.archive__item {
+  background: #1e293b;
+  padding: 22px;
+  border-radius: 14px;
+  border: 1px solid #334155;
+  margin-bottom: 22px;
+  transition: all 0.25s ease;
+}
+
+.archive__item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.35);
+}
+
+/* title */
+
+.archive__item-title a {
+  color: #38bdf8;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.archive__item-title a:hover {
+  color: #7dd3fc;
+}
+
+/* excerpt */
+
+.archive__item-excerpt {
+  color: #cbd5e1;
+}
+
+/* meta */
+
+.page__meta {
+  color: #94a3b8;
+}
+
+/* ================================
+   HERO TEXT
+================================ */
+
+.page__content p {
+  font-size: 17px;
+  color: #374151;
+  line-height: 1.7;
+}
+
+/* ================================
+   PAGINATION
+================================ */
+
+.pagination {
+  text-align: center;
+  margin-top: 40px;
+}
+
+.pagination a,
+.pagination span {
+  padding: 10px 16px;
+  margin: 4px;
+  border-radius: 6px;
+  background: #e5e7eb;
+  color: #111827;
+  font-weight: 600;
+}
+
+.pagination a:hover {
+  background: #3b82f6;
+  color: white;
+}
+
+.pagination .current {
+  background: #2563eb;
+  color: white;
+}
+
+/* ===== MOBILE FIX FOLLOW BUTTON ===== */
+
+@media (max-width: 768px) {
+
+  /* giữ popup ẩn mặc định */
+
+  .author__urls-wrapper .author__urls {
+    display: none;
+  }
+
+  /* khi bấm FOLLOW thì mới hiện */
+
+  .author__urls-wrapper.open .author__urls {
+    display: block;
+    background: #ffffff;
+    padding: 14px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  }
+
+  .author__urls li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .author__urls li a {
+    color: #111827;
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  .author__urls li i {
+    width: 20px;
+    color: #3b82f6;
+  }
+
+}
+
+/* ================================
+   AVATAR
+================================ */
+
+.author__avatar img {
+  width: 140px;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 3px solid #e5e7eb;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.15);
+}
+
+/* Doi sang vuong bo goc: border-radius: 18px; */
+
+.masthead .site-title,
+.greedy-nav .site-title {
+  position: relative;
+  display: inline-block;
+  width: 220px;
+  height: 56px;
+  overflow: hidden;
+  color: transparent !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  text-indent: -9999px;
+  white-space: nowrap;
+}
+
+.masthead .site-title > *,
+.greedy-nav .site-title > * {
+  display: none !important;
+}
+
+.masthead .site-title::before,
+.greedy-nav .site-title::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("../img/anhle-logo-cropped.png") no-repeat left center;
+  background-size: 220px auto;
+}
+
+@media (max-width: 768px) {
+  .masthead .site-title,
+  .greedy-nav .site-title {
+    width: 165px;
+    height: 42px;
+  }
+
+  .masthead .site-title::before,
+  .greedy-nav .site-title::before {
+    background-size: 165px auto;
+  }
+}
+
+/* ================================
+   XIN CHAO PAGE
+================================ */
+
+.xinchao-page .page__title {
+  font-size: 2rem;
+  letter-spacing: 0.2px;
+  margin-bottom: 1rem;
+}
+
+.xinchao-page .page__content {
+  max-width: 760px;
+  background: rgba(15, 23, 42, 0.26);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 14px;
+  padding: 24px;
+}
+
+.xinchao-page .page__content p {
+  font-size: 1.08rem;
+  line-height: 1.9;
+  color: #d7dee9;
+  margin-bottom: 1rem;
+}
+
+.xinchao-page .page__content p:first-of-type {
+  font-size: 1.2rem;
+  color: #f3f4f6;
+}
+
+.xinchao-page .page__content p:last-of-type {
+  margin-top: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .xinchao-page .page__content {
+    padding: 18px;
+    border-radius: 12px;
+  }
+
+  .xinchao-page .page__content p {
+    font-size: 1rem;
+    line-height: 1.8;
+  }
+}
