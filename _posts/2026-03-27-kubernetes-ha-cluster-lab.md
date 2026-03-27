@@ -1,10 +1,10 @@
 ---
-title: Kubernetes HA Cluster Lab
+title: Kubernetes HA Cluster
 categories:
 - System
 - Kubernetes
 - Linux
-- VMware
+
 feature_image: "/assets/postbanner.jpg"
 feature_text: |
   ### Dựng Kubernetes HA Cluster với Cilium, Longhorn, MetalLB và NGINX Ingress
@@ -12,17 +12,19 @@ feature_text: |
 
 ### 1. Giới thiệu
 
-- Trong bài lab này mình triển khai một cụm Kubernetes HA chạy trên VMware ESXi với mô hình 3 control-plane và 3 worker node.
-- Stack sử dụng theo hướng production-ready cho môi trường lab hoặc on-premise nhỏ: Cilium CNI, Longhorn storage, MetalLB, NGINX Ingress, Prometheus/Grafana và Loki/Promtail.
+- Trong bài triển khai này mình xây dựng một cụm Kubernetes HA chạy trên VMware với mô hình 3 control-plane và 3 worker node.
+- Stack sử dụng theo hướng production-ready cho môi trường thử nghiệm hoặc on-premise nhỏ: Cilium CNI, Longhorn storage, MetalLB, NGINX Ingress, Prometheus/Grafana và Loki/Promtail.
 - Mục tiêu là có một cụm K8s vừa dễ quan sát, vừa có khả năng chịu lỗi khi mất 1 node control-plane hoặc 1 worker node.
 
-<img src="/assets/img/2026-03-27-kubernetes-ha-cluster-lab/01.png" />
+<img src="/assets/img/2026-03-27-kubernetes-ha-cluster/01.png" />
 
 - [1. Giới thiệu](#1-giới-thiệu)
 - [2. Kiến trúc tổng thể](#2-kiến-trúc-tổng-thể)
 - [3. Tài nguyên và thành phần sử dụng](#3-tài-nguyên-và-thành-phần-sử-dụng)
+  - [3.1. Tài nguyên VM](#31-tài-nguyên-vm)
+  - [3.2. Công nghệ sử dụng](#32-công-nghệ-sử-dụng)
 - [4. Chuẩn bị VM](#4-chuẩn-bị-vm)
-  - [4.1. Tạo VM trên ESXi](#41-tạo-vm-trên-esxi)
+  - [4.1. Tạo VM trên VMware](#41-tạo-vm-trên-vmware)
   - [4.2. Cấu hình hostname và IP tĩnh](#42-cấu-hình-hostname-và-ip-tĩnh)
   - [4.3. Cấu hình chung cho tất cả node](#43-cấu-hình-chung-cho-tất-cả-node)
 - [5. HA Control Plane với HAProxy và Keepalived](#5-ha-control-plane-với-haproxy-và-keepalived)
@@ -78,30 +80,43 @@ feature_text: |
 ### 2. Kiến trúc tổng thể
 
 ```text
-                     ┌──────────────────────────┐
+                     ┌─────────────────────────┐
                      │    VIP: 10.10.200.10    │
                      │  (HAProxy + Keepalived) │
                      └────────────┬────────────┘
                                   │
          ┌────────────────────────┼────────────────────────┐
          │                        │                        │
-┌────────▼─────────┐  ┌──────────▼────────┐  ┌────────────▼──────┐
-│ k8s-master-01    │  │ k8s-master-02     │  │ k8s-master-03     │
-│ 10.10.200.11     │  │ 10.10.200.12      │  │ 10.10.200.13      │
-│ CP + etcd        │  │ CP + etcd         │  │ CP + etcd         │
-└──────────────────┘  └───────────────────┘  └───────────────────┘
+┌────────▼─────────┐   ┌──────────▼────────┐  ┌────────────▼──────┐
+│ k8s-master-01    │   │ k8s-master-02     │  │ k8s-master-03     │
+│ 10.10.200.11     │   │ 10.10.200.12      │  │ 10.10.200.13      │
+│ CP + etcd        │   │ CP + etcd         │  │ CP + etcd         │
+└──────────────────┘   └───────────────────┘  └───────────────────┘
 
-┌──────────────────┐  ┌───────────────────┐  ┌───────────────────┐
-│ k8s-worker-01    │  │ k8s-worker-02     │  │ k8s-worker-03     │
-│ 10.10.200.14     │  │ 10.10.200.15      │  │ 10.10.200.16      │
-│ Workload         │  │ Workload          │  │ Workload          │
-└──────────────────┘  └───────────────────┘  └───────────────────┘
+┌──────────────────┐   ┌───────────────────┐  ┌───────────────────┐
+│ k8s-worker-01    │   │ k8s-worker-02     │  │ k8s-worker-03     │
+│ 10.10.200.14     │   │ 10.10.200.15      │  │ 10.10.200.16      │
+│ Workload         │   │ Workload          │  │ Workload          │
+└──────────────────┘   └───────────────────┘  └───────────────────┘
 
 MetalLB Pool: 10.10.200.100 - 10.10.200.120
-Ingress IP:   10.10.200.100 → *.lab.local
+Ingress IP:   10.10.200.100 → *.anhle.lab
 ```
 
 ### 3. Tài nguyên và thành phần sử dụng
+
+#### 3.1. Tài nguyên VM
+
+| Hostname | IP | vCPU | RAM | Disk OS | Disk Data | Role |
+|---|---|---|---|---|---|---|
+| k8s-master-01 | 10.10.200.11 | 8 | 8 GB | 100 GB `/dev/sda` | — | Control Plane + etcd |
+| k8s-master-02 | 10.10.200.12 | 8 | 8 GB | 100 GB `/dev/sda` | — | Control Plane + etcd |
+| k8s-master-03 | 10.10.200.13 | 8 | 8 GB | 100 GB `/dev/sda` | — | Control Plane + etcd |
+| k8s-worker-01 | 10.10.200.14 | 8 | 8 GB | 100 GB `/dev/sda` | 100 GB `/dev/sdb` | Worker |
+| k8s-worker-02 | 10.10.200.15 | 8 | 8 GB | 100 GB `/dev/sda` | 100 GB `/dev/sdb` | Worker |
+| k8s-worker-03 | 10.10.200.16 | 8 | 8 GB | 100 GB `/dev/sda` | 100 GB `/dev/sdb` | Worker |
+
+#### 3.2. Công nghệ sử dụng
 
 | Thành phần | Chi tiết | HA |
 |---|---|---|
@@ -116,22 +131,14 @@ Ingress IP:   10.10.200.100 → *.lab.local
 | Monitoring | kube-prometheus-stack | Prometheus x2, Grafana x2, Alertmanager x2 |
 | Logging | Loki + Promtail | Loki x1, Promtail DaemonSet |
 
-| Hostname | IP | vCPU | RAM | Disk OS | Disk Data | Role |
-|---|---|---|---|---|---|---|
-| k8s-master-01 | 10.10.200.11 | 4 | 4 GB | 50 GB | — | Control Plane + etcd |
-| k8s-master-02 | 10.10.200.12 | 4 | 4 GB | 50 GB | — | Control Plane + etcd |
-| k8s-master-03 | 10.10.200.13 | 4 | 4 GB | 50 GB | — | Control Plane + etcd |
-| k8s-worker-01 | 10.10.200.14 | 4 | 8 GB | 50 GB | 100 GB `/dev/sdb` | Worker |
-| k8s-worker-02 | 10.10.200.15 | 4 | 8 GB | 50 GB | 100 GB `/dev/sdb` | Worker |
-| k8s-worker-03 | 10.10.200.16 | 4 | 8 GB | 50 GB | 100 GB `/dev/sdb` | Worker |
-
 - VIP dùng cho kube-apiserver: `10.10.200.10`
 - Pool IP của MetalLB: `10.10.200.100 - 10.10.200.120`
-- Mỗi worker node được gắn thêm 1 disk riêng cho Longhorn.
+- Cả 6 VM đều dùng cấu hình: 8 vCPU, 8 GB RAM, disk OS `/dev/sda` 100 GB.
+- 3 worker node gắn thêm 1 disk `/dev/sdb` 100 GB để làm storage cho Longhorn.
 
 ### 4. Chuẩn bị VM
 
-#### 4.1. Tạo VM trên ESXi
+#### 4.1. Tạo VM trên VMware
 
 - Tạo 6 VM theo bảng tài nguyên ở trên.
 - Cài Ubuntu Server 24.04 LTS cho toàn bộ các node.
@@ -222,6 +229,8 @@ sudo apt install -y kubelet kubeadm kubectl
 sudo apt-mark hold kubelet kubeadm kubectl
 sudo systemctl enable kubelet
 ```
+
+<img src="/assets/img/2026-03-27-kubernetes-ha-cluster/01.png" />
 
 ### 5. HA Control Plane với HAProxy và Keepalived
 
@@ -382,7 +391,7 @@ cilium status --wait
 kubectl get nodes -o wide
 ```
 
-<img src="/assets/img/2026-03-27-kubernetes-ha-cluster-lab/01.png" />
+<img src="/assets/img/2026-03-27-kubernetes-ha-cluster/01.png" />
 
 ### 8. Cài Helm
 
@@ -434,8 +443,6 @@ kubectl get pods -n metallb-system -o wide
 kubectl get ipaddresspool -n metallb-system
 ```
 
-<img src="/assets/img/2026-03-27-kubernetes-ha-cluster-lab/02.png" />
-
 ### 10. Cài NGINX Ingress Controller
 
 ```bash
@@ -454,8 +461,6 @@ helm install ingress-nginx ingress-nginx/ingress-nginx \
 kubectl get svc -n ingress-nginx
 kubectl get pods -n ingress-nginx -o wide
 ```
-
-<img src="/assets/img/2026-03-27-kubernetes-ha-cluster-lab/03.png" />
 
 ### 11. Cài Longhorn Storage
 
@@ -490,8 +495,6 @@ echo '/dev/sdb /mnt/longhorn ext4 defaults 0 0' | sudo tee -a /etc/fstab
 ```bash
 curl -sSfL https://raw.githubusercontent.com/longhorn/longhorn/v1.7.2/scripts/environment_check.sh | bash
 ```
-
-<img src="/assets/img/2026-03-27-kubernetes-ha-cluster-lab/04.png" />
 
 #### 11.3. Cài Longhorn
 
@@ -548,8 +551,6 @@ EOF
 
 kubectl get svc -n longhorn-system longhorn-frontend-lb
 ```
-
-<img src="/assets/img/2026-03-27-kubernetes-ha-cluster-lab/05.png" />
 
 ### 12. Cài Monitoring với kube-prometheus-stack
 
@@ -652,7 +653,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: longhorn.lab.local
+    - host: longhorn.anhle.lab
       http:
         paths:
           - path: /
@@ -671,7 +672,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: grafana.lab.local
+    - host: grafana.anhle.lab
       http:
         paths:
           - path: /
@@ -690,7 +691,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: prometheus.lab.local
+    - host: prometheus.anhle.lab
       http:
         paths:
           - path: /
@@ -709,7 +710,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: alertmanager.lab.local
+    - host: alertmanager.anhle.lab
       http:
         paths:
           - path: /
@@ -725,17 +726,17 @@ EOF
 #### 14.2. Cấu hình hosts trên laptop
 
 ```text
-<INGRESS_IP>  longhorn.lab.local grafana.lab.local prometheus.lab.local alertmanager.lab.local
+<INGRESS_IP>  longhorn.anhle.lab grafana.anhle.lab prometheus.anhle.lab alertmanager.anhle.lab
 ```
 
 #### 14.3. Truy cập các dịch vụ
 
 | Dịch vụ | URL | Credentials |
 |---|---|---|
-| Longhorn UI | http://longhorn.lab.local | — |
-| Grafana | http://grafana.lab.local | admin / admin |
-| Prometheus | http://prometheus.lab.local | — |
-| Alertmanager | http://alertmanager.lab.local | — |
+| Longhorn UI | http://longhorn.anhle.lab | — |
+| Grafana | http://grafana.anhle.lab | admin / admin |
+| Prometheus | http://prometheus.anhle.lab | — |
+| Alertmanager | http://alertmanager.anhle.lab | — |
 
 ### 15. Remote vào cluster từ laptop
 
@@ -745,7 +746,7 @@ EOF
 cat ~/.kube/config
 ```
 
-Lưu thành file ví dụ `k8s-cluster-lab.config`.
+Lưu thành file ví dụ `k8s-cluster.config`.
 
 #### 15.2. Thêm hosts entry trên laptop
 
@@ -756,15 +757,15 @@ Lưu thành file ví dụ `k8s-cluster-lab.config`.
 #### 15.3. Sử dụng trên WSL
 
 ```bash
-export KUBECONFIG=/mnt/d/k8s/k8s-cluster-lab.config
-echo 'export KUBECONFIG=/mnt/d/k8s/k8s-cluster-lab.config' >> ~/.bashrc
+export KUBECONFIG=/mnt/d/k8s/k8s-cluster.config
+echo 'export KUBECONFIG=/mnt/d/k8s/k8s-cluster.config' >> ~/.bashrc
 kubectl get nodes -o wide
 ```
 
 #### 15.4. Sử dụng trên PowerShell
 
 ```powershell
-$env:KUBECONFIG = "D:\k8s\k8s-cluster-lab.config"
+$env:KUBECONFIG = "D:\k8s\k8s-cluster.config"
 kubectl get nodes -o wide
 ```
 
@@ -798,7 +799,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: test.lab.local
+    - host: test.anhle.lab
       http:
         paths:
           - path: /
@@ -889,8 +890,8 @@ sudo apt install -y conntrack
 ### 18. Ghi chú
 
 - Mô hình 3 master giúp control plane vẫn hoạt động khi mất 1 node.
-- Cilium thay kube-proxy bằng eBPF nên nhẹ và hiện đại hơn cho lab K8s mới.
-- MetalLB L2 phù hợp lab hoặc on-premise, không cần BGP router.
+- Cilium thay kube-proxy bằng eBPF nên nhẹ và hiện đại hơn cho cụm K8s mới.
+- MetalLB L2 phù hợp môi trường thử nghiệm hoặc on-premise, không cần BGP router.
 - NGINX Ingress cho phép gom toàn bộ UI về một đầu ingress duy nhất theo host-based routing.
-- Longhorn phù hợp lab storage phân tán, đặc biệt khi mỗi worker có disk riêng.
+- Longhorn phù hợp mô hình storage phân tán, đặc biệt khi mỗi worker có disk riêng.
 - Với production thực tế, phần logging nên cân nhắc Loki SimpleScalable hoặc object storage backend thay vì SingleBinary.
