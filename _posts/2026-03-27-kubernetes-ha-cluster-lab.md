@@ -318,6 +318,8 @@ sudo systemctl enable keepalived
 ip addr show ens160 | grep 10.10.200.10
 ```
 
+<img src="/assets/img/2026-03-27-kubernetes-ha-cluster/02.png" />
+
 ### 6. Khởi tạo Kubernetes Cluster
 
 #### 6.1. Init cluster trên master đầu tiên
@@ -340,6 +342,7 @@ mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
 ```
+<img src="/assets/img/2026-03-27-kubernetes-ha-cluster/03.png" />
 
 #### 6.2. Join các master còn lại
 
@@ -361,6 +364,7 @@ sudo kubeadm join k8s-api:8443 --token <token> \
 ```bash
 kubectl get nodes -o wide
 ```
+<img src="/assets/img/2026-03-27-kubernetes-ha-cluster/03.png" />
 
 ### 7. Cài Cilium CNI
 
