@@ -16,7 +16,6 @@ feature_text: |
 - Stack sử dụng theo hướng production-ready cho môi trường thử nghiệm hoặc on-premise nhỏ: Cilium CNI, Longhorn storage, MetalLB, NGINX Ingress, Prometheus/Grafana và Loki/Promtail.
 - Mục tiêu là có một cụm K8s vừa dễ quan sát, vừa có khả năng chịu lỗi khi mất 1 node control-plane hoặc 1 worker node.
 
-<img src="/assets/img/2026-03-27-kubernetes-ha-cluster/01.png" />
 
 - [1. Giới thiệu](#1-giới-thiệu)
 - [2. Kiến trúc tổng thể](#2-kiến-trúc-tổng-thể)
@@ -115,6 +114,8 @@ Ingress IP:   10.10.200.100 → *.anhle.lab
 | k8s-worker-01 | 10.10.200.14 | 8 | 8 GB | 100 GB `/dev/sda` | 100 GB `/dev/sdb` | Worker |
 | k8s-worker-02 | 10.10.200.15 | 8 | 8 GB | 100 GB `/dev/sda` | 100 GB `/dev/sdb` | Worker |
 | k8s-worker-03 | 10.10.200.16 | 8 | 8 GB | 100 GB `/dev/sda` | 100 GB `/dev/sdb` | Worker |
+
+<img src="/assets/img/2026-03-27-kubernetes-ha-cluster/01.png" />
 
 #### 3.2. Công nghệ sử dụng
 
@@ -229,8 +230,6 @@ sudo apt install -y kubelet kubeadm kubectl
 sudo apt-mark hold kubelet kubeadm kubectl
 sudo systemctl enable kubelet
 ```
-
-<img src="/assets/img/2026-03-27-kubernetes-ha-cluster/01.png" />
 
 ### 5. HA Control Plane với HAProxy và Keepalived
 
@@ -390,8 +389,6 @@ cilium install \
 cilium status --wait
 kubectl get nodes -o wide
 ```
-
-<img src="/assets/img/2026-03-27-kubernetes-ha-cluster/01.png" />
 
 ### 8. Cài Helm
 
