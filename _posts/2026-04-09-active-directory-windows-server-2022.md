@@ -47,7 +47,7 @@ Trong lab này, ta sẽ triển khai:
 
 #### 2.1. Topology
 
-![Topology](/assets/img/2026-04-09-active-directory-windows-server-2022/topology.png)
+![Topology](/assets/img/2026-04-09-active-directory-windows-server-2022/00.png)
 
 #### 2.2. Kế hoạch IP
 
