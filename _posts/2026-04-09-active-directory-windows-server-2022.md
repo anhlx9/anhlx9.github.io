@@ -1,12 +1,12 @@
 ---
-title: "Lab Active Directory - Windows Server 2022"
+title: "Active Directory - Windows Server 2022"
 categories:
 - System
 - Windows Server
 - Active Directory
 feature_image: "/assets/postbanner.jpg"
 feature_text: |
-  ### Lab dựng Active Directory Domain Services trên Windows Server 2022
+  ### Dựng Active Directory Domain Services trên Windows Server 2022
 ---
 
 Bài viết hướng dẫn triển khai lab Active Directory Domain Services (AD DS) với 2 Domain Controller chạy Windows Server 2022 và 1 máy Windows client join domain.
