@@ -19,7 +19,7 @@ My current technical focus includes:
 - Enterprise IT Services
 - Virtualization and Cloud Computing
 - Web Application Development
-- Linux, Kubernetes, and Ceph
+- Linux, Kubernetes, Openstack and Ceph
 
 ## Purpose Of This Blog
 
