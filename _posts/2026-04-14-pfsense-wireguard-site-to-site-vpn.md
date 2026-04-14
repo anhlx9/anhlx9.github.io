@@ -4,7 +4,7 @@ categories:
 - Network
 - Security
 
-feature_image: "../assets/postbanner.jpg"
+feature_image: "/assets/postbanner.jpg"
 feature_text: |
   ### Lab VPN Site-to-Site giữa 2 pfSense với WireGuard — On-Premise to Cloud
 ---
@@ -130,11 +130,11 @@ Thực hiện trên **cả 2 pfSense** (FW01 và FW02):
 Sau khi cài xong, menu **VPN → WireGuard** sẽ xuất hiện.
 
 
-![](../assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/01.png)
+![](/assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/01.png)
 
-![](../assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/02.png)
+![](/assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/02.png)
 
-![](../assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/03.png)
+![](/assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/03.png)
 
 ---
 
@@ -154,7 +154,7 @@ Truy cập **VPN → WireGuard → Tunnels → Add Tunnel**
 | Interface Keys | Nhấn **Generate** để tạo cặp key |
 | Interface Addresses | `10.0.0.1/30` |
 
-![](../assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/04.png)
+![](/assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/04.png)
 
 Nhấn **Save Tunnel** → **Copy Public Key** của FW01 ra notepad để dùng cho bước cấu hình peer trên FW02.
 
@@ -175,7 +175,7 @@ Truy cập **VPN → WireGuard → Peers → Add Peer**
 | Allowed IPs | `10.0.0.2/32` |
 | Allowed IPs | `10.10.202.0/24` |
 
-![](../assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/05.png)
+![](/assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/05.png)
 
 > **Quan trọng:**
 > - **Dynamic Endpoint = OFF** vì FW02 có IP public cố định, FW01 cần biết chính xác endpoint để khởi tạo kết nối
@@ -202,7 +202,7 @@ Truy cập **VPN → WireGuard → Tunnels → Add Tunnel**
 | Interface Keys | Nhấn **Generate** để tạo cặp key |
 | Interface Addresses | `10.0.0.2/30` |
 
-![](../assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/06.png)
+![](/assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/06.png)
 
 Nhấn **Save Tunnel** → **Copy Public Key** của FW02 để paste vào cấu hình peer trên FW01 (bước 4.2).
 
@@ -223,7 +223,7 @@ Truy cập **VPN → WireGuard → Peers → Add Peer**
 | Allowed IPs | `10.0.0.1/32` |
 | Allowed IPs | `10.10.201.0/24` |
 
-![](../assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/07.png)
+![](/assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/07.png)
 
 > **Điểm khác biệt quan trọng so với cấu hình 2 đầu public IP:**
 > - **Dynamic Endpoint = ON** — FW02 không biết trước IP của FW01 (vì FW01 nằm sau NAT). Sau khi FW01 gửi handshake, WireGuard tự ghi nhận source IP:port và dùng nó để gửi traffic ngược lại
@@ -255,11 +255,11 @@ Thực hiện trên **cả 2 pfSense**:
 
 Nhấn **Save** → **Apply Changes**.
 
-![](../assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/08.png)
+![](/assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/08.png)
 
-![](../assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/09.png)
+![](/assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/09.png)
 
-![](../assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/10.png)
+![](/assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/10.png)
 
 ---
 
@@ -288,7 +288,7 @@ Nhấn **Save** → **Apply Changes**.
 >
 > **FW01 (On-Prem):** Không cần mở port WAN vì FW01 gửi packet outbound. Response traffic từ FW02 sẽ đi qua NAT mapping đã được tạo bởi outbound connection. Tuy nhiên nếu ISP/router phía trước FW01 có firewall chặn outbound UDP, cần đảm bảo cho phép UDP 51820 outbound.
 
-![](../assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/11.png)
+![](/assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/11.png)
 
 #### 7.2. WireGuard Interface Rules
 
@@ -303,7 +303,7 @@ Trên **cả 2 pfSense**, truy cập **Firewall → Rules → WireGuard** (hoặ
 | Destination | **any** |
 | Description | `Allow all WireGuard traffic` |
 
-![](../assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/12.png)
+![](/assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/12.png)
 
 > **Trong môi trường production**, bạn nên giới hạn source/destination cụ thể thay vì allow any-any. Ví dụ chỉ cho phép từ `10.10.201.0/24` đến `10.10.202.0/24` và ngược lại.
 
@@ -316,7 +316,7 @@ LAN rules mặc định trên cả 2 pfSense đang có:
 - **Default allow LAN to LAN** (cho phép LAN subnet ra mọi nơi)
 - **Block all** (chặn còn lại)
 
-![](../assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/13.png)
+![](/assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/13.png)
 
 
 Rule **"Default allow LAN to LAN"** đã đủ để cho phép traffic từ LAN đi qua WireGuard tunnel. Nếu bạn muốn kiểm soát chặt hơn, có thể tạo rule cụ thể:
@@ -352,9 +352,9 @@ Kiểm tra:
 - **Transfer**: Có dữ liệu sent/received
 - **Endpoint**: Hiển thị IP:port của peer
 
-![](../assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/14.png)
+![](/assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/14.png)
 
-![](../assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/15.png)
+![](/assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/15.png)
 
 #### 8.2. Ping test từ pfSense
 
@@ -374,14 +374,14 @@ Ping 10.10.201.254 (LAN FW01)      → phải thành công
 
 > **Quan trọng:** Khi ping đến subnet LAN phía bên kia, phải chọn **Source Address** là **LAN address** hoặc **WireGuard address**, không dùng default (WAN).
 
-![](../assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/16.png)
+![](/assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/16.png)
 
 
 #### 8.3. Ping test từ VM
 
 - Các VM trong 2 site ping thông qua lại 
 
-![](../assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/17.png)
+![](/assets/img/2026-04-14-pfsense-wireguard-site-to-site-vpn/17.png)
 
 ---
 
