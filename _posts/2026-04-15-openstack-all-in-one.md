@@ -52,7 +52,7 @@ So với DevStack, Kolla-Ansible có các ưu điểm:
 
 Bài viết này triển khai **OpenStack 2025.2 (Flamingo)** — All-in-One trên 1 VM.
 
-![](../assets/img/2026-04-15-openstack-all-in-one/00.png)
+![](/assets/img/2026-04-15-openstack-all-in-one/00.png)
 
 ---
 
@@ -128,7 +128,7 @@ sudo vgs
 # cinder-volumes   1   0   0 wz--n- 500.00g  500.00g
 ```
 
-![](../assets/img/2026-04-15-openstack-all-in-one/01.png)
+![](/assets/img/2026-04-15-openstack-all-in-one/01.png)
 
 ### 3.3. Cài Docker
 
@@ -192,7 +192,7 @@ kolla-ansible install-deps
 # Kiểm tra version
 kolla-ansible --version
 ```
-![](../assets/img/2026-04-15-openstack-all-in-one/02.png)
+![](/assets/img/2026-04-15-openstack-all-in-one/02.png)
 
 Tạo thư mục cấu hình:
 
@@ -263,7 +263,7 @@ Kiểm tra password admin:
 ```bash
 grep keystone_admin_password /etc/kolla/passwords.yml
 ```
-![](../assets/img/2026-04-15-openstack-all-in-one/03.png)
+![](/assets/img/2026-04-15-openstack-all-in-one/03.png)
 
 ---
 
@@ -307,7 +307,7 @@ ln -s /usr/lib/python3/dist-packages/_dbus_glib_bindings*.so /opt/kolla-venv/lib
 ```bash
 kolla-ansible pull -i ~/all-in-one
 ```
-![](../assets/img/2026-04-15-openstack-all-in-one/04.png)
+![](/assets/img/2026-04-15-openstack-all-in-one/04.png)
 
 ### Bước 4 — Deploy
 
@@ -315,7 +315,7 @@ kolla-ansible pull -i ~/all-in-one
 kolla-ansible deploy -i ~/all-in-one
 ```
 
-![](../assets/img/2026-04-15-openstack-all-in-one/05.png)
+![](/assets/img/2026-04-15-openstack-all-in-one/05.png)
 
 ---
 
@@ -335,8 +335,8 @@ pip install python-openstackclient
 # Kiểm tra kết nối
 openstack token issue
 ```
-![](../assets/img/2026-04-15-openstack-all-in-one/06.png)
-![](../assets/img/2026-04-15-openstack-all-in-one/07.png)
+![](/assets/img/2026-04-15-openstack-all-in-one/06.png)
+![](/assets/img/2026-04-15-openstack-all-in-one/07.png)
 
 ---
 
@@ -356,9 +356,9 @@ http://10.10.200.11/
 grep keystone_admin_password /etc/kolla/passwords.yml
 ```
 
-![](../assets/img/2026-04-15-openstack-all-in-one/08.png)
+![](/assets/img/2026-04-15-openstack-all-in-one/08.png)
 
-![](../assets/img/2026-04-15-openstack-all-in-one/09.png)
+![](/assets/img/2026-04-15-openstack-all-in-one/09.png)
 
 ---
 
@@ -372,7 +372,7 @@ docker ps --format "table {{.Names}}\t{{.Status}}"
 
 Tất cả container phải ở trạng thái `Up`:
 
-![](../assets/img/2026-04-15-openstack-all-in-one/10.png)
+![](/assets/img/2026-04-15-openstack-all-in-one/10.png)
 
 ### 9.2. Kiểm tra Compute
 
@@ -380,7 +380,7 @@ Tất cả container phải ở trạng thái `Up`:
 openstack compute service list
 ```
 
-![](../assets/img/2026-04-15-openstack-all-in-one/11.png)
+![](/assets/img/2026-04-15-openstack-all-in-one/11.png)
 
 
 ### 9.3. Tạo network và VM test
@@ -435,16 +435,16 @@ openstack server create \
 openstack server list
 ```
 
-![](../assets/img/2026-04-15-openstack-all-in-one/12.png)
-![](../assets/img/2026-04-15-openstack-all-in-one/13.png)
-![](../assets/img/2026-04-15-openstack-all-in-one/14.png)
-![](../assets/img/2026-04-15-openstack-all-in-one/15.png)
-![](../assets/img/2026-04-15-openstack-all-in-one/16.png)
-![](../assets/img/2026-04-15-openstack-all-in-one/17.png)
-![](../assets/img/2026-04-15-openstack-all-in-one/18.png)
-![](../assets/img/2026-04-15-openstack-all-in-one/19.png)
-![](../assets/img/2026-04-15-openstack-all-in-one/20.png)
-![](../assets/img/2026-04-15-openstack-all-in-one/21.png)
+![](/assets/img/2026-04-15-openstack-all-in-one/12.png)
+![](/assets/img/2026-04-15-openstack-all-in-one/13.png)
+![](/assets/img/2026-04-15-openstack-all-in-one/14.png)
+![](/assets/img/2026-04-15-openstack-all-in-one/15.png)
+![](/assets/img/2026-04-15-openstack-all-in-one/16.png)
+![](/assets/img/2026-04-15-openstack-all-in-one/17.png)
+![](/assets/img/2026-04-15-openstack-all-in-one/18.png)
+![](/assets/img/2026-04-15-openstack-all-in-one/19.png)
+![](/assets/img/2026-04-15-openstack-all-in-one/20.png)
+![](/assets/img/2026-04-15-openstack-all-in-one/21.png)
 
 
 ---
