@@ -33,11 +33,11 @@ author:
   links:
     - label: "GitHub"
       icon: "fab fa-fw fa-github"
-      url: "https://github.com/anhlx2502"
+      url: "#"
 
     - label: "YouTube"
       icon: "fab fa-fw fa-youtube"
-      url: "https://www.youtube.com/@anhlx2502"
+      url: "#"
 
 include:
   - _pages

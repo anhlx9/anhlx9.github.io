@@ -58,7 +58,6 @@ Trong bài lab này, mình sẽ triển khai **VPN Site-to-Site** giữa 2 pfSen
 |-----------|--------|
 | pfSense Version | 2.7.2-RELEASE (FreeBSD 14.0) |
 | Hypervisor | VMware vSphere (ESXi) |
-| CPU | Intel Xeon Silver 4510 |
 
 > **Lưu ý mô hình lab:** Trong lab, VLAN 200 giả lập Internet nên cả 2 FW đều có IP trên cùng subnet. Trong thực tế, FW01 sẽ có private IP từ ISP (NAT) và FW02 sẽ có Public IP thật trên cloud. Cấu hình WireGuard giữ nguyên — chỉ thay IP endpoint của FW02 thành Public IP thật.
 
