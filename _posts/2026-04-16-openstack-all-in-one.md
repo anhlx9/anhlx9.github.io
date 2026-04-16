@@ -1,12 +1,12 @@
 ---
-title: "Private Cloud OpenStack 2026.1 Giraffe với Kolla-Ansible"
+title: "Private Cloud OpenStack 2025.2 Flamingo với Kolla-Ansible"
 categories:
 - Cloud
 - OpenStack
 
 feature_image: "../assets/postbanner.jpg"
 feature_text: |
-  ### Mô phỏng Private Cloud doanh nghiệp với OpenStack 2026.1 Giraffe — Kolla-Ansible AIO trên VMware ESXi
+  ### Mô phỏng Private Cloud doanh nghiệp với OpenStack 2025.2 Flamingo — Kolla-Ansible AIO trên VMware ESXi
 ---
 
 ### Mục lục
@@ -95,7 +95,15 @@ Bài lab mô phỏng **Private Cloud** cho một doanh nghiệp — **Team Syste
 |-----|-----------|------|----------|
 | NIC1 | `ens160` | VLAN200 | Quản lý OpenStack, API endpoints, Horizon |
 | NIC2 | `ens192` | VLAN200 | Neutron provider — floating IP ra ngoài |
-| NIC3 | `ens224` | VLAN201 | VM overlay tunnel (OVN Geneve/VXLAN) |
+| NIC3 | `ens224` | VLAN201 | OVN tunnel endpoint (TEP) — encapsulate VM traffic |
+
+> **Phân biệt 2 lớp mạng:**
+>
+> - **VLAN201 / 10.10.201.x** là **underlay vật lý** — IP trên `ens224` là địa chỉ Tunnel Endpoint (TEP) của OVN. Khi VM giao tiếp với nhau hoặc với router ảo, OVN đóng gói traffic trong **GENEVE packet** và gửi qua `ens224` với src/dst là các TEP IP (10.10.201.x). Bên ngoài switch vật lý chỉ thấy UDP/GENEVE trên VLAN201.
+>
+> - **192.168.10.x / 192.168.20.x** là **overlay ảo bên trong OVN** — hoàn toàn do Neutron tạo ra, không liên quan đến VLAN vật lý. VM nhận IP 192.168.x.x như một card mạng bình thường, nhưng traffic thực chất được encapsulate trong GENEVE và đi qua `ens224`.
+>
+> - **Floating IP** (10.10.200.x) đến/đi qua `ens192` (VLAN200) — OVN thực hiện DNAT/SNAT tại logical router, ánh xạ giữa IP ngoài (10.10.200.x) và IP trong (192.168.x.x) của VM.
 
 **Disk 1TB** trong lab này được phân vùng để **mô phỏng Ceph cluster** — mỗi phân vùng đại diện một Ceph pool riêng cho từng service. Trong production thực tế, có 2 lựa chọn nâng cấp:
 - **Ceph cluster** (khuyến nghị): 3+ node Ceph riêng, Kolla-Ansible tích hợp sẵn — hỗ trợ live migration, snapshot, thin provisioning
@@ -125,7 +133,7 @@ Bài lab mô phỏng **Private Cloud** cho một doanh nghiệp — **Team Syste
 | NIC3 — Tunnel | `ens224` — 10.10.201.11/24 (VLAN201) — OVN overlay |
 | Floating IP pool | 10.10.200.100 – 10.10.200.200 (VLAN200) |
 | Gateway / NAT | 10.10.200.1 (pfSense → internet) |
-| OpenStack version | 2026.1 — Giraffe (latest stable) |
+| OpenStack version | 2025.2 — Flamingo (latest stable) |
 
 > **Tenant mapping:**
 > - `it-helpdesk` → private subnet `192.168.10.0/24` → floating IP từ pool VLAN200
@@ -184,14 +192,6 @@ EOF
 
 **NIC3 (`ens224`)** — cần IP trên VLAN201, dùng làm tunnel interface cho OVN Geneve:
 
-```bash
-# Kiểm tra 3 NIC đã nhận diện
-ip -br a
-# ens160  UP  10.10.200.11/24   ← Management
-# ens192  UP  (no IP)            ← Provider
-# ens224  UP  (no IP)            ← Tunnel (chưa cấu hình)
-```
-
 Cấu hình netplan cho cả 2 NIC:
 
 ```bash
@@ -202,6 +202,7 @@ network:
     ens192:
       dhcp4: false
       dhcp6: false
+      optional: true        # tránh systemd-networkd-wait-online chờ NIC này
     ens224:
       dhcp4: false
       dhcp6: false
@@ -214,10 +215,9 @@ sudo netplan apply
 
 # Kiểm tra lại
 ip -br a
-# ens160  UP  10.10.200.11/24
-# ens192  UP
-# ens224  UP  10.10.201.11/24
 ```
+
+![](../assets/img/2026-04-16-openstack-all-in-one/01.png)
 
 ### 4.3. Chuẩn bị disk 1TB — mô phỏng Ceph backend
 
@@ -244,9 +244,9 @@ sudo partprobe /dev/sdb
 # Kiểm tra
 lsblk /dev/sdb
 # NAME   MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
-# sdb      8:16   0    1T  0 disk
-# ├─sdb1   8:17   0  600G  0 part
-# └─sdb2   8:18   0  400G  0 part
+# sdb      8:16   0     1T  0 disk
+# ├─sdb1   8:17   0 614.4G  0 part
+# └─sdb2   8:18   0 409.6G  0 part
 ```
 
 **sdb1 → LVM cho Cinder** (mô phỏng Ceph pool `cinder.volumes`):
@@ -257,7 +257,8 @@ sudo vgcreate cinder-volumes /dev/sdb1
 
 sudo vgs
 # VG             #PV #LV #SN Attr   VSize    VFree
-# cinder-volumes   1   0   0 wz--n- <600.00g <600.00g
+#   cinder-volumes   1   0   0 wz--n- <614.40g <614.40g
+#   ubuntu-vg        1   1   0 wz--n-  <98.00g       0
 ```
 
 **sdb2 → XFS filesystem cho Glance và Nova** (mô phỏng Ceph pool `images` và `vms`):
@@ -279,11 +280,35 @@ sudo chown -R 42415:42415 /opt/stack-storage/glance-images   # glance user
 sudo chown -R 42436:42436 /opt/stack-storage/nova-instances  # nova user
 
 df -h /opt/stack-storage
+# Filesystem      Size  Used Avail Use% Mounted on
+# /dev/sdb2       410G  7.9G  402G   2% /opt/stack-storage
+
 ```
 
 ![](../assets/img/2026-04-16-openstack-all-in-one/02.png)
 
 ### 4.4. Cài Docker
+
+> **Tăng tốc apt — đổi mirror về Việt Nam:** Mặc định Ubuntu 24.04 trỏ về `archive.ubuntu.com` (server Singapore/US) và `security.ubuntu.com` — kết nối từ Việt Nam thường chậm và hay timeout IPv6. Thay bằng mirror trong nước trước khi cài:
+>
+> ```bash
+> # Ghi đè ubuntu.sources (deb822 format — Ubuntu 24.04)
+> sudo tee /etc/apt/sources.list.d/ubuntu.sources << 'EOF'
+> Types: deb
+> URIs: http://mirror.bizflycloud.vn/ubuntu
+> Suites: noble noble-updates noble-backports noble-security
+> Components: main restricted universe multiverse
+> Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+> EOF
+>
+> # Xóa sources.list cũ để tránh duplicate warning
+> sudo truncate -s 0 /etc/apt/sources.list
+>
+> # Force IPv4 — tránh timeout khi không có IPv6 route ra ngoài
+> echo 'Acquire::ForceIPv4 "true";' | sudo tee /etc/apt/apt.conf.d/99force-ipv4
+> ```
+>
+> Các mirror Việt Nam tốc độ cao: `mirror.bizflycloud.vn` (BizFly/VCCorp), `mirror.viettelcloud.vn` (Viettel), `gmirror.hcmut.edu.vn` (BK HCM).
 
 ```bash
 sudo apt update
@@ -328,8 +353,11 @@ pip install -U pip
 ```bash
 source /opt/kolla-venv/bin/activate
 
-# Cài Kolla-Ansible 2026.1 (Giraffe) từ PyPI
-pip install kolla-ansible==2026.1.0
+# Kolla-Ansible dùng numbering riêng — 20.x = OpenStack 2025.2 Flamingo
+# (17.x=2024.1, 18.x=2024.2, 19.x=2025.1, 20.x=2025.2, 21.x=2026.1)
+# Lưu ý: PyPI package 21.0.0 đã release nhưng Docker images 2026.1-ubuntu-noble
+# chưa được push lên quay.io — dùng 20.0.0 (2025.2) cho đến khi images available
+pip install kolla-ansible==20.0.0
 
 # Cài Ansible collections cần thiết
 kolla-ansible install-deps
@@ -363,7 +391,7 @@ cp /opt/kolla-venv/share/kolla-ansible/ansible/inventory/all-in-one ~/all-in-one
 cat > /etc/kolla/globals.yml << 'EOF'
 ---
 kolla_base_distro: "ubuntu"
-openstack_release: "2026.1"
+openstack_release: "2025.2"
 
 # NIC1 — Management/API
 network_interface: "ens160"
@@ -430,8 +458,6 @@ kolla-genpwd
 grep keystone_admin_password /etc/kolla/passwords.yml
 ```
 
-![](../assets/img/2026-04-16-openstack-all-in-one/04.png)
-
 ### 6.3. Cấu hình storage paths
 
 Khai báo Kolla config override để Nova và Glance lưu data vào đúng thư mục trên disk `sdb2`:
@@ -478,19 +504,24 @@ source /opt/kolla-venv/bin/activate
 kolla-ansible bootstrap-servers -i ~/all-in-one
 ```
 
+![](../assets/img/2026-04-16-openstack-all-in-one/04.png)
+
 ### Bước 2 — Pre-checks
 
 ```bash
 kolla-ansible prechecks -i ~/all-in-one
 ```
 
-Nếu gặp lỗi `No module named 'docker'`:
+Các lỗi thường gặp khi prechecks:
 
-```bash
-pip install docker
-```
+| Lỗi | Fix |
+|-----|-----|
+| `No module named 'docker'` | `pip install docker` |
+| `No module named 'dbus'` | `sudo apt install -y libdbus-1-dev libglib2.0-dev && pip install dbus-python` |
 
 Sau đó chạy lại prechecks.
+
+![](../assets/img/2026-04-16-openstack-all-in-one/05.png)
 
 ### Bước 3 — Pull images
 
@@ -499,6 +530,12 @@ kolla-ansible pull -i ~/all-in-one
 ```
 
 Quá trình kéo image Docker mất khoảng 15–30 phút tùy tốc độ mạng (~10–15 GB).
+
+Lỗi thường gặp khi pull:
+
+| Lỗi | Nguyên nhân | Fix |
+|-----|-------------|-----|
+| `404 Not Found: quay.io/openstack.kolla/...:2026.1-ubuntu-noble` | Docker images cho bản mới chưa được push lên quay.io (PyPI package release trước images vài ngày) | Kiểm tra tag có sẵn: `curl -s "https://quay.io/v2/openstack.kolla/kolla-toolbox/tags/list" \| python3 -c "import sys,json; print('\n'.join(sorted([t for t in json.load(sys.stdin)['tags'] if 'noble' in t])))"` → nếu chỉ có `2025.2-ubuntu-noble`, chuyển về: `pip install kolla-ansible==20.0.0 && kolla-ansible install-deps` và đổi `openstack_release: "2025.2"` trong `globals.yml` |
 
 ![](../assets/img/2026-04-16-openstack-all-in-one/05.png)
 
