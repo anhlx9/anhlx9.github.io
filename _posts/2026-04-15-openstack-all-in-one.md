@@ -4,7 +4,7 @@ categories:
 - Cloud
 - OpenStack
 
-feature_image: "/assets/postbanner.jpg"
+feature_image: "../assets/postbanner.jpg"
 feature_text: |
   ### Triển khai OpenStack All-in-One trên 1 VM sử dụng Kolla-Ansible — gần với production thực tế
 ---
@@ -33,6 +33,13 @@ feature_text: |
   - [9.1. Kiểm tra containers](#91-kiểm-tra-containers)
   - [9.2. Kiểm tra Compute](#92-kiểm-tra-compute)
   - [9.3. Tạo network và VM test](#93-tạo-network-và-vm-test)
+  - [9.4. Tạo Project cho khách hàng và triển khai VM](#94-tạo-project-cho-khách-hàng-và-triển-khai-vm)
+    - [Build Windows Server 2022 image (.qcow2)](#build-windows-server-2022-image-qcow2)
+    - [Chuẩn bị images và flavors](#chuẩn-bị-images-và-flavors)
+    - [Tạo Project cho 2 khách hàng](#tạo-project-cho-2-khách-hàng)
+    - [Tạo network nội bộ cho từng project](#tạo-network-nội-bộ-cho-từng-project)
+    - [Tạo VM Ubuntu — SSH](#tạo-vm-ubuntu--ssh)
+    - [Tạo VM Windows Server 2022 — RDP](#tạo-vm-windows-server-2022--rdp)
 - [10. Quản lý sau deploy](#10-quản-lý-sau-deploy)
   - [Containers tự khởi động sau reboot](#containers-tự-khởi-động-sau-reboot)
   - [Upgrade lên version mới](#upgrade-lên-version-mới)
@@ -52,7 +59,7 @@ So với DevStack, Kolla-Ansible có các ưu điểm:
 
 Bài viết này triển khai **OpenStack 2025.2 (Flamingo)** — All-in-One trên 1 VM.
 
-![](/assets/img/2026-04-15-openstack-all-in-one/00.png)
+![](../assets/img/2026-04-15-openstack-all-in-one/00.png)
 
 ---
 
@@ -128,7 +135,7 @@ sudo vgs
 # cinder-volumes   1   0   0 wz--n- 500.00g  500.00g
 ```
 
-![](/assets/img/2026-04-15-openstack-all-in-one/01.png)
+![](../assets/img/2026-04-15-openstack-all-in-one/01.png)
 
 ### 3.3. Cài Docker
 
@@ -192,7 +199,7 @@ kolla-ansible install-deps
 # Kiểm tra version
 kolla-ansible --version
 ```
-![](/assets/img/2026-04-15-openstack-all-in-one/02.png)
+![](../assets/img/2026-04-15-openstack-all-in-one/02.png)
 
 Tạo thư mục cấu hình:
 
@@ -263,7 +270,7 @@ Kiểm tra password admin:
 ```bash
 grep keystone_admin_password /etc/kolla/passwords.yml
 ```
-![](/assets/img/2026-04-15-openstack-all-in-one/03.png)
+![](../assets/img/2026-04-15-openstack-all-in-one/03.png)
 
 ---
 
@@ -307,7 +314,7 @@ ln -s /usr/lib/python3/dist-packages/_dbus_glib_bindings*.so /opt/kolla-venv/lib
 ```bash
 kolla-ansible pull -i ~/all-in-one
 ```
-![](/assets/img/2026-04-15-openstack-all-in-one/04.png)
+![](../assets/img/2026-04-15-openstack-all-in-one/04.png)
 
 ### Bước 4 — Deploy
 
@@ -315,7 +322,7 @@ kolla-ansible pull -i ~/all-in-one
 kolla-ansible deploy -i ~/all-in-one
 ```
 
-![](/assets/img/2026-04-15-openstack-all-in-one/05.png)
+![](../assets/img/2026-04-15-openstack-all-in-one/05.png)
 
 ---
 
@@ -335,8 +342,8 @@ pip install python-openstackclient
 # Kiểm tra kết nối
 openstack token issue
 ```
-![](/assets/img/2026-04-15-openstack-all-in-one/06.png)
-![](/assets/img/2026-04-15-openstack-all-in-one/07.png)
+![](../assets/img/2026-04-15-openstack-all-in-one/06.png)
+![](../assets/img/2026-04-15-openstack-all-in-one/07.png)
 
 ---
 
@@ -356,9 +363,9 @@ http://10.10.200.11/
 grep keystone_admin_password /etc/kolla/passwords.yml
 ```
 
-![](/assets/img/2026-04-15-openstack-all-in-one/08.png)
+![](../assets/img/2026-04-15-openstack-all-in-one/08.png)
 
-![](/assets/img/2026-04-15-openstack-all-in-one/09.png)
+![](../assets/img/2026-04-15-openstack-all-in-one/09.png)
 
 ---
 
@@ -372,7 +379,7 @@ docker ps --format "table {{.Names}}\t{{.Status}}"
 
 Tất cả container phải ở trạng thái `Up`:
 
-![](/assets/img/2026-04-15-openstack-all-in-one/10.png)
+![](../assets/img/2026-04-15-openstack-all-in-one/10.png)
 
 ### 9.2. Kiểm tra Compute
 
@@ -380,7 +387,7 @@ Tất cả container phải ở trạng thái `Up`:
 openstack compute service list
 ```
 
-![](/assets/img/2026-04-15-openstack-all-in-one/11.png)
+![](../assets/img/2026-04-15-openstack-all-in-one/11.png)
 
 
 ### 9.3. Tạo network và VM test
@@ -435,17 +442,296 @@ openstack server create \
 openstack server list
 ```
 
-![](/assets/img/2026-04-15-openstack-all-in-one/12.png)
-![](/assets/img/2026-04-15-openstack-all-in-one/13.png)
-![](/assets/img/2026-04-15-openstack-all-in-one/14.png)
-![](/assets/img/2026-04-15-openstack-all-in-one/15.png)
-![](/assets/img/2026-04-15-openstack-all-in-one/16.png)
-![](/assets/img/2026-04-15-openstack-all-in-one/17.png)
-![](/assets/img/2026-04-15-openstack-all-in-one/18.png)
-![](/assets/img/2026-04-15-openstack-all-in-one/19.png)
-![](/assets/img/2026-04-15-openstack-all-in-one/20.png)
-![](/assets/img/2026-04-15-openstack-all-in-one/21.png)
+![](../assets/img/2026-04-15-openstack-all-in-one/12.png)
+![](../assets/img/2026-04-15-openstack-all-in-one/13.png)
+![](../assets/img/2026-04-15-openstack-all-in-one/14.png)
+![](../assets/img/2026-04-15-openstack-all-in-one/15.png)
+![](../assets/img/2026-04-15-openstack-all-in-one/16.png)
+![](../assets/img/2026-04-15-openstack-all-in-one/17.png)
+![](../assets/img/2026-04-15-openstack-all-in-one/18.png)
+![](../assets/img/2026-04-15-openstack-all-in-one/19.png)
+![](../assets/img/2026-04-15-openstack-all-in-one/20.png)
+![](../assets/img/2026-04-15-openstack-all-in-one/21.png)
 
+### 9.4. Tạo Project cho khách hàng và triển khai VM
+
+#### Build Windows Server 2022 image (.qcow2)
+
+Thực hiện trên máy Linux có cài `virt-install` và `qemu-kvm` (không cần thực hiện trên OpenStack VM).
+
+**Chuẩn bị:**
+
+```bash
+# Trên Kolla-Ansible AIO host, nova_libvirt container chiếm libvirt socket
+# → dùng qemu-system trực tiếp, KHÔNG cần libvirtd
+sudo apt install -y qemu-kvm qemu-utils
+
+# Tải virtio drivers ISO (driver mạng, disk cho Windows trên KVM)
+wget https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso
+
+# Chuẩn bị file ISO Windows Server 2022
+# (tải từ Microsoft Evaluation Center hoặc copy iso lên server )
+scp "D:\softs\iso\2022SERVER_EVAL_x64FRE_en-us.iso" ubuntu@10.10.200.11:/home/ubuntu/
+
+ls 2022SERVER_EVAL_x64FRE_en-us.iso
+```
+
+**Tạo disk image và boot cài đặt:**
+
+```bash
+# Tạo file .qcow2 trống 60GB
+qemu-img create -f qcow2 windows-server-2022.qcow2 60G
+
+# Boot VM cài đặt Windows bằng qemu-system trực tiếp (không cần libvirtd)
+qemu-system-x86_64 \
+  -name win2022-build \
+  -m 4096 \
+  -smp 2 \
+  -enable-kvm \
+  -drive file=windows-server-2022.qcow2,format=qcow2,if=virtio \
+  -drive file=2022SERVER_EVAL_x64FRE_en-us.iso,media=cdrom,index=1 \
+  -drive file=virtio-win.iso,media=cdrom,index=2 \
+  -netdev user,id=net0 -device virtio-net-pci,netdev=net0 \
+  -vnc 0.0.0.0:1 \
+  -boot order=dc \
+  -daemonize \
+  -pidfile /tmp/win2022-build.pid
+```
+
+Kết nối VNC vào VM để thực hiện cài đặt:
+
+```bash
+# VNC listen trên display :1 (port 5901) — display :0/5900 thường bị chiếm
+# Dùng VNC viewer kết nối: <host_ip>:5901
+
+# Kiểm tra process đang chạy
+cat /tmp/win2022-build.pid
+```
+![](../assets/img/2026-04-15-openstack-all-in-one/22.png)
+
+**Trong quá trình cài Windows:**
+
+1. Chọn **Windows Server 2022 Standard (Desktop Experience)**
+2. Khi chọn ổ đĩa, ổ sẽ không hiện — nhấn **Load driver** → Browse → chọn CD Drive (virtio-win) → `viostor\2k22\amd64` → Install
+3. Sau khi driver load xong, ổ đĩa xuất hiện → tiếp tục cài đặt bình thường
+
+![](../assets/img/2026-04-15-openstack-all-in-one/23.png)
+![](../assets/img/2026-04-15-openstack-all-in-one/24.png)
+![](../assets/img/2026-04-15-openstack-all-in-one/25.png)
+![](../assets/img/2026-04-15-openstack-all-in-one/26.png)
+![](../assets/img/2026-04-15-openstack-all-in-one/27.png)
+![](../assets/img/2026-04-15-openstack-all-in-one/28.png)
+![](../assets/img/2026-04-15-openstack-all-in-one/29.png)
+
+**Sau khi cài xong Windows — cài thêm virtio drivers:**
+
+Vào `Device Manager`, install driver cho các thiết bị còn lại từ virtio-win ISO:
+- `NetKVM\2k22\amd64` — network driver
+- `Balloon\2k22\amd64` — memory balloon
+- `vioserial\2k22\amd64` — serial console
+
+Hoặc chạy installer tự động:
+```
+D:\virtio-win-gt-x64.msi
+```
+
+![](../assets/img/2026-04-15-openstack-all-in-one/30.png)
+
+
+**Cài cloudbase-init để nhận user-data từ OpenStack:**
+
+```powershell
+# Tải và cài Cloudbase-Init
+# https://github.com/cloudbase/cloudbase-init
+# https://www.cloudbase.it/downloads/CloudbaseInitSetup_Stable_x64.msi
+# Chạy installer, chọn "Run Sysprep" và "Shutdown" khi kết thúc
+```
+![](../assets/img/2026-04-15-openstack-all-in-one/31.png)
+![](../assets/img/2026-04-15-openstack-all-in-one/32.png)
+![](../assets/img/2026-04-15-openstack-all-in-one/33.png)
+
+
+**Sau khi VM shutdown, lấy image:**
+
+```bash
+# Đợi VM shutdown hoàn toàn (shutdown từ bên trong Windows)
+# Kiểm tra process đã kết thúc
+kill $(cat /tmp/win2022-build.pid) 2>/dev/null || true
+
+# Compact image — dùng qemu-img convert thay virt-sparsify để tránh lỗi thiếu dung lượng /tmp
+# virt-sparsify cần ~2x kích thước file tạm trên /tmp, qemu-img convert -c không cần file tạm
+qemu-img convert -c -f qcow2 -O qcow2 \
+  windows-server-2022.qcow2 \
+  windows-server-2022-final.qcow2
+
+# Copy sang OpenStack host và upload
+openstack image create windows-2022 \
+  --disk-format qcow2 \
+  --container-format bare \
+  --public \
+  --property hw_disk_bus=virtio \
+  --property hw_vif_model=virtio \
+  --property os_type=windows \
+  --file windows-server-2022-final.qcow2
+```
+
+
+#### Chuẩn bị images và flavors
+
+```bash
+# Upload Ubuntu Server 22.04 cloud image
+wget https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
+openstack image create ubuntu-22.04 \
+  --disk-format qcow2 \
+  --container-format bare \
+  --public \
+  --file jammy-server-cloudimg-amd64.img
+
+# Upload Windows Server 2022 image
+# (đã build ở bước trên, file: windows-server-2022-final.qcow2)
+openstack image create windows-2022 \
+  --disk-format qcow2 \
+  --container-format bare \
+  --public \
+  --property hw_disk_bus=virtio \
+  --property hw_vif_model=virtio \
+  --property os_type=windows \
+  --file windows-server-2022-final.qcow2
+
+# Tạo flavors
+openstack flavor create m1.small  --vcpus 1 --ram 2048  --disk 20
+openstack flavor create m1.medium --vcpus 2 --ram 4096  --disk 50
+openstack flavor create m1.win    --vcpus 2 --ram 4096  --disk 60
+```
+
+#### Tạo Project cho 2 khách hàng
+
+```bash
+# Tạo project và user cho khách hàng A
+openstack project create --domain Default customer-a
+openstack user create --domain Default --project customer-a \
+  --password Password123 user-a
+openstack role add --project customer-a --user user-a member
+
+# Tạo project và user cho khách hàng B
+openstack project create --domain Default customer-b
+openstack user create --domain Default --project customer-b \
+  --password Password123 user-b
+openstack role add --project customer-b --user user-b member
+```
+
+#### Tạo network nội bộ cho từng project
+
+```bash
+# --- Project customer-a ---
+export OS_PROJECT_NAME=customer-a
+export OS_USERNAME=user-a
+export OS_PASSWORD=Password123
+
+openstack network create net-a
+openstack subnet create subnet-a \
+  --network net-a \
+  --subnet-range 192.168.10.0/24 \
+  --dns-nameserver 8.8.8.8
+
+openstack router create router-a
+openstack router set router-a --external-gateway public
+openstack router add subnet router-a subnet-a
+
+# Security group cho phép SSH + ICMP
+openstack security group create sg-a
+openstack security group rule create sg-a --protocol tcp --dst-port 22
+openstack security group rule create sg-a --protocol icmp
+
+# Security group cho phép RDP
+openstack security group rule create sg-a --protocol tcp --dst-port 3389
+
+# --- Project customer-b (tương tự) ---
+export OS_PROJECT_NAME=customer-b
+export OS_USERNAME=user-b
+export OS_PASSWORD=Password123
+
+openstack network create net-b
+openstack subnet create subnet-b \
+  --network net-b \
+  --subnet-range 192.168.20.0/24 \
+  --dns-nameserver 8.8.8.8
+
+openstack router create router-b
+openstack router set router-b --external-gateway public
+openstack router add subnet router-b subnet-b
+
+openstack security group create sg-b
+openstack security group rule create sg-b --protocol tcp --dst-port 22
+openstack security group rule create sg-b --protocol icmp
+openstack security group rule create sg-b --protocol tcp --dst-port 3389
+
+# Reset về admin
+source /etc/kolla/admin-openrc.sh
+```
+
+#### Tạo VM Ubuntu — SSH
+
+```bash
+# Tạo keypair cho customer-a
+source /etc/kolla/admin-openrc.sh
+export OS_PROJECT_NAME=customer-a
+export OS_USERNAME=user-a
+export OS_PASSWORD=Password123
+
+ssh-keygen -t rsa -N "" -f ~/.ssh/key-a
+openstack keypair create --public-key ~/.ssh/key-a.pub key-a
+
+# Boot VM Ubuntu
+openstack server create \
+  --image ubuntu-22.04 \
+  --flavor m1.small \
+  --network net-a \
+  --key-name key-a \
+  --security-group sg-a \
+  ubuntu-vm-a
+
+# Gắn Floating IP
+openstack floating ip create public
+FIP_A=$(openstack floating ip list -f value -c "Floating IP Address" | head -1)
+openstack server add floating ip ubuntu-vm-a $FIP_A
+
+echo "Ubuntu VM Floating IP: $FIP_A"
+
+# SSH vào VM (user mặc định: ubuntu, đợi ~1-2 phút sau ACTIVE)
+ssh -i ~/.ssh/key-a ubuntu@$FIP_A
+```
+
+#### Tạo VM Windows Server 2022 — RDP
+
+```bash
+export OS_PROJECT_NAME=customer-b
+export OS_USERNAME=user-b
+export OS_PASSWORD=Password123
+
+# Boot VM Windows (dùng user-data để set password Administrator)
+cat > win-userdata.txt << 'EOF'
+#ps1_sysnative
+net user Administrator "Admin@12345" /active:yes
+EOF
+
+openstack server create \
+  --image windows-2022 \
+  --flavor m1.win \
+  --network net-b \
+  --security-group sg-b \
+  --user-data win-userdata.txt \
+  windows-vm-b
+
+# Gắn Floating IP
+openstack floating ip create public
+FIP_B=$(openstack floating ip list -f value -c "Floating IP Address" | grep -v $FIP_A | head -1)
+openstack server add floating ip windows-vm-b $FIP_B
+
+echo "Windows VM Floating IP: $FIP_B"
+```
+
+RDP vào Windows: mở **Remote Desktop Connection**, nhập `$FIP_B`, đăng nhập với `Administrator` / `Admin@12345`.
 
 ---
 
