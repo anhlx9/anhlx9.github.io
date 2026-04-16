@@ -80,7 +80,7 @@ Bài lab mô phỏng **Private Cloud** cho một doanh nghiệp — **Team Syste
 
 ```
 ┌─────────────────────────────────────────────┐
-│           ESXi Host                          │
+│           ESXi Host                         │
 │  ┌─────────────────────────────────────────┐│
 │  │  VM: openstack-aio                      ││
 │  │                                         ││
