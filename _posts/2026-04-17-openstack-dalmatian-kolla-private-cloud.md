@@ -121,6 +121,7 @@ Private Cloud là mô hình điện toán đám mây được triển khai nội
 | HAProxy + Keepalived | Load Balancing & VIP | - |
 | MariaDB Galera | Database Cluster | - |
 | RabbitMQ | Message Queue Cluster | - |
+| Memcached | Caching (session, token) | - |
 
 > **Ceph** được deploy riêng bằng **cephadm** (không qua Kolla-Ansible) và cấu hình External Ceph. Ceph Dashboard truy cập trực tiếp qua `https://10.10.201.11:8443`.
 
@@ -294,17 +295,22 @@ lsblk -o NAME,SIZE,TYPE,FSTYPE
 
 > `cephadm` sẽ tự động sử dụng các disk trống (không có partition/filesystem) để tạo OSD.
 
-#### 3.4 Kiểm tra Nested Virtualization
+#### 3.4 Bật Nested Virtualization
 
+Kiểm tra nested virtualization trên mỗi node:
 ```bash
 egrep -c '(vmx|svm)' /proc/cpuinfo
 ```
 
-> Nếu output > 0 → KVM hoạt động (dùng `kvm` cho Nova).
-> 
->Nếu output = 0 → Cần bật nested virt trên ESXi hoặc dùng `qemu` (chậm hơn).
+Output phải > 0 (KVM hoạt động). Nếu output = 0, **bật nested virtualization trên ESXi** trước khi tiếp tục:
+
+1. Tắt VM trên ESXi
+2. Edit Settings → CPU → bật **"Expose hardware assisted virtualization to the guest OS"**
+3. Bật lại VM và kiểm tra lại lệnh trên
 
 ![](../assets/img/2026-04-17-openstack-dalmatian-kolla-private-cloud/03.png)
+
+> Bước này bắt buộc để Nova sử dụng KVM. Nếu không bật được (hardware không hỗ trợ), sẽ phải dùng QEMU (chậm hơn nhiều) — khi đó thay `nova_compute_virt_type: "kvm"` thành `"qemu"` trong `globals.yml` ở Section 4.6.
 
 #### 3.5 Cập nhật hệ thống
 
@@ -628,25 +634,11 @@ EOF
 ```
 
 > **Lưu ý quan trọng:**
-> - Kolla-Ansible Dalmatian (2024.2) **không còn hỗ trợ `enable_ceph`** — Ceph phải được deploy riêng (cephadm/ceph-ansible) rồi cấu hình External Ceph
+> - Kolla-Ansible Dalmatian (2024.2) **không còn hỗ trợ `enable_ceph`** — Ceph phải được deploy riêng (cephadm) rồi cấu hình External Ceph
 > - `ceph_nova_user` mặc định là `cinder` (Nova dùng chung keyring với Cinder để attach volume)
-> - Nếu nested virtualization không hoạt động, thay `nova_compute_virt_type: "kvm"` thành `"qemu"`
+> - `nova_compute_virt_type: "kvm"` yêu cầu nested virtualization đã được bật ở Section 3.4
 
-#### 4.7 Cấu hình External Ceph cho Kolla
-
-> **Bước này thực hiện SAU khi deploy Ceph bằng cephadm (Section 5)**. Tạm thời tạo cấu trúc thư mục trước, nội dung file sẽ được điền sau khi có Ceph cluster.
-
-Tạo cấu trúc thư mục config cho External Ceph:
-```bash
-mkdir -p /etc/kolla/config/glance
-mkdir -p /etc/kolla/config/cinder/cinder-volume
-mkdir -p /etc/kolla/config/cinder/cinder-backup
-mkdir -p /etc/kolla/config/nova
-```
-
-> Các file `ceph.conf` và keyring sẽ được copy từ Ceph cluster vào đây sau bước 5 (Deploy Ceph). Xem **Section 5.5** để biết chi tiết.
-
-#### 4.8 Generate Passwords
+#### 4.7 Generate Passwords
 
 ```bash
 source ~/kolla-venv/bin/activate
@@ -670,16 +662,18 @@ grep keystone_admin_password /etc/kolla/passwords.yml
 
 Trên **cloud-01**:
 ```bash
-# Thêm Ceph Squid repo (tương thích Ubuntu 24.04)
+# Download cephadm (script Python, platform-independent)
 CEPH_RELEASE=squid
 curl --silent --remote-name --location https://download.ceph.com/rpm-${CEPH_RELEASE}/el9/noarch/cephadm
 chmod +x cephadm
 sudo mv cephadm /usr/local/bin/
 
-# Thêm Ceph repo
+# Thêm Ceph Squid repo cho Ubuntu 24.04 và cài ceph-common
 sudo cephadm add-repo --release ${CEPH_RELEASE}
 sudo cephadm install ceph-common
 ```
+
+> **Lưu ý:** URL chứa `rpm-squid/el9` nhưng `cephadm` là script Python chạy trên mọi distro. Lệnh `cephadm add-repo` sẽ tự thêm đúng APT repo cho Ubuntu.
 
 Kiểm tra:
 ```bash
@@ -694,6 +688,7 @@ Bootstrap cluster trên cloud-01, sử dụng **Storage network** (10.10.201.0/2
 sudo cephadm bootstrap \
   --mon-ip 10.10.201.11 \
   --cluster-network 10.10.201.0/24 \
+  --ssh-user sysadmin \
   --initial-dashboard-password 'CephDash@2026' \
   --dashboard-password-noupdate \
   --allow-fqdn-hostname
@@ -701,9 +696,10 @@ sudo cephadm bootstrap \
 
 > Bootstrap sẽ:
 > - Tạo MON + MGR đầu tiên trên cloud-01
-> - Cài đặt Docker/Podman containers cho Ceph services
+> - Cài đặt containers cho Ceph services
 > - Bật Ceph Dashboard tại `https://10.10.201.11:8443`
 > - Tạo SSH key để quản lý các node khác
+> - `--ssh-user sysadmin`: cephadm SSH bằng user `sysadmin` (đã có passwordless sudo) thay vì root
 
 Sau khi bootstrap xong, kiểm tra:
 ```bash
@@ -815,8 +811,14 @@ sudo ceph auth get-or-create client.cinder-backup \
   mgr 'profile rbd pool=backups'
 ```
 
-**Copy ceph.conf và keyrings vào Kolla config:**
+**Tạo thư mục config External Ceph cho Kolla và copy keyrings:**
 ```bash
+# Tạo cấu trúc thư mục config cho External Ceph
+mkdir -p /etc/kolla/config/glance
+mkdir -p /etc/kolla/config/cinder/cinder-volume
+mkdir -p /etc/kolla/config/cinder/cinder-backup
+mkdir -p /etc/kolla/config/nova
+
 # Lấy ceph.conf minimal
 sudo ceph config generate-minimal-conf | sed 's/^\t//' > /tmp/ceph.conf
 
@@ -905,11 +907,7 @@ Kiểm tra tất cả điều kiện trước khi deploy:
 kolla-ansible prechecks -i ~/multinode
 ```
 
-> Nếu có lỗi, đọc kỹ thông báo và sửa trước khi tiếp tục. Các lỗi phổ biến:
-> - Docker chưa start → `systemctl start docker`
-> - NIC không tồn tại → kiểm tra lại tên interface
-> - Port đã bị chiếm → `ss -tlnp | grep <port>`
-> - Thiếu file keyring Ceph → kiểm tra lại Section 5.5
+Nếu các bước trước đã thực hiện đúng (Docker hoạt động, NIC đúng tên, Ceph keyrings đã copy), prechecks sẽ pass toàn bộ.
 
 #### 6.3 Pull Images (tùy chọn)
 
@@ -932,11 +930,7 @@ kolla-ansible deploy -i ~/multinode
 >
 > Ceph đã được deploy riêng ở Section 5, Kolla chỉ cấu hình kết nối External Ceph.
 
-Nếu deploy thất bại giữa chừng, sửa lỗi rồi chạy lại:
-```bash
-kolla-ansible deploy -i ~/multinode
-```
-Kolla-Ansible có tính idempotent - chạy lại sẽ không ảnh hưởng các service đã deploy thành công.
+> Kolla-Ansible có tính idempotent — có thể chạy lại lệnh deploy bất cứ lúc nào mà không ảnh hưởng các service đã deploy thành công.
 
 #### 6.5 Post-deploy
 
@@ -982,8 +976,6 @@ sudo rbd ls images
 sudo rbd ls volumes
 sudo rbd ls vms
 ```
-
-> Nếu `ceph` CLI chưa cài, dùng: `sudo cephadm shell -- ceph -s`
 
 #### 7.2 OpenStack Services
 
