@@ -45,7 +45,7 @@ Private Cloud là mô hình điện toán đám mây được triển khai nội
 - Đảm bảo HA cho control plane (MariaDB Galera, RabbitMQ cluster, HAProxy + Keepalived)
 - Sau này có thể scale bằng cách thêm compute node riêng hoặc tách role
 
-<img src="../assets/img/2026-04-17-openstack-dalmatian-kolla-private-cloud/01-topology.png"/>
+<img src="../assets/img/2026-04-17-openstack-dalmatian-kolla-private-cloud/00.png"/>
 
 ---
 
