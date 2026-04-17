@@ -1,14 +1,14 @@
 ﻿---
-title: "Private Cloud - Kolla Deploy OpenStack Bobcat (2023.2) + Ceph trên 3 Node All-in-One"
+title: "Private Cloud - Kolla Deploy OpenStack Dalmatian (2024.2) + Ceph trên 3 Node All-in-One"
 categories:
 - Cloud
 - OpenStack
 - Ceph
 - Linux
 
-feature_image: "/assets/postbanner.jpg"
+feature_image: "../assets/postbanner.jpg"
 feature_text: |
-  ### Xây dựng Private Cloud cho doanh nghiệp với OpenStack Bobcat + Ceph - Kolla-Ansible trên 3 node All-in-One
+  ### Xây dựng Private Cloud cho doanh nghiệp với OpenStack Dalmatian + Ceph - Kolla-Ansible trên 3 node All-in-One
 ---
 
 ### Mục lục
@@ -17,12 +17,13 @@ feature_text: |
 - [2. Kiến trúc & Mô hình triển khai](#2-kiến-trúc--mô-hình-triển-khai)
 - [3. Cấu hình cơ bản trên 3 node](#3-cấu-hình-cơ-bản-trên-3-node)
 - [4. Cài đặt Kolla-Ansible](#4-cài-đặt-kolla-ansible)
-- [5. Deploy OpenStack + Ceph](#5-deploy-openstack--ceph)
-- [6. Kiểm tra dịch vụ](#6-kiểm-tra-dịch-vụ)
-- [7. Cấu hình Multi-tenant cho doanh nghiệp](#7-cấu-hình-multi-tenant-cho-doanh-nghiệp)
-- [8. Demo - Tạo VM trong OpenStack](#8-demo---tạo-vm-trong-openstack)
-- [9. Scale & Best Practices](#9-scale--best-practices)
-- [10. Kết luận](#10-kết-luận)
+- [5. Deploy Ceph với cephadm](#5-deploy-ceph-với-cephadm)
+- [6. Deploy OpenStack (Kolla-Ansible)](#6-deploy-openstack-kolla-ansible)
+- [7. Kiểm tra dịch vụ](#7-kiểm-tra-dịch-vụ)
+- [8. Cấu hình Multi-tenant cho doanh nghiệp](#8-cấu-hình-multi-tenant-cho-doanh-nghiệp)
+- [9. Demo - Tạo VM trong OpenStack](#9-demo---tạo-vm-trong-openstack)
+- [10. Scale & Best Practices](#10-scale--best-practices)
+- [11. Kết luận](#11-kết-luận)
 
 ---
 
@@ -33,8 +34,8 @@ Private Cloud là mô hình điện toán đám mây được triển khai nội
 **OpenStack** là nền tảng Private Cloud mã nguồn mở phổ biến nhất, được sử dụng bởi nhiều tổ chức lớn trên thế giới. Kết hợp với **Ceph** - hệ thống lưu trữ phân tán (Software-Defined Storage), ta có một giải pháp Private Cloud hoàn chỉnh với tính sẵn sàng cao.
 
 **Mục tiêu bài lab:**
-- Triển khai OpenStack Bobcat (2023.2) trên 3 node All-in-One bằng **Kolla-Ansible**
-- Tích hợp **Ceph** làm storage backend cho Glance, Cinder, Nova
+- Triển khai OpenStack Dalmatian (2024.2) trên 3 node All-in-One bằng **Kolla-Ansible**
+- Deploy **Ceph** bằng **cephadm** và cấu hình External Ceph làm storage backend cho Glance, Cinder, Nova
 - Sử dụng **OVN** cho Neutron networking (self-service + provider network)
 - Mô phỏng môi trường production cho doanh nghiệp với 2 phòng ban: **IT-Helpdesk** và **Dev**
 - Demo tạo VM Ubuntu Server và Windows Server 2022 trong OpenStack
@@ -44,7 +45,7 @@ Private Cloud là mô hình điện toán đám mây được triển khai nội
 - Đảm bảo HA cho control plane (MariaDB Galera, RabbitMQ cluster, HAProxy + Keepalived)
 - Sau này có thể scale bằng cách thêm compute node riêng hoặc tách role
 
-<img src="/assets/img/2026-04-17-openstack-bobcat-kolla-private-cloud/01-topology.png"/>
+<img src="../assets/img/2026-04-17-openstack-dalmatian-kolla-private-cloud/01-topology.png"/>
 
 ---
 
@@ -120,7 +121,8 @@ Private Cloud là mô hình điện toán đám mây được triển khai nội
 | HAProxy + Keepalived | Load Balancing & VIP | - |
 | MariaDB Galera | Database Cluster | - |
 | RabbitMQ | Message Queue Cluster | - |
-| Memcached | Caching | - |
+
+> **Ceph** được deploy riêng bằng **cephadm** (không qua Kolla-Ansible) và cấu hình External Ceph. Ceph Dashboard truy cập trực tiếp qua `https://10.10.201.11:8443`.
 
 #### 2.6 Ceph Architecture
 
@@ -176,8 +178,9 @@ EOF
 
 #### 3.2 Cấu hình Network (Netplan)
 
-**Node 1** - `/etc/netplan/50-cloud-init.yaml`:
-```yaml
+**Node 1:**
+```bash
+cat << 'EOF' | sudo tee /etc/netplan/50-cloud-init.yaml
 network:
   version: 2
   ethernets:
@@ -189,14 +192,19 @@ network:
         via: "10.10.200.1"
       nameservers:
         addresses: [8.8.8.8]
-    ens192: {}
+    ens192:
+      optional: true
     ens224:
+      optional: true
       addresses:
         - "10.10.201.11/24"
+EOF
+sudo netplan apply
 ```
 
-**Node 2** - thay IP tương ứng `.12`:
-```yaml
+**Node 2:**
+```bash
+cat << 'EOF' | sudo tee /etc/netplan/50-cloud-init.yaml
 network:
   version: 2
   ethernets:
@@ -208,14 +216,19 @@ network:
         via: "10.10.200.1"
       nameservers:
         addresses: [8.8.8.8]
-    ens192: {}
+    ens192:
+      optional: true
     ens224:
+      optional: true
       addresses:
         - "10.10.201.12/24"
+EOF
+sudo netplan apply
 ```
 
-**Node 3** - thay IP tương ứng `.13`:
-```yaml
+**Node 3:**
+```bash
+cat << 'EOF' | sudo tee /etc/netplan/50-cloud-init.yaml
 network:
   version: 2
   ethernets:
@@ -227,26 +240,19 @@ network:
         via: "10.10.200.1"
       nameservers:
         addresses: [8.8.8.8]
-    ens192: {}
+    ens192:
+      optional: true
     ens224:
+      optional: true
       addresses:
         - "10.10.201.13/24"
-```
-
-Apply cấu hình:
-```bash
+EOF
 sudo netplan apply
 ```
 
-> **Lưu ý:** `ens192: {}` khai báo interface nhưng **không gán IP** - Neutron sẽ quản lý interface này.
+> **Lưu ý:** `ens192` và `ens224` thêm `optional: true` để tránh `systemd-networkd-wait-online.service` bị treo khi boot (do interface chưa có link). `ens192` không gán IP - Neutron sẽ quản lý interface này.
 
-Kiểm tra:
-```bash
-ip addr show
-ping -c 3 cloud-01
-ping -c 3 cloud-02
-ping -c 3 cloud-03
-```
+![](../assets/img/2026-04-17-openstack-dalmatian-kolla-private-cloud/01.png)
 
 #### 3.3 Chuẩn bị disk cho Ceph OSD
 
@@ -257,45 +263,36 @@ lsblk
 
 Output mong đợi:
 ```
-NAME   MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
-sda      8:0    0  100G  0 disk
-├─sda1   8:1    0    1G  0 part /boot/efi
-├─sda2   8:2    0    2G  0 part [SWAP]
-└─sda3   8:3    0   97G  0 part /
-sdb      8:16   0  500G  0 disk
-sdc      8:32   0  500G  0 disk
+NAME                      MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+sda                         8:0    0  100G  0 disk
+├─sda1                      8:1    0    1M  0 part
+├─sda2                      8:2    0    2G  0 part /boot
+└─sda3                      8:3    0   98G  0 part
+  └─ubuntu--vg-ubuntu--lv 252:0    0   98G  0 lvm  /
+sdb                         8:16   0  500G  0 disk
+sdc                         8:32   0  500G  0 disk
+sr0                        11:0    1  3.2G  0 rom
 ```
 
-Tạo label cho Ceph OSD (BlueStore):
+Xóa sạch disk để cephadm sử dụng:
 ```bash
-# Xóa sạch partition table cũ (nếu có)
+# Xóa sạch partition table và filesystem signatures
 sudo wipefs -a /dev/sdb
 sudo wipefs -a /dev/sdc
 
-# Tạo GPT label với partition name KOLLA_CEPH_OSD_BOOTSTRAP_BS
-sudo parted /dev/sdb -s -- mklabel gpt mkpart KOLLA_CEPH_OSD_BOOTSTRAP_BS 1 -1
-sudo parted /dev/sdc -s -- mklabel gpt mkpart KOLLA_CEPH_OSD_BOOTSTRAP_BS 1 -1
+# Xóa LVM metadata nếu có
+sudo sgdisk --zap-all /dev/sdb
+sudo sgdisk --zap-all /dev/sdc
 ```
 
-Kiểm tra:
+Kiểm tra disk đã sạch:
 ```bash
-lsblk -o NAME,SIZE,TYPE,PARTLABEL
+lsblk -o NAME,SIZE,TYPE,FSTYPE
 ```
 
-Output:
-```
-NAME   SIZE TYPE PARTLABEL
-sda    100G disk
-├─sda1   1G part
-├─sda2   2G part
-└─sda3  97G part
-sdb    500G disk
-└─sdb1 500G part KOLLA_CEPH_OSD_BOOTSTRAP_BS
-sdc    500G disk
-└─sdc1 500G part KOLLA_CEPH_OSD_BOOTSTRAP_BS
-```
+![](../assets/img/2026-04-17-openstack-dalmatian-kolla-private-cloud/02.png)
 
-> Kolla-Ansible sẽ tự động nhận diện các partition có label `KOLLA_CEPH_OSD_BOOTSTRAP_BS` để tạo OSD.
+> `cephadm` sẽ tự động sử dụng các disk trống (không có partition/filesystem) để tạo OSD.
 
 #### 3.4 Kiểm tra Nested Virtualization
 
@@ -303,14 +300,28 @@ sdc    500G disk
 egrep -c '(vmx|svm)' /proc/cpuinfo
 ```
 
-Nếu output > 0 → KVM hoạt động (dùng `kvm` cho Nova).
-Nếu output = 0 → Cần bật nested virt trên ESXi hoặc dùng `qemu` (chậm hơn).
+> Nếu output > 0 → KVM hoạt động (dùng `kvm` cho Nova).
+> 
+>Nếu output = 0 → Cần bật nested virt trên ESXi hoặc dùng `qemu` (chậm hơn).
 
-#### 3.5 Tắt firewall & cập nhật hệ thống
+![](../assets/img/2026-04-17-openstack-dalmatian-kolla-private-cloud/03.png)
 
+#### 3.5 Cập nhật hệ thống
+
+Chuyển mirror APT sang server tại Việt Nam để tăng tốc download:
+```bash
+sudo sed -i 's|http://archive.ubuntu.com/ubuntu|http://mirror.bizflycloud.vn/ubuntu|g' /etc/apt/sources.list.d/ubuntu.sources 2>/dev/null || \
+sudo sed -i 's|http://archive.ubuntu.com/ubuntu|http://mirror.bizflycloud.vn/ubuntu|g' /etc/apt/sources.list
+
+sudo sed -i 's|http://security.ubuntu.com/ubuntu|http://mirror.bizflycloud.vn/ubuntu|g' /etc/apt/sources.list.d/ubuntu.sources 2>/dev/null || \
+sudo sed -i 's|http://security.ubuntu.com/ubuntu|http://mirror.bizflycloud.vn/ubuntu|g' /etc/apt/sources.list
+```
+
+
+Tắt firewall và cập nhật:
 ```bash
 sudo systemctl disable --now ufw
-sudo apt update && sudo apt upgrade -y
+sudo apt autoremove -y && sudo apt update && sudo apt upgrade -y 
 sudo reboot
 ```
 
@@ -320,30 +331,51 @@ sudo reboot
 
 > **Thực hiện trên cloud-01** - node này đóng vai trò deploy node
 
-#### 4.1 SSH Key-based Authentication
+#### 4.1 Tạo user deploy `sysadmin`
 
-Tạo SSH key trên cloud-01 và copy sang tất cả node:
+> **Thực hiện trên cả 3 node** - Kolla-Ansible cần user riêng (không dùng root) có quyền sudo để deploy và vận hành.
+
+Tạo user `sysadmin` trên mỗi node:
+```bash
+# Tạo user sysadmin với home directory
+sudo useradd -m -s /bin/bash sysadmin
+
+# Đặt password
+sudo passwd sysadmin
+
+# Cấu hình sudo không cần password
+echo "sysadmin ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/sysadmin
+```
+
+> **Tại sao không dùng root?**
+> - Kolla-Ansible sử dụng `ansible_become: true` để escalate khi cần, nên cần user thường có sudo
+> - Tránh rủi ro bảo mật khi cho phép SSH bằng root trên production
+> - Dễ audit và quản lý quyền truy cập
+
+Sau khi tạo xong, chuyển sang user `sysadmin` trên **cloud-01** để thực hiện các bước tiếp theo:
+```bash
+su - sysadmin
+```
+
+#### 4.2 SSH Key-based Authentication
+
+Tạo SSH key trên cloud-01 (user `sysadmin`) và copy sang tất cả node:
 ```bash
 ssh-keygen -t ed25519 -N "" -f ~/.ssh/id_ed25519
 
 # Copy key sang cả 3 node (bao gồm chính nó)
-ssh-copy-id sysadmin@cloud-01
-ssh-copy-id sysadmin@cloud-02
-ssh-copy-id sysadmin@cloud-03
+ssh-copy-id sysadmin@10.10.200.11
+ssh-copy-id sysadmin@10.10.200.12
+ssh-copy-id sysadmin@10.10.200.13
 ```
 
 Kiểm tra SSH không cần password:
 ```bash
-ssh cloud-02 hostname
-ssh cloud-03 hostname
+ssh 10.10.200.12 hostname
+ssh 10.10.200.13 hostname
 ```
 
-Cấu hình sudo không cần password (trên cả 3 node):
-```bash
-echo "sysadmin ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/sysadmin
-```
-
-#### 4.2 Cài đặt Python & Kolla-Ansible
+#### 4.3 Cài đặt Python & Kolla-Ansible
 
 ```bash
 # Cài đặt dependencies
@@ -356,14 +388,17 @@ source ~/kolla-venv/bin/activate
 # Upgrade pip
 pip install -U pip setuptools
 
-# Cài đặt Ansible (phiên bản tương thích với Kolla Bobcat)
-pip install 'ansible-core>=2.14,<2.16'
+# Cài đặt Ansible (phiên bản tương thích với Kolla Dalmatian)
+pip install 'ansible-core>=2.16,<2.17.99'
 
-# Cài đặt Kolla-Ansible phiên bản Bobcat (2023.2)
-pip install 'kolla-ansible==17.2.0'
+# Cài đặt Kolla-Ansible phiên bản Dalmatian (2024.2)
+pip install git+https://opendev.org/openstack/kolla-ansible@stable/2024.2
+
+# Cài đặt Ansible Galaxy dependencies (collection openstack.kolla)
+kolla-ansible install-deps
 ```
 
-#### 4.3 Chuẩn bị thư mục cấu hình
+#### 4.4 Chuẩn bị thư mục cấu hình
 
 ```bash
 # Tạo thư mục /etc/kolla
@@ -390,38 +425,41 @@ forks = 100
 EOF
 ```
 
-#### 4.4 Inventory Multinode
+#### 4.5 Inventory Multinode
 
-Chỉnh sửa file `~/multinode`:
+Tạo file `~/multinode`:
 
-```ini
+> **Lưu ý:** Tên NIC (network interface) được khai báo **per-host** trong inventory thay vì trong `globals.yml`. Cách này phù hợp thực tế production khi các physical server có thể có tên NIC khác nhau (ví dụ server Dell dùng `eno1`, HP dùng `ens1f0`, VM dùng `ens160`...). Kiểm tra tên NIC trên mỗi node bằng `ip link show` trước khi điền vào inventory.
+
+```bash
+cat << 'EOF' > ~/multinode
 [control]
-cloud-01 ansible_user=sysadmin ansible_become=true
-cloud-02 ansible_user=sysadmin ansible_become=true
-cloud-03 ansible_user=sysadmin ansible_become=true
+10.10.200.11 ansible_user=sysadmin ansible_become=true network_interface=ens160 neutron_external_interface=ens192 storage_interface=ens224 tunnel_interface=ens160
+10.10.200.12 ansible_user=sysadmin ansible_become=true network_interface=ens160 neutron_external_interface=ens192 storage_interface=ens224 tunnel_interface=ens160
+10.10.200.13 ansible_user=sysadmin ansible_become=true network_interface=ens160 neutron_external_interface=ens192 storage_interface=ens224 tunnel_interface=ens160
 
 [network]
-cloud-01 ansible_user=sysadmin ansible_become=true
-cloud-02 ansible_user=sysadmin ansible_become=true
-cloud-03 ansible_user=sysadmin ansible_become=true
+10.10.200.11 ansible_user=sysadmin ansible_become=true
+10.10.200.12 ansible_user=sysadmin ansible_become=true
+10.10.200.13 ansible_user=sysadmin ansible_become=true
 
 [compute]
-cloud-01 ansible_user=sysadmin ansible_become=true
-cloud-02 ansible_user=sysadmin ansible_become=true
-cloud-03 ansible_user=sysadmin ansible_become=true
+10.10.200.11 ansible_user=sysadmin ansible_become=true
+10.10.200.12 ansible_user=sysadmin ansible_become=true
+10.10.200.13 ansible_user=sysadmin ansible_become=true
 
 [storage]
-cloud-01 ansible_user=sysadmin ansible_become=true
-cloud-02 ansible_user=sysadmin ansible_become=true
-cloud-03 ansible_user=sysadmin ansible_become=true
+10.10.200.11 ansible_user=sysadmin ansible_become=true
+10.10.200.12 ansible_user=sysadmin ansible_become=true
+10.10.200.13 ansible_user=sysadmin ansible_become=true
 
 [monitoring]
-cloud-01 ansible_user=sysadmin ansible_become=true
+10.10.200.11 ansible_user=sysadmin ansible_become=true
 
 [deployment]
-localhost ansible_connection=local become=true
+localhost ansible_connection=local ansible_become=true
 
-# Các group thừa kế (giữ nguyên từ sample)
+# Các group thừa kế
 [baremetal:children]
 control
 network
@@ -429,16 +467,25 @@ compute
 storage
 monitoring
 
-[chrony-server:children]
+[tls-backend:children]
 control
+network
 
-[chrony:children]
-baremetal
+[common:children]
+control
+network
+compute
+storage
+monitoring
 
 [hacluster:children]
 control
 
 [hacluster-remote:children]
+compute
+
+[loadbalancer:children]
+network
 
 [mariadb:children]
 control
@@ -462,23 +509,10 @@ network
 network
 compute
 
-[ovn:children]
-network
-compute
-
-[ovn-controller:children]
-ovn
-
-[ovn-nb-db:children]
-control
-
-[ovn-sb-db:children]
-control
-
-[ovn-northd:children]
-control
-
 [cinder:children]
+control
+
+[memcached:children]
 control
 
 [horizon:children]
@@ -490,31 +524,30 @@ control
 [placement:children]
 control
 
+[bifrost:children]
+deployment
+
 [nova-compute:children]
 compute
 
-[ceph:children]
-storage
+[ovn-controller-compute:children]
+compute
 
-[ceph-mon:children]
-control
-
-[ceph-mgr:children]
-control
-
-[ceph-osd:children]
-storage
-
-[ceph-rgw:children]
-
-[memcached:children]
-control
-
-[haproxy:children]
+[ovn-controller-network:children]
 network
 
-[keepalived:children]
-haproxy
+[ovn-database:children]
+control
+
+[ovn-northd:children]
+ovn-database
+
+[ovn-nb-db:children]
+ovn-database
+
+[ovn-sb-db:children]
+ovn-database
+EOF
 ```
 
 Kiểm tra inventory:
@@ -525,15 +558,19 @@ ansible -i ~/multinode all -m ping
 
 Tất cả node phải trả về `SUCCESS`.
 
-#### 4.5 globals.yml
+![](../assets/img/2026-04-17-openstack-dalmatian-kolla-private-cloud/04.png)
 
-Đây là file cấu hình quan trọng nhất. Chỉnh sửa `/etc/kolla/globals.yml`:
 
-```yaml
+#### 4.6 globals.yml
+
+Đây là file cấu hình quan trọng nhất:
+
+```bash
+cat << 'EOF' > /etc/kolla/globals.yml
 ---
 # Kolla options
 kolla_base_distro: "ubuntu"
-openstack_release: "2023.2"
+openstack_release: "2024.2"
 kolla_internal_vip_address: "10.10.200.10"
 node_custom_config: "/etc/kolla/config"
 
@@ -541,11 +578,8 @@ node_custom_config: "/etc/kolla/config"
 docker_registry: "quay.io"
 docker_namespace: "openstack.kolla"
 
-# Network interfaces
-network_interface: "ens160"
-neutron_external_interface: "ens192"
-storage_interface: "ens224"
-tunnel_interface: "ens160"
+# Network interfaces → Đã khai báo per-host trong inventory (~/multinode)
+# Không đặt ở đây để hỗ trợ môi trường có NIC name khác nhau giữa các node
 
 # Neutron - OVN
 neutron_plugin_agent: "ovn"
@@ -553,23 +587,27 @@ neutron_ovn_distributed_fip: "yes"
 
 # Nova
 nova_compute_virt_type: "kvm"
-nova_backend_ceph: "yes"
 
-# Ceph (deployed by Kolla)
-enable_ceph: "yes"
-enable_ceph_dashboard: "no"
-ceph_pool_type: "replicated"
-ceph_target_max_bytes: ""
-ceph_target_max_objects: ""
-
-# Glance
+# External Ceph (Ceph được deploy riêng bằng cephadm)
+# Glance → Ceph RBD
 glance_backend_ceph: "yes"
 glance_backend_file: "no"
+ceph_glance_user: "glance"
+ceph_glance_pool_name: "images"
 
-# Cinder
+# Cinder → Ceph RBD
 enable_cinder: "yes"
 cinder_backend_ceph: "yes"
 cinder_backup_driver: "ceph"
+ceph_cinder_user: "cinder"
+ceph_cinder_pool_name: "volumes"
+ceph_cinder_backup_user: "cinder-backup"
+ceph_cinder_backup_pool_name: "backups"
+
+# Nova → Ceph RBD
+nova_backend_ceph: "yes"
+ceph_nova_user: "cinder"
+ceph_nova_pool_name: "vms"
 
 # Horizon
 enable_horizon: "yes"
@@ -586,37 +624,29 @@ enable_central_logging: "no"
 
 # Misc
 enable_openstack_core: "yes"
+EOF
 ```
 
-> **Lưu ý:** Nếu nested virtualization không hoạt động, thay `nova_compute_virt_type: "kvm"` thành `"qemu"`.
+> **Lưu ý quan trọng:**
+> - Kolla-Ansible Dalmatian (2024.2) **không còn hỗ trợ `enable_ceph`** — Ceph phải được deploy riêng (cephadm/ceph-ansible) rồi cấu hình External Ceph
+> - `ceph_nova_user` mặc định là `cinder` (Nova dùng chung keyring với Cinder để attach volume)
+> - Nếu nested virtualization không hoạt động, thay `nova_compute_virt_type: "kvm"` thành `"qemu"`
 
-#### 4.6 Ceph Configuration
+#### 4.7 Cấu hình External Ceph cho Kolla
 
-Tạo thư mục config cho Ceph:
+> **Bước này thực hiện SAU khi deploy Ceph bằng cephadm (Section 5)**. Tạm thời tạo cấu trúc thư mục trước, nội dung file sẽ được điền sau khi có Ceph cluster.
+
+Tạo cấu trúc thư mục config cho External Ceph:
 ```bash
-mkdir -p /etc/kolla/config/ceph
+mkdir -p /etc/kolla/config/glance
+mkdir -p /etc/kolla/config/cinder/cinder-volume
+mkdir -p /etc/kolla/config/cinder/cinder-backup
+mkdir -p /etc/kolla/config/nova
 ```
 
-Tạo file `/etc/kolla/config/ceph.conf`:
-```ini
-[global]
-# Ceph network
-public network = 10.10.201.0/24
-cluster network = 10.10.201.0/24
+> Các file `ceph.conf` và keyring sẽ được copy từ Ceph cluster vào đây sau bước 5 (Deploy Ceph). Xem **Section 5.5** để biết chi tiết.
 
-# Performance tuning cho lab
-osd pool default size = 3
-osd pool default min size = 2
-osd pool default pg num = 128
-osd pool default pgp num = 128
-
-# BlueStore
-osd objectstore = bluestore
-```
-
-> Trong lab này, **public network** và **cluster network** dùng chung subnet 10.10.201.0/24 (Storage network - Host-Only). Trong production, nên tách riêng 2 network này.
-
-#### 4.7 Generate Passwords
+#### 4.8 Generate Passwords
 
 ```bash
 source ~/kolla-venv/bin/activate
@@ -632,7 +662,219 @@ grep keystone_admin_password /etc/kolla/passwords.yml
 
 ---
 
-### 5. Deploy OpenStack + Ceph
+### 5. Deploy Ceph với cephadm
+
+> **Thực hiện trên cloud-01** (user `sysadmin`). Kolla-Ansible Dalmatian không còn deploy Ceph tích hợp — ta cần deploy Ceph cluster riêng bằng `cephadm` trước khi deploy OpenStack.
+
+#### 5.1 Cài đặt cephadm
+
+Trên **cloud-01**:
+```bash
+# Thêm Ceph Squid repo (tương thích Ubuntu 24.04)
+CEPH_RELEASE=squid
+curl --silent --remote-name --location https://download.ceph.com/rpm-${CEPH_RELEASE}/el9/noarch/cephadm
+chmod +x cephadm
+sudo mv cephadm /usr/local/bin/
+
+# Thêm Ceph repo
+sudo cephadm add-repo --release ${CEPH_RELEASE}
+sudo cephadm install ceph-common
+```
+
+Kiểm tra:
+```bash
+cephadm version
+ceph --version
+```
+
+#### 5.2 Bootstrap Ceph Cluster
+
+Bootstrap cluster trên cloud-01, sử dụng **Storage network** (10.10.201.0/24):
+```bash
+sudo cephadm bootstrap \
+  --mon-ip 10.10.201.11 \
+  --cluster-network 10.10.201.0/24 \
+  --initial-dashboard-password 'CephDash@2026' \
+  --dashboard-password-noupdate \
+  --allow-fqdn-hostname
+```
+
+> Bootstrap sẽ:
+> - Tạo MON + MGR đầu tiên trên cloud-01
+> - Cài đặt Docker/Podman containers cho Ceph services
+> - Bật Ceph Dashboard tại `https://10.10.201.11:8443`
+> - Tạo SSH key để quản lý các node khác
+
+Sau khi bootstrap xong, kiểm tra:
+```bash
+sudo ceph -s
+sudo ceph orch host ls
+```
+
+#### 5.3 Thêm các node vào Ceph cluster
+
+Copy SSH key của cephadm sang cloud-02 và cloud-03:
+```bash
+# Lấy public key của cephadm
+sudo ceph cephadm get-pub-key > ~/cephadm-pub-key
+
+# Copy sang các node khác
+ssh-copy-id -f -i ~/cephadm-pub-key sysadmin@10.10.201.12
+ssh-copy-id -f -i ~/cephadm-pub-key sysadmin@10.10.201.13
+```
+
+Thêm host vào cluster:
+```bash
+sudo ceph orch host add cloud-02 10.10.201.12
+sudo ceph orch host add cloud-03 10.10.201.13
+```
+
+Kiểm tra:
+```bash
+sudo ceph orch host ls
+```
+
+Output mong đợi: 3 hosts (cloud-01, cloud-02, cloud-03).
+
+#### 5.4 Deploy MON, MGR và OSD
+
+Cephadm tự động deploy MON và MGR trên tất cả host. Đợi vài phút rồi kiểm tra:
+```bash
+sudo ceph orch ps
+sudo ceph -s
+```
+
+Thêm OSD từ tất cả disk trống trên các node:
+```bash
+# Kiểm tra disk available
+sudo ceph orch device ls --refresh
+
+# Thêm tất cả disk trống làm OSD
+sudo ceph orch apply osd --all-available-devices
+```
+
+Đợi vài phút cho OSD khởi tạo, kiểm tra:
+```bash
+sudo ceph osd tree
+```
+
+Output mong đợi: 6 OSD (2 per node) trên 3 host.
+
+```bash
+sudo ceph -s
+```
+
+Output mong đợi:
+```
+  cluster:
+    health: HEALTH_OK
+
+  services:
+    mon: 3 daemons, quorum cloud-01,cloud-02,cloud-03
+    mgr: cloud-01(active), standbys: cloud-02, cloud-03
+    osd: 6 osds: 6 up, 6 in
+
+  data:
+    usage:   6.0 GiB used, 2.93 TiB / 2.93 TiB avail
+```
+
+#### 5.5 Tạo Pools và Keyrings cho OpenStack
+
+**Tạo pools:**
+```bash
+sudo ceph osd pool create images 128
+sudo ceph osd pool create volumes 128
+sudo ceph osd pool create vms 128
+sudo ceph osd pool create backups 128
+
+# Bật RBD application cho các pool
+sudo ceph osd pool application enable images rbd
+sudo ceph osd pool application enable volumes rbd
+sudo ceph osd pool application enable vms rbd
+sudo ceph osd pool application enable backups rbd
+```
+
+**Tạo keyrings cho OpenStack services:**
+```bash
+# Keyring cho Glance
+sudo ceph auth get-or-create client.glance \
+  mon 'profile rbd' \
+  osd 'profile rbd pool=images' \
+  mgr 'profile rbd pool=images'
+
+# Keyring cho Cinder
+sudo ceph auth get-or-create client.cinder \
+  mon 'profile rbd' \
+  osd 'profile rbd pool=volumes, profile rbd pool=vms, profile rbd-read-only pool=images' \
+  mgr 'profile rbd pool=volumes, profile rbd pool=vms'
+
+# Keyring cho Cinder Backup
+sudo ceph auth get-or-create client.cinder-backup \
+  mon 'profile rbd' \
+  osd 'profile rbd pool=backups' \
+  mgr 'profile rbd pool=backups'
+```
+
+**Copy ceph.conf và keyrings vào Kolla config:**
+```bash
+# Lấy ceph.conf minimal
+sudo ceph config generate-minimal-conf | sed 's/^\t//' > /tmp/ceph.conf
+
+# Export keyrings
+sudo ceph auth get client.glance -o /tmp/client.glance.keyring
+sudo ceph auth get client.cinder -o /tmp/client.cinder.keyring
+sudo ceph auth get client.cinder-backup -o /tmp/client.cinder-backup.keyring
+
+# Copy ceph.conf cho tất cả services
+cp /tmp/ceph.conf /etc/kolla/config/glance/ceph.conf
+cp /tmp/ceph.conf /etc/kolla/config/cinder/ceph.conf
+cp /tmp/ceph.conf /etc/kolla/config/nova/ceph.conf
+
+# Copy keyrings cho Glance
+cp /tmp/client.glance.keyring /etc/kolla/config/glance/ceph.client.glance.keyring
+
+# Copy keyrings cho Cinder
+cp /tmp/client.cinder.keyring /etc/kolla/config/cinder/cinder-volume/ceph.client.cinder.keyring
+cp /tmp/client.cinder.keyring /etc/kolla/config/cinder/cinder-backup/ceph.client.cinder.keyring
+cp /tmp/client.cinder-backup.keyring /etc/kolla/config/cinder/cinder-backup/ceph.client.cinder-backup.keyring
+
+# Copy keyrings cho Nova (Nova dùng keyring cinder để attach volume)
+cp /tmp/client.cinder.keyring /etc/kolla/config/nova/ceph.client.cinder.keyring
+```
+
+Kiểm tra cấu trúc thư mục:
+```bash
+find /etc/kolla/config/{glance,cinder,nova} -type f
+```
+
+Output mong đợi:
+```
+/etc/kolla/config/glance/ceph.conf
+/etc/kolla/config/glance/ceph.client.glance.keyring
+/etc/kolla/config/cinder/ceph.conf
+/etc/kolla/config/cinder/cinder-volume/ceph.client.cinder.keyring
+/etc/kolla/config/cinder/cinder-backup/ceph.client.cinder.keyring
+/etc/kolla/config/cinder/cinder-backup/ceph.client.cinder-backup.keyring
+/etc/kolla/config/nova/ceph.conf
+/etc/kolla/config/nova/ceph.client.cinder.keyring
+```
+
+#### 5.6 Ceph Dashboard
+
+Ceph Dashboard đã được bật khi bootstrap, truy cập tại:
+
+```
+https://10.10.201.11:8443
+```
+
+- **User:** admin
+- **Password:** CephDash@2026
+
+<img src="../assets/img/2026-04-17-openstack-dalmatian-kolla-private-cloud/09-ceph-dashboard.png"/>
+
+---
+
+### 6. Deploy OpenStack (Kolla-Ansible)
 
 > **Tất cả lệnh chạy trên cloud-01** trong virtual environment
 
@@ -640,11 +882,11 @@ grep keystone_admin_password /etc/kolla/passwords.yml
 source ~/kolla-venv/bin/activate
 ```
 
-#### 5.1 Bootstrap Servers
+#### 6.1 Bootstrap Servers
 
 Bootstrap cài đặt Docker, configure hệ thống trên tất cả node:
 ```bash
-kolla-ansible -i ~/multinode bootstrap-servers
+kolla-ansible bootstrap-servers -i ~/multinode
 ```
 
 > Bước này mất khoảng 5-10 phút. Kolla sẽ cài Docker, cấu hình Docker daemon, cài các package cần thiết trên tất cả node.
@@ -654,106 +896,99 @@ Kiểm tra Docker đã chạy trên tất cả node:
 ansible -i ~/multinode all -m shell -a "docker --version && systemctl is-active docker"
 ```
 
-#### 5.2 Prechecks
+![](../assets/img/2026-04-17-openstack-dalmatian-kolla-private-cloud/05.png)
+
+#### 6.2 Prechecks
 
 Kiểm tra tất cả điều kiện trước khi deploy:
 ```bash
-kolla-ansible -i ~/multinode prechecks
+kolla-ansible prechecks -i ~/multinode
 ```
 
 > Nếu có lỗi, đọc kỹ thông báo và sửa trước khi tiếp tục. Các lỗi phổ biến:
 > - Docker chưa start → `systemctl start docker`
 > - NIC không tồn tại → kiểm tra lại tên interface
-> - Disk label không đúng → kiểm tra `parted` lại
 > - Port đã bị chiếm → `ss -tlnp | grep <port>`
+> - Thiếu file keyring Ceph → kiểm tra lại Section 5.5
 
-#### 5.3 Pull Images (tùy chọn)
+#### 6.3 Pull Images (tùy chọn)
 
 Pull Docker images trước để giảm thời gian deploy:
 ```bash
-kolla-ansible -i ~/multinode pull
+kolla-ansible pull -i ~/multinode
 ```
 
-#### 5.4 Deploy
+#### 6.4 Deploy
 
-Deploy toàn bộ OpenStack + Ceph:
+Deploy toàn bộ OpenStack:
 ```bash
-kolla-ansible -i ~/multinode deploy
+kolla-ansible deploy -i ~/multinode
 ```
 
-> **Thời gian deploy:** 30-60 phút tùy tốc độ mạng và disk I/O. Kolla sẽ deploy theo thứ tự:
+> **Thời gian deploy:** 20-40 phút tùy tốc độ mạng và disk I/O. Kolla sẽ deploy theo thứ tự:
 > 1. Infrastructure (MariaDB, RabbitMQ, Memcached, HAProxy, Keepalived)
-> 2. Ceph (MON → MGR → OSD)
-> 3. Keystone
-> 4. Glance, Nova, Neutron, Cinder, Heat, Horizon
+> 2. Keystone
+> 3. Glance, Nova, Neutron, Cinder, Heat, Horizon
+>
+> Ceph đã được deploy riêng ở Section 5, Kolla chỉ cấu hình kết nối External Ceph.
 
 Nếu deploy thất bại giữa chừng, sửa lỗi rồi chạy lại:
 ```bash
-kolla-ansible -i ~/multinode deploy
+kolla-ansible deploy -i ~/multinode
 ```
 Kolla-Ansible có tính idempotent - chạy lại sẽ không ảnh hưởng các service đã deploy thành công.
 
-#### 5.5 Post-deploy
+#### 6.5 Post-deploy
 
 Tạo file cấu hình OpenStack client:
 ```bash
-kolla-ansible -i ~/multinode post-deploy
+kolla-ansible post-deploy -i ~/multinode
 ```
 
-File `admin-openrc.sh` được tạo tại `/etc/kolla/admin-openrc.sh`.
+File `clouds.yaml` được tạo tại `/etc/kolla/clouds.yaml`.
+
+Copy file credentials để OpenStack CLI sử dụng:
+```bash
+mkdir -p ~/.config/openstack
+cp /etc/kolla/clouds.yaml ~/.config/openstack/clouds.yaml
+```
 
 Cài đặt OpenStack CLI:
 ```bash
 pip install python-openstackclient python-heatclient
 ```
 
-Source credentials:
+Kiểm tra kết nối (sử dụng cloud `kolla-admin` từ `clouds.yaml`):
 ```bash
-source /etc/kolla/admin-openrc.sh
+openstack --os-cloud kolla-admin service list
 ```
 
 ---
 
-### 6. Kiểm tra dịch vụ
+### 7. Kiểm tra dịch vụ
 
-#### 6.1 Ceph Health
+#### 7.1 Ceph Health
+
+Kiểm tra Ceph cluster (chạy trên cloud-01):
+```bash
+sudo ceph -s
+sudo ceph osd tree
+sudo ceph osd pool ls detail
+```
+
+Kiểm tra RBD pool đã sẵn sàng cho OpenStack:
+```bash
+sudo rbd ls images
+sudo rbd ls volumes
+sudo rbd ls vms
+```
+
+> Nếu `ceph` CLI chưa cài, dùng: `sudo cephadm shell -- ceph -s`
+
+#### 7.2 OpenStack Services
 
 ```bash
-sudo docker exec ceph_mon ceph -s
-```
-
-Output mong đợi:
-```
-  cluster:
-    id:     xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-    health: HEALTH_OK
-
-  services:
-    mon: 3 daemons, quorum cloud-01,cloud-02,cloud-03
-    mgr: cloud-01(active), standbys: cloud-02, cloud-03
-    osd: 6 osds: 6 up, 6 in
-
-  data:
-    pools:   4 pools, 512 pgs
-    objects: 0 objects, 0 B
-    usage:   6.0 GiB used, 2.93 TiB / 2.93 TiB avail
-    pgs:     512 active+clean
-```
-
-Kiểm tra OSD:
-```bash
-sudo docker exec ceph_mon ceph osd tree
-```
-
-Kiểm tra pools:
-```bash
-sudo docker exec ceph_mon ceph osd pool ls detail
-```
-
-#### 6.2 OpenStack Services
-
-```bash
-source /etc/kolla/admin-openrc.sh
+export OS_CLOUD=kolla-admin
 
 # Kiểm tra service catalog
 openstack service list
@@ -776,7 +1011,7 @@ openstack hypervisor list
 
 Tất cả services phải ở trạng thái `enabled` và `up`.
 
-#### 6.3 Horizon Dashboard
+#### 7.3 Horizon Dashboard
 
 Truy cập Horizon qua trình duyệt:
 ```
@@ -787,18 +1022,36 @@ http://10.10.200.10
 - **User:** admin
 - **Password:** (lấy từ `grep keystone_admin_password /etc/kolla/passwords.yml`)
 
-<img src="/assets/img/2026-04-17-openstack-bobcat-kolla-private-cloud/04-horizon-login.png"/>
+<img src="../assets/img/2026-04-17-openstack-dalmatian-kolla-private-cloud/04-horizon-login.png"/>
 
-<img src="/assets/img/2026-04-17-openstack-bobcat-kolla-private-cloud/05-horizon-overview.png"/>
+<img src="../assets/img/2026-04-17-openstack-dalmatian-kolla-private-cloud/05-horizon-overview.png"/>
+
+#### 7.4 Ceph Dashboard
+
+Ceph Dashboard được cephadm quản lý trực tiếp, truy cập qua **Storage network**:
+
+```
+https://10.10.201.11:8443
+```
+
+- **User:** admin
+- **Password:** CephDash@2026 (đã đặt khi bootstrap)
+
+Dashboard cung cấp giao diện trực quan để giám sát:
+- Cluster health, OSD status, PG state
+- Pool usage, IOPS, throughput
+- Host & service map
+
+<img src="../assets/img/2026-04-17-openstack-dalmatian-kolla-private-cloud/09-ceph-dashboard.png"/>
 
 ---
 
-### 7. Cấu hình Multi-tenant cho doanh nghiệp
+### 8. Cấu hình Multi-tenant cho doanh nghiệp
 
-#### 7.1 Tạo Project
+#### 8.1 Tạo Project
 
 ```bash
-source /etc/kolla/admin-openrc.sh
+export OS_CLOUD=kolla-admin
 
 # Tạo project cho phòng IT-Helpdesk
 openstack project create --domain default \
@@ -811,7 +1064,7 @@ openstack project create --domain default \
   Dev
 ```
 
-#### 7.2 Tạo User & gán Role
+#### 8.2 Tạo User & gán Role
 
 ```bash
 # Tạo user cho IT-Helpdesk
@@ -833,7 +1086,7 @@ openstack user create --domain default \
 openstack role add --project Dev --user dev-admin member
 ```
 
-#### 7.3 Cấu hình Quota
+#### 8.3 Cấu hình Quota
 
 ```bash
 # Quota cho IT-Helpdesk: 8 vCPU, 16GB RAM, 200GB storage
@@ -857,12 +1110,12 @@ openstack quota show IT-Helpdesk
 openstack quota show Dev
 ```
 
-#### 7.4 Tạo External Network (Admin)
+#### 8.4 Tạo External Network (Admin)
 
 External network chỉ admin mới có thể tạo, dùng chung cho tất cả project:
 
 ```bash
-source /etc/kolla/admin-openrc.sh
+export OS_CLOUD=kolla-admin
 
 # Tạo external network (provider flat)
 openstack network create --external \
@@ -881,7 +1134,7 @@ openstack subnet create --network external-net \
   external-subnet
 ```
 
-#### 7.5 Tạo Internal Network cho từng Project
+#### 8.5 Tạo Internal Network cho từng Project
 
 **IT-Helpdesk network:**
 ```bash
@@ -920,16 +1173,16 @@ openstack router set --external-gateway external-net dev-router
 openstack router add subnet dev-router dev-internal-subnet
 ```
 
-<img src="/assets/img/2026-04-17-openstack-bobcat-kolla-private-cloud/06-network-topology.png"/>
+<img src="../assets/img/2026-04-17-openstack-dalmatian-kolla-private-cloud/06-network-topology.png"/>
 
 ---
 
-### 8. Demo - Tạo VM trong OpenStack
+### 9. Demo - Tạo VM trong OpenStack
 
-#### 8.1 Upload Image
+#### 9.1 Upload Image
 
 ```bash
-source /etc/kolla/admin-openrc.sh
+export OS_CLOUD=kolla-admin
 
 # Download Ubuntu Server 22.04 cloud image
 wget https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
@@ -960,7 +1213,7 @@ openstack image create "Windows-Server-2022" \
 
 > **Tạo Windows image:** Cần boot VM từ ISO Windows Server 2022 + virtio driver, cài đặt xong rồi export thành qcow2. Có thể dùng `virt-install` hoặc tạo trực tiếp trong OpenStack.
 
-#### 8.2 Tạo Flavor
+#### 9.2 Tạo Flavor
 
 ```bash
 # Flavor cho Ubuntu Server
@@ -973,7 +1226,7 @@ openstack flavor create --vcpus 4 --ram 4096 --disk 60 m1.medium
 openstack flavor create --vcpus 1 --ram 1024 --disk 10 m1.tiny
 ```
 
-#### 8.3 Tạo Security Group
+#### 9.3 Tạo Security Group
 
 ```bash
 # Security Group cho IT-Helpdesk
@@ -1007,7 +1260,7 @@ openstack security group rule create --project Dev \
   --protocol tcp --dst-port 3389 dev-secgroup
 ```
 
-#### 8.4 Tạo SSH Keypair
+#### 9.4 Tạo SSH Keypair
 
 ```bash
 # Keypair cho IT-Helpdesk
@@ -1021,7 +1274,7 @@ openstack keypair create --type ssh \
 chmod 600 dev-keypair.pem
 ```
 
-#### 8.5 Tạo VM Ubuntu Server (IT-Helpdesk)
+#### 9.5 Tạo VM Ubuntu Server (IT-Helpdesk)
 
 ```bash
 # Tạo VM Ubuntu trong project IT-Helpdesk
@@ -1057,9 +1310,9 @@ Truy cập VM:
 ssh -i it-keypair.pem ubuntu@$FLOAT_IP
 ```
 
-<img src="/assets/img/2026-04-17-openstack-bobcat-kolla-private-cloud/07-vm-ubuntu.png"/>
+<img src="../assets/img/2026-04-17-openstack-dalmatian-kolla-private-cloud/07-vm-ubuntu.png"/>
 
-#### 8.6 Tạo VM Windows Server 2022 (Dev)
+#### 9.6 Tạo VM Windows Server 2022 (Dev)
 
 ```bash
 # Tạo volume từ Windows image (boot from volume cho disk lớn)
@@ -1096,9 +1349,9 @@ mstsc /v:$FLOAT_IP_WIN
 
 Hoặc truy cập qua Horizon Console:
 
-<img src="/assets/img/2026-04-17-openstack-bobcat-kolla-private-cloud/08-vm-windows.png"/>
+<img src="../assets/img/2026-04-17-openstack-dalmatian-kolla-private-cloud/08-vm-windows.png"/>
 
-#### 8.7 Tạo Cinder Volume & Attach
+#### 9.7 Tạo Cinder Volume & Attach
 
 Demo tạo thêm volume data cho VM:
 ```bash
@@ -1113,41 +1366,57 @@ openstack server add volume dev-win2022-srv01 dev-data-vol01
 
 Kiểm tra volume trên Ceph:
 ```bash
-sudo docker exec ceph_mon rbd ls volumes
-sudo docker exec ceph_mon ceph df
+sudo rbd ls volumes
+sudo ceph df
 ```
-
-<img src="/assets/img/2026-04-17-openstack-bobcat-kolla-private-cloud/09-ceph-dashboard.png"/>
 
 ---
 
-### 9. Scale & Best Practices
+### 10. Scale & Best Practices
 
-#### 9.1 Thêm Compute Node
+#### 10.1 Thêm Compute Node
 
 Khi cần thêm tài nguyên compute, chỉ cần:
 
 1. Tạo VM mới trên ESXi (cùng cấu hình, không cần disk OSD)
 2. Cài Ubuntu 24.04, cấu hình network
-3. Thêm node vào inventory group `[compute]`:
+3. Thêm node vào inventory group `[control]` và `[compute]` (NIC name theo server thực tế):
    ```ini
+   [control]
+   10.10.200.11 ansible_user=sysadmin ansible_become=true network_interface=ens160 neutron_external_interface=ens192 storage_interface=ens224 tunnel_interface=ens160
+   10.10.200.12 ansible_user=sysadmin ansible_become=true network_interface=ens160 neutron_external_interface=ens192 storage_interface=ens224 tunnel_interface=ens160
+   10.10.200.13 ansible_user=sysadmin ansible_become=true network_interface=ens160 neutron_external_interface=ens192 storage_interface=ens224 tunnel_interface=ens160
+
    [compute]
-   cloud-01 ansible_user=sysadmin ansible_become=true
-   cloud-02 ansible_user=sysadmin ansible_become=true
-   cloud-03 ansible_user=sysadmin ansible_become=true
-   cloud-04 ansible_user=sysadmin ansible_become=true  # node mới
+   ...
+   10.10.200.14 ansible_user=sysadmin ansible_become=true network_interface=eno1 neutron_external_interface=eno2 storage_interface=eno3 tunnel_interface=eno1  # server Dell mới
    ```
 4. Chạy lại:
    ```bash
-   kolla-ansible -i ~/multinode bootstrap-servers --limit cloud-04
-   kolla-ansible -i ~/multinode deploy
+   kolla-ansible bootstrap-servers -i ~/multinode --limit 10.10.200.14
+   kolla-ansible deploy -i ~/multinode
    ```
 
-#### 9.2 Thêm Ceph OSD Node
+#### 10.2 Thêm Ceph OSD Node
 
-Tương tự, thêm node mới vào `[storage]` và `[ceph-osd]`, chuẩn bị disk label, rồi deploy lại.
+Với cephadm, thêm node OSD mới rất đơn giản:
 
-#### 9.3 Tách Role (Production)
+1. Cài Ubuntu 24.04, cấu hình network (Storage network 10.10.201.x)
+2. Copy SSH key của cephadm sang node mới:
+   ```bash
+   ssh-copy-id -f -i ~/cephadm-pub-key sysadmin@10.10.201.14
+   ```
+3. Thêm host vào Ceph cluster:
+   ```bash
+   sudo ceph orch host add cloud-04 10.10.201.14
+   ```
+4. OSD tự động được thêm từ disk trống (nếu đã `apply osd --all-available-devices`), hoặc thêm thủ công:
+   ```bash
+   sudo ceph orch daemon add osd cloud-04:/dev/sdb
+   sudo ceph orch daemon add osd cloud-04:/dev/sdc
+   ```
+
+#### 10.3 Tách Role (Production)
 
 Khi scale lên production, nên tách role:
 
@@ -1158,7 +1427,7 @@ Khi scale lên production, nên tách role:
 | Compute | N (theo nhu cầu) | Nova compute |
 | Storage (Ceph) | 3+ | MON + OSD |
 
-#### 9.4 Best Practices
+#### 10.4 Best Practices
 
 - **Backup:** Định kỳ backup `/etc/kolla/` (đặc biệt `passwords.yml` và `globals.yml`)
 - **Monitoring:** Bật `enable_prometheus: "yes"` và `enable_grafana: "yes"` trong globals.yml
@@ -1168,19 +1437,22 @@ Khi scale lên production, nên tách role:
 
 ---
 
-### 10. Kết luận
+### 11. Kết luận
 
 Trong bài lab này, chúng ta đã triển khai thành công một hệ thống **Private Cloud** hoàn chỉnh với:
 
-- **OpenStack Bobcat (2023.2)** trên 3 node All-in-One với HA cho control plane
-- **Ceph** tích hợp làm unified storage backend (Glance, Cinder, Nova)
+- **OpenStack Dalmatian (2024.2)** trên 3 node All-in-One với HA cho control plane
+- Sử dụng **Kolla-Ansible** từ branch `stable/2024.2` — collection `openstack.kolla` tương thích hoàn toàn
+- **Ceph (External)** deploy bằng **cephadm** làm unified storage backend (Glance, Cinder, Nova)
 - **OVN** cho networking với self-service + provider network
 - **Multi-tenant** cho 2 phòng ban IT-Helpdesk và Dev với quota riêng biệt
 - Demo tạo VM **Ubuntu Server** và **Windows Server 2022**
 
-Mô hình 3 node All-in-One phù hợp cho PoC và môi trường nhỏ. Khi doanh nghiệp cần scale, chỉ cần thêm compute node hoặc tách role mà không ảnh hưởng đến hệ thống đang chạy.
+> **Lưu ý:** Từ Kolla-Ansible Dalmatian (2024.2), `enable_ceph` đã bị loại bỏ. Ceph phải được deploy riêng và cấu hình External Ceph cho Kolla-Ansible.
+
+Mô hình 3 node All-in-One phù hợp cho PoC và môi trường nhỏ. Khi doanh nghiệp cần scale, chỉ cần thêm compute node (Kolla) hoặc OSD node (cephadm) mà không ảnh hưởng đến hệ thống đang chạy.
 
 **Tài nguyên tham khảo:**
-- [OpenStack Kolla-Ansible Documentation](https://docs.openstack.org/kolla-ansible/2023.2/)
-- [Ceph Documentation](https://docs.ceph.com/en/reef/)
-- [OVN Architecture](https://docs.openstack.org/neutron/2023.2/admin/ovn/index.html)
+- [OpenStack Kolla-Ansible Documentation](https://docs.openstack.org/kolla-ansible/2024.2/)
+- [Ceph Documentation](https://docs.ceph.com/en/squid/)
+- [OVN Architecture](https://docs.openstack.org/neutron/2024.2/admin/ovn/index.html)
