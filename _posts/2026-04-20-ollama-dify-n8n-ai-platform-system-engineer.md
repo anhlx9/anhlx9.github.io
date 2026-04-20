@@ -241,179 +241,7 @@ sudo systemctl restart docker
 
 ### 5. Triển khai Ollama & Custom model từ Hugging Face
 
-**Tạo thư mục project:**
-
-```bash
-sudo mkdir -p /opt/ai-platform/{ollama,dify,n8n}
-sudo chown -R $USER:$USER /opt/ai-platform
-cd /opt/ai-platform
-```
-
-**Tạo docker-compose cho Ollama:**
-
-```bash
-cat <<'EOF' > /opt/ai-platform/ollama/docker-compose.yml
-services:
-  ollama:
-    image: ollama/ollama:latest
-    container_name: ollama
-    restart: unless-stopped
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    environment:
-      - OLLAMA_HOST=0.0.0.0
-      - OLLAMA_NUM_PARALLEL=2
-      - OLLAMA_MAX_LOADED_MODELS=1
-      - OLLAMA_KEEP_ALIVE=10m
-    networks:
-      - ai-network
-
-volumes:
-  ollama_data:
-
-networks:
-  ai-network:
-    name: ai-network
-    driver: bridge
-EOF
-```
-
-> **Lưu ý:** Đây là config khởi tạo Ollama ban đầu (chưa mount models, chưa cấu hình tài nguyên). Config đầy đủ với volume mount, CPU limit và 2 model loaded sẽ được cập nhật ở **Bước 3** bên dưới.
-
-**Khởi chạy Ollama:**
-
-```bash
-cd /opt/ai-platform/ollama
-docker compose up -d
-
-# Kiểm tra Ollama đã chạy
-docker logs ollama -f
-curl http://localhost:11434
-# Output: "Ollama is running"
-```
-
-**Tải model GGUF từ Hugging Face và tạo custom model:**
-
-Thay vì pull model mặc định từ Ollama library, ta tải bản GGUF quantized từ Hugging Face cho **text model** (kiểm soát mức quantize), và dùng `ollama pull` cho **vision model** (Llama 3.2 Vision đã được tối ưu sẵn trong Ollama Library).
-
-> **Các mức quantize phổ biến (cho GGUF):**
->
-> | Quantize | Đặc điểm | Khi nào dùng |
-> |---|---|---|
-> | Q8_0 | Gần gốc, nặng | Khi có GPU hoặc RAM dư thừa |
-> | **Q5_K_M** | Cân bằng chất lượng/tốc độ | **Khuyến nghị cho model text (14b)** |
-> | Q4_K_M | Nhẹ, nhanh | Khi RAM hạn chế |
-> | Q3_K_M | Rất nhẹ, giảm chất lượng | Chỉ khi RAM rất hạn chế |
-
-**Bước 1: Tải text model GGUF từ Hugging Face + Pull vision model từ Ollama**
-
-```bash
-# Tạo thư mục chứa model GGUF (cho text model)
-mkdir -p /opt/ai-platform/models
-
-# Cài hf CLI (Ubuntu 24.04 dùng pipx thay vì pip)
-sudo apt install -y pipx
-pipx install huggingface-hub
-pipx ensurepath
-source ~/.bashrc
-
-# === Model TEXT (14b Q5_K_M ~10GB) - GGUF từ Hugging Face ===
-hf download bartowski/Qwen2.5-Coder-14B-Instruct-GGUF \
-  Qwen2.5-Coder-14B-Instruct-Q5_K_M.gguf \
-  --local-dir /opt/ai-platform/models
-
-# Kiểm tra file đã tải
-ls -lh /opt/ai-platform/models/
-# Qwen2.5-Coder-14B-Instruct-Q5_K_M.gguf         ~10 GB (text)
-
-# === Model VISION (Llama 3.2 Vision 11b ~7.9GB) - từ Ollama Library ===
-# Llama 3.2 Vision: native multimodal của Meta, không bias tiếng Trung, reasoning vượt LLaVA
-docker exec -it ollama ollama pull llama3.2-vision
-```
-
-> **Lưu ý:** Nếu không cài được `hf`, dùng `wget` trực tiếp:
-> ```bash
-> wget -P /opt/ai-platform/models/ \
->   "https://huggingface.co/bartowski/Qwen2.5-Coder-14B-Instruct-GGUF/resolve/main/Qwen2.5-Coder-14B-Instruct-Q5_K_M.gguf"
-> ```
-
-> **Tại sao vision model dùng `ollama pull` thay vì GGUF?**
-> Vision model cần cả language GGUF + vision projector (mmproj), phải match chính xác phiên bản. Dùng `ollama pull` đảm bảo 2 thành phần tương thích, đã được test kỹ, tránh lỗi runtime crash. **Lý do chọn Llama 3.2 Vision:** Native multimodal của Meta, không bias tiếng Trung, reasoning vượt trội hơn LLaVA, context 128K, hỗ trợ tiếng Việt tốt. Text model dùng GGUF từ HF vì chỉ có 1 file đơn giản, dễ kiểm soát quantize.
-
-
-**Bước 2: Tạo 2 Modelfile tùy chỉnh**
-
-**Modelfile cho `sysadmin-coder` (Text - 14b):**
-
-```bash
-cat <<'EOF' > /opt/ai-platform/models/Modelfile-sysadmin-coder
-# Model TEXT: Qwen2.5-Coder 14b Q5_K_M
-# Dùng cho: sinh script, phân tích log, viết tài liệu, chatbot Q&A
-FROM /models/Qwen2.5-Coder-14B-Instruct-Q5_K_M.gguf
-
-PARAMETER temperature 0.3
-PARAMETER top_p 0.9
-PARAMETER num_ctx 8192
-PARAMETER num_thread 8
-PARAMETER stop "<|im_end|>"
-PARAMETER stop "<|endoftext|>"
-
-SYSTEM """
-Bạn là System Engineer AI Assistant cấp cao, thành thạo Linux và Windows Server.
-Chuyên sinh script (Bash, PowerShell, Ansible, Terraform), phân tích log sâu, và viết tài liệu kỹ thuật.
-Trả lời bằng tiếng Việt. Cung cấp lệnh/script cụ thể, có error handling.
-Cảnh báo nếu lệnh nguy hiểm. Luôn đề xuất best practice và bảo mật.
-"""
-
-TEMPLATE """{{- if .System }}<|im_start|>system
-{{ .System }}<|im_end|>
-{{ end }}
-{{- range .Messages }}<|im_start|>{{ .Role }}
-{{ .Content }}<|im_end|>
-{{ end }}<|im_start|>assistant
-"""
-EOF
-```
-
-**Modelfile cho `sysadmin-vision` (Vision - Llama 3.2 Vision 11b):**
-
-```bash
-cat <<'EOF' > /opt/ai-platform/models/Modelfile-sysadmin-vision
-# Model VISION: Llama 3.2 Vision (11b) - từ Ollama Library
-# Dùng cho: phân tích screenshot, đọc diagram, OCR log từ ảnh
-# Native multimodal của Meta, không bias tiếng Trung, hỗ trợ tiếng Việt tốt
-FROM llama3.2-vision
-
-PARAMETER temperature 0.5
-PARAMETER top_p 0.8
-PARAMETER num_ctx 4096
-PARAMETER num_thread 8
-
-SYSTEM """
-Bạn là System Engineer Vision Assistant, chuyên phân tích hình ảnh kỹ thuật.
-Khi nhận ảnh screenshot, dashboard, diagram hoặc log: mô tả chi tiết những gì thấy,
-nhận diện lỗi/cảnh báo, và đề xuất giải pháp cụ thể.
-Trả lời bằng tiếng Việt. Nếu ảnh là dashboard/log: phân tích metric, chỉ ra vấn đề.
-"""
-EOF
-```
-
-
-> **Sự khác biệt giữa 2 Modelfile:**
->
-> | Tham số | sysadmin-coder (Text 14b) | sysadmin-vision (Vision 11b) |
-> |---|---|---|
-> | Base model | Qwen2.5-Coder-14B (GGUF từ HF) | Llama 3.2 Vision 11b (`ollama pull`) |
-> | `FROM` | Trỏ file GGUF cụ thể | `FROM llama3.2-vision` (model đã pull) |
-> | `temperature` | 0.3 (chính xác cho code) | 0.5 (linh hoạt cho mô tả ảnh) |
-> | `num_ctx` | 8192 (8K - cân bằng RAM/context) | 4096 (4K - đủ cho ảnh + prompt) |
-> | `num_thread` | 8 (dùng 8/16 core) | 8 (dùng 8/16 core) |
-> | System prompt | Suy luận, thiết kế, debug; sinh script, phân tích log | Xử lý hình ảnh: screenshot, dashboard, diagram, OCR |
-> | Khả năng | Text only | **Text + Image input** |
-
-**Bước 3: Mount thư mục models vào container Ollama**
+**Bước 1: Mount thư mục models vào container Ollama**
 
 Cập nhật docker-compose để mount thư mục chứa GGUF:
 
@@ -471,7 +299,7 @@ docker compose up -d
 > 2. `deploy.resources.limits.cpus: '10'` trong docker-compose — hard cap ở tầng Docker
 > Kết hợp 2 giới hạn này đảm bảo Ollama dùng tối đa ~8 core thực tế, dành 6-8 core cho OS/Dify/n8n.
 
-**Bước 4: Tạo 2 custom model trong Ollama**
+**Bước 2: Tạo 2 custom model trong Ollama**
 
 ```bash
 # Tạo model TEXT (14b) - cho code, log, tài liệu
@@ -485,7 +313,7 @@ docker exec -it ollama ollama list
 ```
 
 
-**Bước 5: Test cả 2 model**
+**Bước 3: Test cả 2 model**
 
 ```bash
 # Test model TEXT (14b) - sinh script phức tạp
@@ -974,7 +802,7 @@ curl -s http://localhost:11434/api/ps | python3 -m json.tool
 
 **Tối ưu Ollama cho CPU-only inference (config tham khảo cho VM <32GB RAM):**
 
-> **Lưu ý:** Config bên dưới là ví dụ tham khảo cho VM có RAM hạn chế (16-24GB). **Với lab 32GB này**, config thực tế đã được đặt ở Bước 3 Section 5 (`NUM_PARALLEL=1, MAX_LOADED_MODELS=2, KEEP_ALIVE=60m`).
+> **Lưu ý:** Config bên dưới là ví dụ tham khảo cho VM có RAM hạn chế (16-24GB). **Với lab 32GB này**, config thực tế đã được đặt ở Bước 1 Section 5 (`NUM_PARALLEL=1, MAX_LOADED_MODELS=2, KEEP_ALIVE=60m`).
 
 ```bash
 # Tham khảo: cấu hình bảo thủ cho VM <32GB RAM
