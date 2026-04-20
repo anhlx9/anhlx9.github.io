@@ -5,7 +5,7 @@ categories:
 - LLM
 - Automation
 
-feature_image: "../assets/postbanner.jpg"
+feature_image: "/assetss/postbanner.jpg"
 feature_text: |
   ### Xây dựng nền tảng AI Assistant tự host cho System Engineer với Ollama, Dify và n8n
 ---
@@ -336,7 +336,7 @@ docker exec -it ollama ollama pull llama3.2-vision
 > **Tại sao vision model dùng `ollama pull` thay vì GGUF?**
 > Vision model cần cả language GGUF + vision projector (mmproj) phải match chính xác phiên bản — dùng `ollama pull` đảm bảo 2 thành phần tương thích, đã test kỹ, tránh runtime crash. Llama 3.2 Vision là native multimodal của Meta, không bias tiếng Trung, context 128K, tiếng Việt tốt.
 
-<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/01.png"/>
+<img src="/assetss/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/01.png"/>
 
 
 **Bước 3: Tạo 2 Modelfile tùy chỉnh**
@@ -419,7 +419,7 @@ docker exec -it ollama ollama list
 > docker exec -it ollama ollama create sysadmin-coder -f /models/Modelfile-sysadmin-coder
 > ```
 
-<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/02.png"/>
+<img src="/assetss/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/02.png"/>
 
 
 **Bước 5: Test cả 2 model**
@@ -432,9 +432,9 @@ docker exec -it ollama ollama run sysadmin-coder "Viết script bash kiểm tra 
 docker exec -it ollama ollama run sysadmin-vision "Mô tả chi tiết những gì bạn thấy trong một Grafana dashboard điển hình có CPU, RAM, Disk"
 
 ```
-<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/03.png"/>
+<img src="/assetss/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/03.png"/>
 
-<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/04.png"/>
+<img src="/assetss/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/04.png"/>
 
 
 ```bash
@@ -468,7 +468,7 @@ time curl -s http://localhost:11434/api/generate -d '{
 docker exec -it ollama ollama pull nomic-embed-text
 ```
 
-<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/05.png"/>
+<img src="/assetss/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/05.png"/>
 
 ---
 
@@ -512,7 +512,7 @@ docker compose ps
 
 > Dify sẽ khởi chạy nhiều container: `api`, `worker`, `web`, `nginx`, `db` (PostgreSQL), `redis`, `weaviate`, `sandbox`, `ssrf_proxy`.
 
-<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/06.png"/>
+<img src="/assetss/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/06.png"/>
 
 
 **Chờ khoảng 1-2 phút** cho tất cả service khởi động xong, sau đó truy cập:
@@ -524,11 +524,11 @@ http://<IP-VM>:80
 - Lần đầu tiên sẽ hiện trang **đăng ký admin account**
 - Tạo tài khoản admin với email và password
 
-<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/07.png"/>
+<img src="/assetss/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/07.png"/>
 
-<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/08.png"/>
+<img src="/assetss/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/08.png"/>
 
-<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/09.png"/>
+<img src="/assetss/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/09.png"/>
 
 ---
 
@@ -579,14 +579,14 @@ docker compose up -d
 # Kiểm tra
 docker logs n8n -f
 ```
-<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/10.png"/>
+<img src="/assetss/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/10.png"/>
 
 Truy cập n8n tại: `http://10.10.200.11:5678`
 
 - **Lần đầu tiên** sẽ hiện trang **"Set up owner account"** — điền Email, First Name, Last Name, Password để tạo tài khoản owner
 - Từ lần sau đăng nhập bằng email/password vừa tạo
 
-<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/11.png"/>
+<img src="/assetss/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/11.png"/>
 
 ---
 
@@ -598,7 +598,7 @@ Truy cập n8n tại: `http://10.10.200.11:5678`
 
 2. Chọn **Model Provider** → tìm **Ollama**
 
-<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/12.png"/>
+<img src="/assetss/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/12.png"/>
 
 3. Click **Setup** và điền:
    - **Model Name:** `sysadmin-coder`
@@ -612,7 +612,7 @@ Truy cập n8n tại: `http://10.10.200.11:5678`
 
 4. Click **Add** → Dify sẽ test kết nối đến Ollama
 
-<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/13.png"/>
+<img src="/assetss/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/13.png"/>
 
 
 **Bước 2: Thêm Model Provider - Vision (11b)**
@@ -628,7 +628,7 @@ Truy cập n8n tại: `http://10.10.200.11:5678`
    - **Vision support:** `Yes` ← quan trọng, bật để Dify cho phép upload ảnh
    - **Function call support:** `No`
 
-<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/14.png"/>
+<img src="/assetss/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/14.png"/>
 
 **Bước 3: Thêm Embedding Model (cho RAG)**
 
@@ -638,9 +638,9 @@ Truy cập n8n tại: `http://10.10.200.11:5678`
    - **Base URL:** `http://10.10.200.11:11434/`
    - **Model context size:** `8192`
 
-<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/15.png"/>
+<img src="/assetss/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/15.png"/>
 
-<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/16.png"/>
+<img src="/assetss/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/16.png"/>
 
 
 **Bước 4: Cấu hình System Model**
@@ -658,7 +658,7 @@ Truy cập n8n tại: `http://10.10.200.11:5678`
 
 > **Lưu ý Docker Network:** Dify chạy trong network riêng (`docker-dify`), không resolve được hostname `ollama`. Dùng **IP host** `http://10.10.200.11:11434/` cho tất cả model là cách đơn giản và ổn định nhất. Thêm trailing slash `/` vào Base URL để tránh lỗi 404 khi Dify gọi API Ollama.
 
-<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/17.png"/>
+<img src="/assetss/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/17.png"/>
 
 ---
 
@@ -674,7 +674,7 @@ Sau khi Ollama model đã được thêm vào Dify ở Section 8, bước tiếp
 4. Đặt tên: `SysAdmin Q&A`
 5. Click **Create**
 
-<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/18.png"/>
+<img src="/assetss/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/18.png"/>
 
 **Bước 2: Cấu hình Orchestrate**
 
@@ -716,7 +716,7 @@ Dùng ô chat bên phải để test ngay trước khi publish:
 
 > **Lưu ý:** Response đầu tiên mất **20-60 giây** (Ollama load model vào RAM). Từ lần 2 trở đi nhanh hơn do model đã warm. Nếu timeout, kiểm tra `docker logs ollama -f` để xem trạng thái load.
 
-<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/19.png"/>
+<img src="/assetss/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/19.png"/>
 
 **Bước 4: Publish App**
 
