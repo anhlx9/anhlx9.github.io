@@ -5,7 +5,7 @@ categories:
 - LLM
 - Automation
 
-feature_image: "/assets/postbanner.jpg"
+feature_image: "../assets/postbanner.jpg"
 feature_text: |
   ### Xây dựng nền tảng AI Assistant tự host cho System Engineer với Ollama, Dify và n8n
 ---
@@ -21,8 +21,8 @@ feature_text: |
 - [6. Triển khai Dify - AI Application Platform](#6-triển-khai-dify---ai-application-platform)
 - [7. Triển khai n8n - Workflow Automation](#7-triển-khai-n8n---workflow-automation)
 - [8. Tích hợp Ollama vào Dify](#8-tích-hợp-ollama-vào-dify)
-- [9. Tích hợp Ollama/Dify vào n8n](#9-tích-hợp-ollamadify-vào-n8n)
-- [10. Use Case 1 - Chatbot hỗ trợ SysAdmin](#10-use-case-1---chatbot-hỗ-trợ-sysadmin)
+- [9. Tạo Dify App - SysAdmin Q\&A Chatbot](#9-tạo-dify-app---sysadmin-qa-chatbot)
+- [10. Tích hợp n8n với Ollama \& Dify API](#10-tích-hợp-n8n-với-ollama--dify-api)
 - [11. Use Case 2 - Tự động phân tích log \& tạo ticket](#11-use-case-2---tự-động-phân-tích-log--tạo-ticket)
 - [12. Use Case 3 - Sinh script Bash/Ansible tự động](#12-use-case-3---sinh-script-bashansible-tự-động)
 - [13. Use Case 4 - Tạo tài liệu kỹ thuật tự động](#13-use-case-4---tạo-tài-liệu-kỹ-thuật-tự-động)
@@ -336,7 +336,7 @@ docker exec -it ollama ollama pull llama3.2-vision
 > **Tại sao vision model dùng `ollama pull` thay vì GGUF?**
 > Vision model cần cả language GGUF + vision projector (mmproj) phải match chính xác phiên bản — dùng `ollama pull` đảm bảo 2 thành phần tương thích, đã test kỹ, tránh runtime crash. Llama 3.2 Vision là native multimodal của Meta, không bias tiếng Trung, context 128K, tiếng Việt tốt.
 
-<img src="/assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/01.png"/>
+<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/01.png"/>
 
 
 **Bước 3: Tạo 2 Modelfile tùy chỉnh**
@@ -356,7 +356,14 @@ PARAMETER stop "<|endoftext|>"
 SYSTEM """
 Bạn là System Engineer AI Assistant cấp cao, thành thạo Linux và Windows Server.
 Chuyên sinh script (Bash, PowerShell, Ansible, Terraform), phân tích log sâu, và viết tài liệu kỹ thuật.
-Trả lời bằng tiếng Việt. Cung cấp lệnh/script cụ thể, có error handling.
+
+Quy tắc ngôn ngữ TUYỆT ĐỐI:
+- Chỉ dùng TIẾNG VIỆT cho toàn bộ phần giải thích, mô tả, hướng dẫn
+- Chỉ dùng TIẾNG ANH cho: tên lệnh, code, config, technical term
+- TUYỆT ĐỐI KHÔNG dùng tiếng Trung Quốc (中文) dù chỉ 1 ký tự
+- Nếu không biết thuật ngữ tiếng Việt, giữ nguyên tiếng Anh
+
+Cung cấp lệnh/script cụ thể, có error handling.
 Cảnh báo nếu lệnh nguy hiểm. Luôn đề xuất best practice và bảo mật.
 """
 
@@ -382,7 +389,13 @@ SYSTEM """
 Bạn là System Engineer Vision Assistant, chuyên phân tích hình ảnh kỹ thuật.
 Khi nhận ảnh screenshot, dashboard, diagram hoặc log: mô tả chi tiết những gì thấy,
 nhận diện lỗi/cảnh báo, và đề xuất giải pháp cụ thể.
-Trả lời bằng tiếng Việt. Nếu ảnh là dashboard/log: phân tích metric, chỉ ra vấn đề.
+
+Quy tắc ngôn ngữ TUYỆT ĐỐI:
+- Chỉ dùng TIẾNG VIỆT cho toàn bộ phần giải thích và mô tả
+- TUYỆT ĐỐI KHÔNG dùng tiếng Trung Quốc (中文) dù chỉ 1 ký tự
+- Chỉ dùng tiếng Anh cho tên lệnh, code, technical term
+
+Nếu ảnh là dashboard/log: phân tích metric, chỉ ra vấn đề.
 """
 EOF
 ```
@@ -400,7 +413,13 @@ docker exec -it ollama ollama create sysadmin-vision -f /models/Modelfile-sysadm
 docker exec -it ollama ollama list
 ```
 
-<img src="/assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/02.png"/>
+> **⚠️ Lưu ý Qwen tiếng Trung:** Qwen2.5 đôi khi lẫn ký tự tiếng Trung vào response dù prompt yêu cầu tiếng Việt. System prompt trên đã thêm lệnh cấm tuyệt đối. Nếu vẫn gặp sau khi tạo model, cập nhật Modelfile và recreate:
+> ```bash
+> # Cập nhật Modelfile rồi recreate (ghi đè model cũ)
+> docker exec -it ollama ollama create sysadmin-coder -f /models/Modelfile-sysadmin-coder
+> ```
+
+<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/02.png"/>
 
 
 **Bước 5: Test cả 2 model**
@@ -413,9 +432,9 @@ docker exec -it ollama ollama run sysadmin-coder "Viết script bash kiểm tra 
 docker exec -it ollama ollama run sysadmin-vision "Mô tả chi tiết những gì bạn thấy trong một Grafana dashboard điển hình có CPU, RAM, Disk"
 
 ```
-<img src="/assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/03.png"/>
+<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/03.png"/>
 
-<img src="/assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/04.png"/>
+<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/04.png"/>
 
 
 ```bash
@@ -449,7 +468,7 @@ time curl -s http://localhost:11434/api/generate -d '{
 docker exec -it ollama ollama pull nomic-embed-text
 ```
 
-<img src="/assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/05.png"/>
+<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/05.png"/>
 
 ---
 
@@ -493,7 +512,7 @@ docker compose ps
 
 > Dify sẽ khởi chạy nhiều container: `api`, `worker`, `web`, `nginx`, `db` (PostgreSQL), `redis`, `weaviate`, `sandbox`, `ssrf_proxy`.
 
-<img src="/assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/06.png"/>
+<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/06.png"/>
 
 
 **Chờ khoảng 1-2 phút** cho tất cả service khởi động xong, sau đó truy cập:
@@ -505,11 +524,11 @@ http://<IP-VM>:80
 - Lần đầu tiên sẽ hiện trang **đăng ký admin account**
 - Tạo tài khoản admin với email và password
 
-<img src="/assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/07.png"/>
+<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/07.png"/>
 
-<img src="/assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/08.png"/>
+<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/08.png"/>
 
-<img src="/assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/09.png"/>
+<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/09.png"/>
 
 ---
 
@@ -560,14 +579,14 @@ docker compose up -d
 # Kiểm tra
 docker logs n8n -f
 ```
-<img src="/assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/10.png"/>
+<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/10.png"/>
 
 Truy cập n8n tại: `http://10.10.200.11:5678`
 
 - **Lần đầu tiên** sẽ hiện trang **"Set up owner account"** — điền Email, First Name, Last Name, Password để tạo tài khoản owner
 - Từ lần sau đăng nhập bằng email/password vừa tạo
 
-<img src="/assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/11.png"/>
+<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/11.png"/>
 
 ---
 
@@ -576,138 +595,241 @@ Truy cập n8n tại: `http://10.10.200.11:5678`
 **Bước 1: Thêm Model Provider - sysadmin-coder (14b)**
 
 1. Đăng nhập Dify → vào **Settings** (icon bánh răng góc trên phải)
+
 2. Chọn **Model Provider** → tìm **Ollama**
+
+<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/12.png"/>
+
 3. Click **Setup** và điền:
    - **Model Name:** `sysadmin-coder`
-   - **Base URL:** `http://ollama:11434` (nếu Dify chạy cùng Docker network) hoặc `http://<IP-VM>:11434`
-   - **Model Type:** LLM
-   - **Context Size:** `8192` (8K - theo cấu hình trong Modelfile)
+   - **Model Type:** `LLM`
+   - **Base URL:** `http://10.10.200.11:11434/` (dùng IP host — Dify chạy network riêng, không resolve hostname `ollama`)
+   - **Completion mode:** `Chat`
+   - **Model context size:** `8192`
+   - **Upper bound for max tokens:** `4096`
+   - **Vision support:** `No`
+   - **Function call support:** `No`
 
-4. Click **Save** → Dify sẽ test kết nối đến Ollama
+4. Click **Add** → Dify sẽ test kết nối đến Ollama
+
+<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/13.png"/>
+
 
 **Bước 2: Thêm Model Provider - Vision (11b)**
 
 1. Quay lại **Model Provider** → **Ollama** → **Add Model**
 2. Điền:
    - **Model Name:** `sysadmin-vision`
-   - **Base URL:** `http://ollama:11434`
-   - **Model Type:** LLM
-   - **Model Features:** ☑ Vision (tick chọn hỗ trợ ảnh)
-   - **Context Size:** `4096` (4K)
+   - **Model Type:** `LLM`
+   - **Base URL:** `http://10.10.200.11:11434/`
+   - **Completion mode:** `Chat`
+   - **Model context size:** `4096`
+   - **Upper bound for max tokens:** `2048`
+   - **Vision support:** `Yes` ← quan trọng, bật để Dify cho phép upload ảnh
+   - **Function call support:** `No`
+
+<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/14.png"/>
 
 **Bước 3: Thêm Embedding Model (cho RAG)**
 
 1. Tiếp tục **Add Model**:
    - **Model Name:** `nomic-embed-text`
-   - **Base URL:** `http://ollama:11434`
-   - **Model Type:** Text Embedding
+   - **Model Type:** `Text Embedding`
+   - **Base URL:** `http://10.10.200.11:11434/`
+   - **Model context size:** `8192`
+
+<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/15.png"/>
+
+<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/16.png"/>
+
 
 **Bước 4: Cấu hình System Model**
 
-1. Vào **Settings** → **Model Provider** → **System Model Settings**
+1. Vào **Settings** → **Model Provider** → click **Default Model Settings**
 2. Chọn:
-   - **System Reasoning Model:** `sysadmin-coder` (Ollama) — dùng model text mạnh làm mặc định cho hệ thống
-   - **Embedding Model:** `nomic-embed-text` (Ollama)
+   - **System Reasoning Model:** `sysadmin-coder` (CHAT)
+   - **Embedding Model:** `nomic-embed-text`
+   - **Rerank Model:** bỏ trống (chưa cần)
+   - **Speech-to-Text Model:** bỏ trống
+   - **Text-to-Speech Model:** bỏ trống
+3. Click **Save**
 
 > **Lưu ý:** System Model chỉ là mặc định. Khi tạo từng App, ta sẽ chọn model phù hợp (coder cho text, vision cho phân tích ảnh).
 
-> **Lưu ý Docker Network:** Dify dùng Docker network riêng. Để Dify kết nối được Ollama, cần đảm bảo cùng network hoặc dùng IP host:
-> ```bash
-> # Cách 1: Kết nối container Dify vào ai-network
-> docker network connect ai-network dify-api-1
-> docker network connect ai-network dify-worker-1
->
-> # Cách 2: Dùng host IP
-> # Base URL: http://10.10.200.11:11434
-> ```
+> **Lưu ý Docker Network:** Dify chạy trong network riêng (`docker-dify`), không resolve được hostname `ollama`. Dùng **IP host** `http://10.10.200.11:11434/` cho tất cả model là cách đơn giản và ổn định nhất. Thêm trailing slash `/` vào Base URL để tránh lỗi 404 khi Dify gọi API Ollama.
+
+<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/17.png"/>
 
 ---
 
-### 9. Tích hợp Ollama/Dify vào n8n
+### 9. Tạo Dify App - SysAdmin Q&A Chatbot
 
-**Cách 1: Kết nối trực tiếp n8n → Ollama**
+Sau khi Ollama model đã được thêm vào Dify ở Section 8, bước tiếp theo là tạo **App** — đây là nơi đóng gói logic AI (system prompt, model, context) thành một chatbot hoàn chỉnh. App cũng cung cấp **API Key** để tích hợp với n8n và các hệ thống khác ở Section 10.
 
-1. Trong n8n, tạo **Credential** mới:
-   - Type: **Ollama API**
-   - Base URL: `http://ollama:11434` (cùng Docker network)
+**Bước 1: Tạo App mới trong Dify Studio**
 
-2. Sử dụng các AI nodes:
-   - **Ollama Chat Model**: Chọn `sysadmin-coder` cho phân tích text, `sysadmin-vision` cho phân tích ảnh
-   - **AI Agent**: Tạo agent với tool-calling
-   - **AI Chain**: Xây dựng LangChain pipeline
+1. Đăng nhập Dify → sidebar trái → **Studio**
+2. Click **Create from Blank**
+3. Chọn loại App: **Chatbot**
+4. Đặt tên: `SysAdmin Q&A`
+5. Click **Create**
 
-**Cách 2: Kết nối n8n → Dify API**
+<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/18.png"/>
 
-1. Trong Dify, tạo một **App** (ví dụ chatbot SysAdmin)
-2. Vào **API Access** → copy **API Key** và **API Endpoint**
-3. Trong n8n, dùng **HTTP Request** node:
-   - Method: `POST`
-   - URL: `http://<IP-VM>:80/v1/chat-messages`
-   - Headers: `Authorization: Bearer <DIFY-API-KEY>`
-   - Body:
-   ```json
-   {
-     "inputs": {},
-     "query": "{{ $json.message }}",
-     "response_mode": "blocking",
-     "user": "n8n-automation"
-   }
-   ```
+**Bước 2: Cấu hình Orchestrate**
 
----
+Dify mở trang **Orchestrate** — giao diện thiết kế chatbot với 2 vùng chính: cấu hình bên trái và preview chat bên phải.
 
-### 10. Use Case 1 - Chatbot hỗ trợ SysAdmin
-
-Tạo chatbot trên Dify có khả năng trả lời câu hỏi về system administration, tích hợp knowledge base nội bộ.
-
-**Bước 1: Tạo Knowledge Base**
-
-1. Trong Dify → **Knowledge** → **Create Knowledge**
-2. Upload các tài liệu kỹ thuật:
-   - Runbook nội bộ (`.md`, `.pdf`, `.docx`)
-   - Cấu hình chuẩn (Ansible playbooks, Terraform configs)
-   - SOP xử lý sự cố
-   - Man pages, cheat sheets
-3. Dify sẽ tự động chunk và embedding tài liệu vào vector database
-
-**Bước 2: Tạo Chatbot App**
-
-1. **Studio** → **Create App** → chọn **Chatbot**
-2. Đặt tên: `SysAdmin Assistant`
-3. Cấu hình **System Prompt:**
+1. Tại ô **INSTRUCTIONS** (System Prompt), dán nội dung sau:
 
 ```
-Bạn là một System Engineer Assistant chuyên nghiệp, thành thạo cả Linux và Windows Server. Nhiệm vụ của bạn:
+Bạn là System Engineer Assistant chuyên nghiệp, thành thạo Linux, Windows Server, networking và cloud infrastructure.
 
-1. Trả lời câu hỏi về Linux & Windows Server administration, networking, security
-2. Viết và giải thích script (Bash, PowerShell, Python, Ansible, Terraform)
-3. Phân tích log và đề xuất giải pháp khắc phục sự cố (syslog, Event Viewer, dmesg...)
-4. Hướng dẫn cấu hình dịch vụ Linux: Docker, Kubernetes, HAProxy, Nginx, Ceph, etc.
-5. Hướng dẫn cấu hình dịch vụ Windows: Active Directory, DNS, DHCP, GPO, IIS, Hyper-V, WSUS, etc.
-6. Tạo tài liệu kỹ thuật theo yêu cầu
+Nhiệm vụ:
+- Trả lời câu hỏi kỹ thuật về Linux/Windows/networking/Docker/Kubernetes/Ceph
+- Viết và giải thích script: Bash, PowerShell, Ansible, Terraform, Python
+- Phân tích log, tìm nguyên nhân lỗi và đề xuất fix cụ thể
+- Hướng dẫn cấu hình dịch vụ: HAProxy, Nginx, Keepalived, Active Directory, DNS, GPO
+- Tạo tài liệu kỹ thuật: runbook, SOP, post-mortem, change request
 
 Quy tắc:
-- Luôn trả lời bằng tiếng Việt
+- Trả lời bằng tiếng Việt
 - Cung cấp lệnh/script cụ thể, có thể chạy ngay
-- Giải thích từng bước rõ ràng
-- Cảnh báo nếu lệnh có thể gây nguy hiểm (rm -rf, fdisk, iptables flush, Format-Volume, Remove-ADUser...)
-- Đề xuất best practice và bảo mật
+- Giải thích từng bước, kèm ví dụ thực tế
+- Cảnh báo nếu lệnh nguy hiểm (rm -rf, fdisk, iptables flush, Format-Volume...)
+- Đề xuất best practice và lưu ý bảo mật
 - Nếu không chắc chắn, nói rõ và đề xuất cách kiểm tra thêm
 ```
 
-4. **Context** → thêm Knowledge Base đã tạo ở bước 1
-5. **Model:** chọn `sysadmin-coder` (Ollama) — dùng model text mạnh cho chatbot Q&A, trả lời chính xác và chi tiết
-6. **Publish** → lấy URL để truy cập chatbot
+2. **Model** — click dropdown model (góc trên phải khu vực chat preview) → chọn **sysadmin-coder**
 
-> **Tại sao dùng `sysadmin-coder` (14b) cho chatbot?** Model 14b cho output chính xác hơn, kết hợp với RAG từ Knowledge Base cho trải nghiệm tốt nhất. Không cần model nhanh vì chatbot cho phép chờ vài giây.
+3. **CONTEXT** — bỏ trống (sẽ thêm Knowledge Base ở Use Case 1)
 
-**Test chatbot:**
-- "Hướng dẫn cấu hình HAProxy load balancing cho 3 backend server"
-- "Phân tích log này và cho biết nguyên nhân: `kernel: [UFW BLOCK] IN=ens192 OUT= ...`"
-- "Viết Ansible playbook cài đặt Docker trên 10 server Ubuntu"
-- "Viết PowerShell script join domain hàng loạt cho 20 máy Windows Server 2022"
-- "Hướng dẫn cấu hình Active Directory với 2 site và replication"
-- "Phân tích Event ID 4625 liên tục trong Security log của Domain Controller"
+**Bước 3: Test trực tiếp trong Dify**
+
+Dùng ô chat bên phải để test ngay trước khi publish:
+
+- *"Hướng dẫn cấu hình HAProxy load balancing cho 3 backend web server Ubuntu"*
+- *"Viết script bash kiểm tra disk usage tất cả partition, cảnh báo khi vượt 80%"*
+- *"Phân tích log: `kernel: [UFW BLOCK] IN=ens192 SRC=1.2.3.4 DPT=22` — nguyên nhân là gì?"*
+- *"Viết Ansible playbook deploy Docker lên 10 server Ubuntu 24.04"*
+
+> **Lưu ý:** Response đầu tiên mất **20-60 giây** (Ollama load model vào RAM). Từ lần 2 trở đi nhanh hơn do model đã warm. Nếu timeout, kiểm tra `docker logs ollama -f` để xem trạng thái load.
+
+<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/19.png"/>
+
+**Bước 4: Publish App**
+
+1. Click **Publish** (góc trên phải) → **Publish** để chính thức phát hành
+2. App sẽ có URL truy cập dạng: `http://10.10.200.11:80/chat/<app-id>`
+
+
+**Bước 5: Lấy API Key**
+
+1. Sau khi publish, click **API Access** (menu trái, biểu tượng `</>`)
+2. Click **Create API Key**
+3. Copy key dạng `app-xxxxxxxxxxxxxxxxxxxxxxxx` → lưu lại
+
+> **API Key này dùng ở Section 10** để n8n gọi vào App. Mỗi App có key riêng — sau này tạo thêm App (script gen, vision...) sẽ có key khác nhau. Endpoint chung cho tất cả App: `http://10.10.200.11:80/v1`
+
+
+---
+
+### 10. Tích hợp n8n với Ollama & Dify API
+
+Sau khi có App và API Key từ Section 9, n8n có thể kết nối với AI theo 2 cách:
+
+| | Cách 1: n8n → Ollama trực tiếp | Cách 2: n8n → Dify API |
+|---|---|---|
+| **Khi nào dùng** | Prompt đơn giản, không cần RAG | Cần RAG, vision, pipeline Dify phức tạp |
+| **Ưu điểm** | Ít bước, latency thấp hơn 1 hop | Dùng được toàn bộ logic đã thiết kế trong Dify App |
+| **Setup** | Tạo Credential Ollama trong n8n | HTTP Request node + API Key |
+
+---
+
+**Cách 1: n8n → Ollama trực tiếp**
+
+Phù hợp cho workflow đơn giản: alert triage, sinh script ngắn, classify text — không cần knowledge base.
+
+**Bước 1: Tạo Credential Ollama trong n8n**
+
+1. Trong n8n → sidebar trái → **Credentials** → **Add Credential**
+2. Tìm kiếm và chọn **Ollama API**
+3. **Base URL:** `http://ollama:11434`
+   - n8n và Ollama cùng `ai-network` → resolve hostname `ollama` trực tiếp, không cần dùng IP
+4. Click **Save** — n8n sẽ test kết nối ngay
+
+**Bước 2: Dùng AI nodes trong Workflow**
+
+Tạo workflow mới, thêm các node theo use case:
+
+- **Basic LLM Chain**: pipeline đơn giản — thêm **Ollama Chat Model** sub-node, chọn credential vừa tạo, chọn model `sysadmin-coder`
+- **AI Agent**: agent có tool-calling, chọn `sysadmin-coder` làm LLM backbone
+- **Chat Memory**: thêm conversation memory vào AI Agent nếu cần multi-turn
+
+---
+
+**Cách 2: n8n → Dify API**
+
+Dùng App `SysAdmin Q&A` đã tạo ở Section 9. n8n gửi HTTP request đến Dify, Dify xử lý AI (bao gồm RAG nếu có) rồi trả kết quả về.
+
+**Bước 1: Thêm HTTP Request node trong workflow n8n**
+
+Cấu hình node:
+- **Method:** `POST`
+- **URL:** `http://10.10.200.11:80/v1/chat-messages`
+- **Authentication:** `Header Auth`
+  - Header Name: `Authorization`
+  - Header Value: `Bearer app-xxxxxxxxxxxxxxxx` ← API Key từ Section 9, Bước 5
+- **Body Content Type:** `JSON`
+- **Body:**
+
+```json
+{
+  "inputs": {},
+  "query": "{{ $json.message }}",
+  "response_mode": "blocking",
+  "conversation_id": "",
+  "user": "n8n-bot",
+  "files": []
+}
+```
+
+**Bước 2: Parse kết quả**
+
+Dify trả về JSON, nội dung AI nằm tại trường `answer`:
+
+```json
+{
+  "answer": "Nội dung trả lời của AI...",
+  "conversation_id": "xxx",
+  "message_id": "xxx"
+}
+```
+
+Trong node tiếp theo, tham chiếu bằng: `{{ $json.answer }}`
+
+**Bước 3: Gửi ảnh qua Dify API (vision workflow)**
+
+Khi App được config với model `sysadmin-vision` (Vision support = Yes), có thể gửi kèm ảnh:
+
+```json
+{
+  "inputs": {},
+  "query": "Phân tích screenshot lỗi này và đề xuất fix",
+  "response_mode": "blocking",
+  "user": "n8n-bot",
+  "files": [
+    {
+      "type": "image",
+      "transfer_method": "remote_url",
+      "url": "{{ $json.screenshot_url }}"
+    }
+  ]
+}
+```
+
+> **Kiến trúc khi dùng Cách 2:** n8n đóng vai **orchestrator** — nhận event từ monitoring/webhook, quyết định gọi Dify App nào (Q&A text, vision hay script gen), parse trường `answer`, rồi route kết quả đến Slack/Telegram/Jira. Dify lo phần AI reasoning và RAG retrieval. Phân tách rõ ràng: **n8n = workflow logic**, **Dify = AI brain**.
 
 ---
 
