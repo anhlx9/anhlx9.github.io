@@ -39,50 +39,55 @@ Bài lab này xây dựng một **AI Platform tự host hoàn toàn nội bộ**
 
 | Thành phần | Vai trò | Port |
 |---|---|---|
-| **Ollama** | Chạy LLM model cục bộ (custom GGUF từ Hugging Face) | `11434` |
+| **Ollama** | Chạy LLM model cục bộ (Text + Vision GGUF từ Hugging Face) | `11434` |
 | **Dify** | Nền tảng xây dựng AI app, chatbot, agent, RAG pipeline | `80` |
 | **n8n** | Nền tảng workflow automation, kết nối AI với hệ thống giám sát/ticketing | `5678` |
 
-**Chiến lược Dual-Model: Nhanh + Thông minh**
+**Chiến lược Dual-Model: Text + Vision**
 
-Thay vì dùng 1 model cho mọi tác vụ, lab này triển khai **2 model song song** trên cùng Ollama — tối ưu tốc độ cho tác vụ nhẹ và chất lượng cho tác vụ nặng:
+Thay vì dùng 1 model text cho mọi tác vụ, lab này triển khai **2 model chuyên biệt** trên cùng Ollama — 1 model text mạnh cho code/analysis và 1 model vision cho xử lý hình ảnh:
 
-| Model | Base | Quantize | Size | RAM | Tốc độ | Vai trò |
-|---|---|---|---|---|---|---|
-| **sysadmin-coder** | Qwen2.5-Coder:**14b** | Q5_K_M | ~10 GB | ~13 GB | Trung bình | **Smart** - sinh script, phân tích log sâu, viết tài liệu phức tạp |
-| **sysadmin-fast** | Qwen2.5-Coder:**7b** | Q4_K_M | ~4.5 GB | ~7 GB | **Nhanh 2-3x** | **Fast** - chatbot Q&A, phân loại alert, quick answer |
+| Model | Base | Quantize | Size | RAM | Vai trò |
+|---|---|---|---|---|---|
+| **sysadmin-coder** | Qwen2.5-Coder:**14b** | Q5_K_M | ~10 GB | ~13 GB | **Text** - sinh script, phân tích log, viết tài liệu, chatbot Q&A |
+| **sysadmin-vision** | Qwen3-VL:**4b** | Q4_K_M | ~3.3 GB | ~5 GB | **Vision** - phân tích screenshot, đọc diagram, OCR log từ ảnh |
 
-> **Tại sao dual-model?**
-> - Model 14b cho output chính xác hơn nhưng inference chậm (~5-10 token/s trên CPU)
-> - Model 7b nhẹ hơn, phản hồi nhanh (~15-25 token/s) — đủ tốt cho Q&A, triage
-> - Với 32GB RAM: load cả 2 model = ~13GB + ~7GB + ~6GB (Dify/n8n/OS) = ~26GB → vẫn đủ headroom
+> **Tại sao dual-model Text + Vision?**
+> - Mỗi model chuyên biệt cho 1 loại tác vụ: text model cho code/analysis, vision model cho hình ảnh
+> - Model 14b text cho output chính xác, sinh script mạnh (~5-10 token/s trên CPU)
+> - Model 4b vision nhẹ (~3.3 GB GGUF), nhận diện screenshot, đọc diagram, OCR nhanh
+> - Với 32GB RAM: load cả 2 model = ~13GB + ~5GB + ~6GB (Dify/n8n/OS) = ~24GB → còn 8GB headroom
 > - Dify/n8n cho phép chọn model khác nhau cho mỗi app/workflow
 
 **Phân công model theo Use Case:**
 
 | Use Case | Model | Lý do |
 |---|---|---|
-| Chatbot SysAdmin Q&A | `sysadmin-fast` (7b) | Phản hồi nhanh, đủ chính xác cho hỏi đáp |
-| Phân loại alert & triage | `sysadmin-fast` (7b) | Cần xử lý nhanh, output ngắn (JSON) |
+| Chatbot SysAdmin Q&A | `sysadmin-coder` (14b) | Chính xác cao cho hỏi đáp kỹ thuật |
 | Sinh script Bash/Ansible | `sysadmin-coder` (14b) | Cần chính xác cao, code phức tạp |
-| Phân tích log sâu | `sysadmin-coder` (14b) | Cần hiểu context dài, reasoning sâu |
+| Phân tích log text | `sysadmin-coder` (14b) | Cần hiểu context dài, reasoning sâu |
+| Phân loại alert & triage | `sysadmin-coder` (14b) | Output JSON, phân tích nguyên nhân |
 | Tạo tài liệu kỹ thuật | `sysadmin-coder` (14b) | Output dài, cần chất lượng cao |
+| Phân tích screenshot lỗi | `sysadmin-vision` (4b) | Nhìn ảnh Grafana/error → đề xuất fix |
+| Đọc diagram/topology | `sysadmin-vision` (4b) | Upload sơ đồ mạng → AI mô tả kiến trúc |
+| OCR log từ ảnh | `sysadmin-vision` (4b) | Chụp màn hình log → AI đọc và phân tích |
+| Nhận diện phần cứng từ ảnh | `sysadmin-vision` (4b) | Chụp rack/switch → AI nhận diện thiết bị |
 
-**Tại sao chọn Qwen2.5-Coder?**
+**Tại sao chọn 2 model này?**
 
-So với model Qwen2.5 base, bản **Coder** được fine-tune chuyên biệt cho code generation và system tasks:
+| Tiêu chí | sysadmin-coder (Qwen2.5-Coder:14b) | sysadmin-vision (Qwen3-VL:4b) |
+|---|---|---|
+| Sinh script Bash/Ansible | **Xuất sắc** (HumanEval 92.9%) | Không hỗ trợ |
+| Phân tích log text | **Rất tốt** - context 128K | Cơ bản |
+| Nhìn screenshot/dashboard | Không hỗ trợ | **Rất tốt** - mô tả + đề xuất fix |
+| Đọc diagram/topology | Không hỗ trợ | **Rất tốt** - OCR 32 ngôn ngữ |
+| OCR log từ ảnh chụp | Không hỗ trợ | **Xuất sắc** - đọc text từ ảnh |
+| Tốc độ inference (CPU) | 5-10 tok/s | **15-25 tok/s** (model nhẹ) |
+| Context window | **128K** | **256K** (hỗ trợ ảnh + text) |
+| RAM cần thiết | ~13 GB (Q5_K_M) | ~5 GB (Q4_K_M + mmproj) |
+| Nguồn GGUF | bartowski (Hugging Face) | bartowski (Hugging Face) |
 
-| Tiêu chí | Qwen2.5-Coder:7b | Qwen2.5-Coder:14b | Ghi chú |
-|---|---|---|---|
-| Sinh script Bash/Ansible | Tốt | **Xuất sắc** | 14b chính xác hơn nhiều ở script dài |
-| Phân tích config/log | Khá tốt | **Rất tốt** | 7b đủ cho log ngắn, 14b cho log phức tạp |
-| Giải thích lỗi hệ thống | Khá tốt | **Rất tốt** | 14b hiểu sâu hơn về root cause |
-| Tốc độ inference (CPU) | **15-25 tok/s** | 5-10 tok/s | 7b nhanh gấp 2-3 lần |
-| Context window | 128K | **128K** | Cả hai đều đủ dùng |
-| RAM cần thiết | **~4.5 GB** | ~10 GB | 7b nhẹ hơn đáng kể |
-| HumanEval score | 83.5% | **92.9%** | 14b vượt trội cho code generation |
-
-> **Tip:** Nếu VM chỉ có 16GB RAM, chỉ dùng `sysadmin-fast` (7b) cho tất cả tác vụ — vẫn đủ tốt
+> **Tip:** Nếu VM chỉ có 16GB RAM, chỉ dùng `sysadmin-coder` (14b) cho text — bỏ vision model
 
 **Mục tiêu lab:**
 - Chatbot SysAdmin hỏi đáp về Linux, Windows Server, networking, troubleshooting
@@ -90,6 +95,9 @@ So với model Qwen2.5 base, bản **Coder** được fine-tune chuyên biệt c
 - Sinh script Bash/Ansible/Terraform từ mô tả bằng ngôn ngữ tự nhiên
 - Tạo tài liệu kỹ thuật (runbook, post-mortem) tự động
 - Workflow tự động: Alert → AI phân tích → Tạo ticket → Gửi thông báo
+- **Phân tích screenshot** Grafana/error page → AI nhìn ảnh và đề xuất giải pháp
+- **Đọc diagram/topology** → AI mô tả kiến trúc mạng từ ảnh
+- **OCR log từ ảnh** → Chụp màn hình log → AI đọc và phân tích
 
 ---
 
@@ -106,12 +114,12 @@ So với model Qwen2.5 base, bản **Coder** được fine-tune chuyên biệt c
 │  │  :11434     │   │      :80         │   │      :5678       │  │
 │  │             │   │                  │   │                  │  │
 │  │ ┌─────────┐ │   │ ┌──────────────┐ │   │ ┌──────────────┐ │  │
-│  │ │Smart 14b│ │◄──┤ │ Script Gen   │ │   │ │ Alert Triage │ │  │
-│  │ │ (Q5_K_M)│ │   │ │ Deep Analyze │ │   │ │ (→Fast 7b)   │ │  │
+│  │ │Text 14b │ │◄──┤ │ Script Gen   │ │   │ │ Alert Triage │ │  │
+│  │ │ (Q5_K_M)│ │   │ │ Deep Analyze │ │   │ │ Chatbot Q&A  │ │  │
 │  │ ├─────────┤ │   │ │ Tech Docs    │ │   │ ├──────────────┤ │  │
-│  │ │Fast 7b  │ │◄──┤ ├──────────────┤ │   │ │ Deep Analyze │ │  │
-│  │ │ (Q4_K_M)│ │   │ │ Chatbot Q&A  │ │   │ │ (→Smart 14b) │ │  │
-│  │ └─────────┘ │   │ │ Quick Answer │ │   │ └──────┬───────┘ │  │
+│  │ │Vision 4b│ │◄──┤ ├──────────────┤ │   │ │ Screenshot   │ │  │
+│  │ │(Qwen3VL)│ │   │ │ Chatbot Q&A  │ │   │ │ Analysis     │ │  │
+│  │ └─────────┘ │   │ │ OCR Ảnh      │ │   │ └──────┬───────┘ │  │
 │  └──────▲──────┘   └──────────────────┘   └────────┼─────────┘  │
 │         │                                          │            │
 │         └──────────────────────────────────────────┘            │
@@ -126,7 +134,7 @@ So với model Qwen2.5 base, bản **Coder** được fine-tune chuyên biệt c
 
 **Luồng hoạt động:**
 1. **User → Dify**: Truy cập giao diện web Dify để chat, hỏi đáp với AI chatbot
-2. **Dify → Ollama**: Dify gửi prompt đến Ollama API để inference model Qwen2.5:14b
+2. **Dify → Ollama**: Dify gửi prompt/ảnh đến Ollama API — text query dùng `sysadmin-coder` (14b), ảnh dùng `sysadmin-vision` (4b)
 3. **n8n → Ollama/Dify**: n8n nhận webhook từ hệ thống giám sát (Prometheus, Zabbix...), gọi AI phân tích, rồi tạo ticket/gửi thông báo
 4. **Dify RAG**: Upload tài liệu kỹ thuật (runbook, KB) → Dify vector hóa và lưu vào vector database → AI trả lời dựa trên knowledge base nội bộ
 
@@ -144,7 +152,7 @@ So với model Qwen2.5 base, bản **Coder** được fine-tune chuyên biệt c
 | Hard Disk | 100 GB |
 | Network | 10.10.200.11 |
 
-> **Lưu ý:** 100 GB disk cần phân bổ hợp lý: ~25GB cho OS + Docker images, ~15GB cho model Qwen2.5:14b, ~30GB cho Dify data/vector DB, ~30GB còn lại cho log/data.
+> **Lưu ý:** 100 GB disk cần phân bổ hợp lý: ~25GB cho OS + Docker images, ~15GB cho model text (14b) + vision (4b), ~30GB cho Dify data/vector DB, ~30GB còn lại cho log/data.
 
 **Cài đặt Ubuntu Server 24.04 LTS** với cấu hình cơ bản:
 
@@ -288,22 +296,24 @@ curl http://localhost:11434
 
 **Tải model GGUF từ Hugging Face và tạo custom model:**
 
-Thay vì pull model mặc định từ Ollama library, ta tải bản GGUF quantized từ Hugging Face để chọn đúng mức quantize phù hợp và tạo 2 custom model: **smart** (14b) và **fast** (7b).
+Thay vì pull model mặc định từ Ollama library, ta tải bản GGUF quantized từ Hugging Face để chọn đúng mức quantize phù hợp và tạo 2 custom model: **text** (14b) và **vision** (4b).
 
 > **Các mức quantize phổ biến:**
 >
 > | Quantize | Đặc điểm | Khi nào dùng |
 > |---|---|---|
 > | Q8_0 | Gần gốc, nặng | Khi có GPU hoặc RAM dư thừa |
-> | **Q5_K_M** | Cân bằng chất lượng/tốc độ | **Khuyến nghị cho model smart (14b)** |
-> | **Q4_K_M** | Nhẹ, nhanh | **Khuyến nghị cho model fast (7b)** |
+> | **Q5_K_M** | Cân bằng chất lượng/tốc độ | **Khuyến nghị cho model text (14b)** |
+> | **Q4_K_M** | Nhẹ, nhanh | **Khuyến nghị cho model vision (4b)** |
 > | Q3_K_M | Rất nhẹ, giảm chất lượng | Chỉ khi RAM rất hạn chế |
 
 **Bước 1: Tải 2 GGUF model từ Hugging Face**
 
 ```bash
 # Tạo thư mục chứa model
-mkdir -p /opt/ai-platform/models
+# Text model: chung thư mục models/
+# Vision model: thư mục riêng (Ollama cần FROM . để quét cả language + mmproj)
+mkdir -p /opt/ai-platform/models/qwen3-vl-4b
 
 # Cài hf CLI (Ubuntu 24.04 dùng pipx thay vì pip)
 sudo apt install -y pipx
@@ -311,41 +321,54 @@ pipx install huggingface-hub
 pipx ensurepath
 source ~/.bashrc
 
-# === Model SMART (14b Q5_K_M ~10GB) - cho tác vụ phức tạp ===
+# === Model TEXT (14b Q5_K_M ~10GB) - cho code, log, tài liệu ===
 hf download bartowski/Qwen2.5-Coder-14B-Instruct-GGUF \
   Qwen2.5-Coder-14B-Instruct-Q5_K_M.gguf \
   --local-dir /opt/ai-platform/models
 
-# === Model FAST (7b Q4_K_M ~4.5GB) - cho tác vụ nhanh ===
-hf download bartowski/Qwen2.5-Coder-7B-Instruct-GGUF \
-  Qwen2.5-Coder-7B-Instruct-Q4_K_M.gguf \
-  --local-dir /opt/ai-platform/models
+# === Model VISION (4b Q4_K_M ~2.5GB + mmproj ~836MB) - cho ảnh ===
+# Vision model cần 2 file: language GGUF + vision projector (mmproj)
+# QUAN TRỌNG: Tải vào thư mục riêng, chỉ chứa đúng 2 file này
+hf download bartowski/Qwen_Qwen3-VL-4B-Instruct-GGUF \
+  Qwen_Qwen3-VL-4B-Instruct-Q4_K_M.gguf \
+  mmproj-Qwen_Qwen3-VL-4B-Instruct-f16.gguf \
+  --local-dir /opt/ai-platform/models/qwen3-vl-4b
 
 # Kiểm tra file đã tải
 ls -lh /opt/ai-platform/models/
+# Qwen2.5-Coder-14B-Instruct-Q5_K_M.gguf         ~10 GB (text)
+
+ls -lh /opt/ai-platform/models/qwen3-vl-4b/
+# Qwen_Qwen3-VL-4B-Instruct-Q4_K_M.gguf          ~2.5 GB (vision language)
+# mmproj-Qwen_Qwen3-VL-4B-Instruct-f16.gguf       ~836 MB (vision projector)
 ```
 
 > **Lưu ý:** Nếu không cài được `hf`, dùng `wget` trực tiếp:
 > ```bash
-> # Model Smart 14b
+> # Model Text 14b
 > wget -P /opt/ai-platform/models/ \
 >   "https://huggingface.co/bartowski/Qwen2.5-Coder-14B-Instruct-GGUF/resolve/main/Qwen2.5-Coder-14B-Instruct-Q5_K_M.gguf"
 >
-> # Model Fast 7b
-> wget -P /opt/ai-platform/models/ \
->   "https://huggingface.co/bartowski/Qwen2.5-Coder-7B-Instruct-GGUF/resolve/main/Qwen2.5-Coder-7B-Instruct-Q4_K_M.gguf"
+> # Model Vision 4b (language + projector) → thư mục riêng
+> wget -P /opt/ai-platform/models/qwen3-vl-4b/ \
+>   "https://huggingface.co/bartowski/Qwen_Qwen3-VL-4B-Instruct-GGUF/resolve/main/Qwen_Qwen3-VL-4B-Instruct-Q4_K_M.gguf"
+> wget -P /opt/ai-platform/models/qwen3-vl-4b/ \
+>   "https://huggingface.co/bartowski/Qwen_Qwen3-VL-4B-Instruct-GGUF/resolve/main/mmproj-Qwen_Qwen3-VL-4B-Instruct-f16.gguf"
 > ```
+
+> **Tại sao vision model cần thư mục riêng?**
+> Ollama hỗ trợ cú pháp `FROM .` để quét toàn bộ thư mục — tự nhận diện đâu là file language GGUF, đâu là file mmproj projector, rồi liên kết chúng lại. Thư mục chỉ nên chứa đúng 2 file vision (không lẫn file GGUF khác) để tránh Ollama nhầm lẫn.
 
 ![](../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/01.png)
 
 **Bước 2: Tạo 2 Modelfile tùy chỉnh**
 
-**Modelfile cho `sysadmin-coder` (Smart - 14b):**
+**Modelfile cho `sysadmin-coder` (Text - 14b):**
 
 ```bash
 cat <<'EOF' > /opt/ai-platform/models/Modelfile-sysadmin-coder
-# Model SMART: Qwen2.5-Coder 14b Q5_K_M
-# Dùng cho: sinh script, phân tích log sâu, viết tài liệu phức tạp
+# Model TEXT: Qwen2.5-Coder 14b Q5_K_M
+# Dùng cho: sinh script, phân tích log, viết tài liệu, chatbot Q&A
 FROM /models/Qwen2.5-Coder-14B-Instruct-Q5_K_M.gguf
 
 PARAMETER temperature 0.3
@@ -371,43 +394,41 @@ TEMPLATE """{{- if .System }}<|im_start|>system
 EOF
 ```
 
-**Modelfile cho `sysadmin-fast` (Fast - 7b):**
+**Modelfile cho `sysadmin-vision` (Vision - 4b):**
 
 ```bash
-cat <<'EOF' > /opt/ai-platform/models/Modelfile-sysadmin-fast
-# Model FAST: Qwen2.5-Coder 7b Q4_K_M
-# Dùng cho: chatbot Q&A nhanh, phân loại alert, quick answer
-FROM /models/Qwen2.5-Coder-7B-Instruct-Q4_K_M.gguf
+cat <<'EOF' > /opt/ai-platform/models/qwen3-vl-4b/Modelfile-sysadmin-vision
+# Model VISION: Qwen3-VL 4b Q4_K_M + mmproj
+# Dùng cho: phân tích screenshot, đọc diagram, OCR log từ ảnh
+# FROM . = Ollama quét thư mục hiện tại, tự nhận diện language GGUF + mmproj projector
+FROM .
 
 PARAMETER temperature 0.5
-PARAMETER top_p 0.9
-PARAMETER num_ctx 16384
-PARAMETER stop "<|im_end|>"
-PARAMETER stop "<|endoftext|>"
+PARAMETER top_p 0.8
+PARAMETER num_ctx 8192
 
 SYSTEM """
-Bạn là System Engineer AI Assistant, thành thạo Linux và Windows Server.
-Trả lời ngắn gọn, chính xác bằng tiếng Việt.
-Cung cấp lệnh cụ thể khi được hỏi. Cảnh báo nếu lệnh nguy hiểm.
-"""
-
-TEMPLATE """{{- if .System }}<|im_start|>system
-{{ .System }}<|im_end|>
-{{ end }}
-{{- range .Messages }}<|im_start|>{{ .Role }}
-{{ .Content }}<|im_end|>
-{{ end }}<|im_start|>assistant
+Bạn là System Engineer Vision Assistant, chuyên phân tích hình ảnh kỹ thuật.
+Khi nhận ảnh screenshot, dashboard, diagram hoặc log: mô tả chi tiết những gì thấy,
+nhận diện lỗi/cảnh báo, và đề xuất giải pháp cụ thể.
+Trả lời bằng tiếng Việt. Nếu ảnh là dashboard/log: phân tích metric, chỉ ra vấn đề.
 """
 EOF
 ```
 
+> **Cách `FROM .` hoạt động:**
+> Cú pháp `FROM .` (từ thư mục hiện tại) ra lệnh cho Ollama **quét toàn bộ thư mục**, tự nhận diện đâu là file language GGUF chính, đâu là file mmproj vision projector, rồi **tự động liên kết** chúng lại thành 1 model hoàn chỉnh. Đây là cách chính thức để import vision model GGUF vào Ollama mà không cần `ollama pull` từ thư viện online.
+
 > **Sự khác biệt giữa 2 Modelfile:**
 >
-> | Tham số | sysadmin-coder (Smart) | sysadmin-fast (Fast) |
+> | Tham số | sysadmin-coder (Text 14b) | sysadmin-vision (Vision 4b) |
 > |---|---|---|
-> | `temperature` | 0.3 (chính xác, ít sáng tạo) | 0.5 (linh hoạt hơn cho chat) |
-> | `num_ctx` | 32768 (32K - cho log/doc dài) | 16384 (16K - đủ cho Q&A, tiết kiệm RAM) |
-> | System prompt | Chi tiết, hướng dẫn output có cấu trúc | Ngắn gọn, phản hồi nhanh |
+> | Base model | Qwen2.5-Coder-14B (GGUF) | Qwen3-VL-4B (GGUF + mmproj) |
+> | `FROM` | Trỏ file GGUF cụ thể | `FROM .` (quét thư mục, auto-detect) |
+> | `temperature` | 0.3 (chính xác cho code) | 0.5 (linh hoạt cho mô tả ảnh) |
+> | `num_ctx` | 32768 (32K - cho log/doc dài) | 8192 (8K - đủ cho ảnh + prompt) |
+> | System prompt | Hướng dẫn sinh script, phân tích log | Hướng dẫn phân tích ảnh, OCR, diagram |
+> | Khả năng | Text only | **Text + Image input** |
 
 **Bước 3: Mount thư mục models vào container Ollama**
 
@@ -446,7 +467,7 @@ networks:
 EOF
 ```
 
-> **Lưu ý:** `OLLAMA_MAX_LOADED_MODELS=2` cho phép load cả 2 model đồng thời. Memory limit tăng lên `24G` để đủ chứa cả smart + fast model.
+> **Lưu ý:** `OLLAMA_MAX_LOADED_MODELS=2` cho phép load cả 2 model đồng thời. Memory limit tăng lên `24G` để đủ chứa cả text (14b ~13GB) + vision (4b ~5GB).
 
 ```bash
 # Restart Ollama với volume mới
@@ -457,11 +478,12 @@ docker compose up -d
 **Bước 4: Tạo 2 custom model trong Ollama**
 
 ```bash
-# Tạo model SMART (14b) - cho tác vụ phức tạp
+# Tạo model TEXT (14b) - cho code, log, tài liệu
 docker exec -it ollama ollama create sysadmin-coder -f /models/Modelfile-sysadmin-coder
 
-# Tạo model FAST (7b) - cho tác vụ nhanh
-docker exec -it ollama ollama create sysadmin-fast -f /models/Modelfile-sysadmin-fast
+# Tạo model VISION (4b) - cho phân tích ảnh
+# Lưu ý: Modelfile vision dùng FROM . nên phải chạy từ đúng thư mục chứa GGUF + mmproj
+docker exec -w /models/qwen3-vl-4b -it ollama ollama create sysadmin-vision -f /models/qwen3-vl-4b/Modelfile-sysadmin-vision
 
 # Kiểm tra cả 2 model đã tạo
 docker exec -it ollama ollama list
@@ -469,9 +491,9 @@ docker exec -it ollama ollama list
 
 > Output kỳ vọng:
 > ```
-> NAME                     SIZE      MODIFIED
-> sysadmin-coder:latest    10 GB     just now
-> sysadmin-fast:latest     4.5 GB    just now
+> NAME                       SIZE      MODIFIED
+> sysadmin-coder:latest      10 GB     just now
+> sysadmin-vision:latest     3.3 GB    just now
 > ```
 
 <img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/01.png"/>
@@ -479,23 +501,23 @@ docker exec -it ollama ollama list
 **Bước 5: Test cả 2 model**
 
 ```bash
-# Test model SMART (14b) - sinh script phức tạp
+# Test model TEXT (14b) - sinh script phức tạp
 docker exec -it ollama ollama run sysadmin-coder "Viết script bash kiểm tra disk usage trên Linux, cảnh báo khi partition vượt 80%"
 
-# Test model FAST (7b) - Q&A nhanh
-docker exec -it ollama ollama run sysadmin-fast "HAProxy health check hoạt động thế nào?"
+# Test model VISION (4b) - mô tả ảnh (test text mode)
+docker exec -it ollama ollama run sysadmin-vision "Mô tả chi tiết những gì bạn thấy trong một Grafana dashboard điển hình có CPU, RAM, Disk"
 
 # So sánh tốc độ qua API
-echo "=== SMART (14b) ==="
+echo "=== TEXT (14b) ==="
 time curl -s http://localhost:11434/api/generate -d '{
   "model": "sysadmin-coder",
   "prompt": "Liệt kê 5 lệnh kiểm tra disk trên Linux",
   "stream": false
 }' | python3 -c "import sys,json; print(json.load(sys.stdin)['response'][:200])"
 
-echo "=== FAST (7b) ==="
+echo "=== VISION (4b) ==="
 time curl -s http://localhost:11434/api/generate -d '{
-  "model": "sysadmin-fast",
+  "model": "sysadmin-vision",
   "prompt": "Liệt kê 5 lệnh kiểm tra disk trên Linux",
   "stream": false
 }' | python3 -c "import sys,json; print(json.load(sys.stdin)['response'][:200])"
@@ -504,7 +526,7 @@ time curl -s http://localhost:11434/api/generate -d '{
 > **Kiểm tra resource tiêu thụ:**
 > ```bash
 > docker stats ollama
-> # Khi cả 2 model loaded: ~18-20GB RAM
+> # Khi cả 2 model loaded: ~16-18GB RAM
 > # Khi chỉ 1 model active: ~12-15GB RAM
 > ```
 
@@ -638,14 +660,15 @@ Truy cập n8n tại: `http://10.10.200.11:5678`
 
 4. Click **Save** → Dify sẽ test kết nối đến Ollama
 
-**Bước 2: Thêm Model Provider - Fast (7b)**
+**Bước 2: Thêm Model Provider - Vision (4b)**
 
 1. Quay lại **Model Provider** → **Ollama** → **Add Model**
 2. Điền:
-   - **Model Name:** `sysadmin-fast`
+   - **Model Name:** `sysadmin-vision`
    - **Base URL:** `http://ollama:11434`
    - **Model Type:** LLM
-   - **Context Size:** `16384` (16K)
+   - **Model Features:** ☑ Vision (tick chọn hỗ trợ ảnh)
+   - **Context Size:** `8192` (8K)
 
 **Bước 3: Thêm Embedding Model (cho RAG)**
 
@@ -658,10 +681,10 @@ Truy cập n8n tại: `http://10.10.200.11:5678`
 
 1. Vào **Settings** → **Model Provider** → **System Model Settings**
 2. Chọn:
-   - **System Reasoning Model:** `sysadmin-fast` (Ollama) — dùng model nhanh làm mặc định cho hệ thống
+   - **System Reasoning Model:** `sysadmin-coder` (Ollama) — dùng model text mạnh làm mặc định cho hệ thống
    - **Embedding Model:** `nomic-embed-text` (Ollama)
 
-> **Lưu ý:** System Model chỉ là mặc định. Khi tạo từng App, ta sẽ chọn model phù hợp (fast cho chatbot, smart cho script generation).
+> **Lưu ý:** System Model chỉ là mặc định. Khi tạo từng App, ta sẽ chọn model phù hợp (coder cho text, vision cho phân tích ảnh).
 
 > **Lưu ý Docker Network:** Dify dùng Docker network riêng. Để Dify kết nối được Ollama, cần đảm bảo cùng network hoặc dùng IP host:
 > ```bash
@@ -684,7 +707,7 @@ Truy cập n8n tại: `http://10.10.200.11:5678`
    - Base URL: `http://ollama:11434` (cùng Docker network)
 
 2. Sử dụng các AI nodes:
-   - **Ollama Chat Model**: Chọn `sysadmin-fast` cho alert triage nhanh, `sysadmin-coder` cho phân tích sâu
+   - **Ollama Chat Model**: Chọn `sysadmin-coder` cho phân tích text, `sysadmin-vision` cho phân tích ảnh
    - **AI Agent**: Tạo agent với tool-calling
    - **AI Chain**: Xây dựng LangChain pipeline
 
@@ -748,10 +771,10 @@ Quy tắc:
 ```
 
 4. **Context** → thêm Knowledge Base đã tạo ở bước 1
-5. **Model:** chọn `sysadmin-fast` (Ollama) — dùng model nhanh cho chatbot Q&A, phản hồi tức thì
+5. **Model:** chọn `sysadmin-coder` (Ollama) — dùng model text mạnh cho chatbot Q&A, trả lời chính xác và chi tiết
 6. **Publish** → lấy URL để truy cập chatbot
 
-> **Tại sao dùng `sysadmin-fast` (7b) cho chatbot?** Chatbot cần phản hồi nhanh (< 5 giây). Model 7b đủ chính xác cho Q&A, còn có RAG từ Knowledge Base hỗ trợ thêm context.
+> **Tại sao dùng `sysadmin-coder` (14b) cho chatbot?** Model 14b cho output chính xác hơn, kết hợp với RAG từ Knowledge Base cho trải nghiệm tốt nhất. Không cần model nhanh vì chatbot cho phép chờ vài giây.
 
 **Test chatbot:**
 - "Hướng dẫn cấu hình HAProxy load balancing cho 3 backend server"
@@ -785,7 +808,7 @@ Xây dựng workflow n8n: nhận alert từ Prometheus Alertmanager → AI phân
 
 1. Thêm node **Basic LLM Chain** hoặc **AI Agent**
 2. Kết nối với **Ollama Chat Model**:
-   - Model: `sysadmin-fast` — dùng model nhanh cho alert triage (output JSON ngắn, cần xử lý realtime)
+   - Model: `sysadmin-coder` — dùng model text cho alert triage (phân tích log và output JSON)
 3. Prompt template:
 
 ```
@@ -825,10 +848,10 @@ receivers:
 **Bước 4: Thêm logic xử lý kết quả**
 
 - Node **IF**: Kiểm tra priority
-  - `critical/high` → Gọi `sysadmin-coder` (14b) phân tích sâu → Gửi Telegram + tạo ticket kèm root cause analysis
+  - `critical/high` → Gọi `sysadmin-coder` (14b) phân tích sâu + `sysadmin-vision` (4b) nếu có ảnh đính kèm → Gửi Telegram + tạo ticket kèm root cause analysis
   - `medium/low` → Ghi log + gửi email summary
 
-> **Dual-model trong workflow:** Bước đầu dùng `sysadmin-fast` (7b) để phân loại nhanh (< 3 giây). Chỉ khi alert critical/high mới gọi `sysadmin-coder` (14b) phân tích chi tiết — tiết kiệm thời gian xử lý cho alert volume cao.
+> **Dual-model trong workflow:** `sysadmin-coder` (14b) phân tích log text và phân loại alert. Khi alert có đính kèm screenshot (Grafana, Zabbix screen capture), gọi thêm `sysadmin-vision` (4b) để AI nhìn ảnh và bổ sung phân tích.
 
 ---
 
@@ -838,7 +861,7 @@ receivers:
 
 1. Tạo **Agent** mới trong Dify
 2. Cấu hình:
-   - **Model:** `sysadmin-coder` — dùng model smart (14b) vì cần sinh code chính xác, có error handling
+   - **Model:** `sysadmin-coder` — dùng model text (14b) vì cần sinh code chính xác, có error handling
    - **Agent Mode:** Function Calling
 3. System Prompt:
 
@@ -926,7 +949,7 @@ curl -s http://localhost:11434/api/ps | python3 -m json.tool
 # Thêm biến môi trường tối ưu CPU
 docker exec -it ollama bash
 export OLLAMA_NUM_PARALLEL=2        # Giảm nếu RAM không đủ
-export OLLAMA_MAX_LOADED_MODELS=2   # Load cả 2 model (fast + smart) đồng thời
+export OLLAMA_MAX_LOADED_MODELS=2   # Load cả 2 model (text + vision) đồng thời
 ```
 
 **Hoặc chỉnh docker-compose Ollama:**
@@ -935,11 +958,11 @@ export OLLAMA_MAX_LOADED_MODELS=2   # Load cả 2 model (fast + smart) đồng t
 environment:
   - OLLAMA_HOST=0.0.0.0
   - OLLAMA_NUM_PARALLEL=2
-  - OLLAMA_MAX_LOADED_MODELS=2      # Giữ cả sysadmin-fast + sysadmin-coder trong RAM
+  - OLLAMA_MAX_LOADED_MODELS=2      # Giữ cả sysadmin-coder + sysadmin-vision trong RAM
   - OLLAMA_KEEP_ALIVE=30m           # Unload model sau 30 phút không dùng
 ```
 
-> **Tip:** Nếu RAM không đủ 24GB active, đặt `OLLAMA_MAX_LOADED_MODELS=1` và `OLLAMA_KEEP_ALIVE=5m` — Ollama sẽ tự swap model khi cần.
+> **Tip:** Nếu RAM không đủ 20GB active, đặt `OLLAMA_MAX_LOADED_MODELS=1` và `OLLAMA_KEEP_ALIVE=5m` — Ollama sẽ tự swap model khi cần.
 
 **Monitoring với ctop:**
 
@@ -955,14 +978,14 @@ ctop
 | Service | RAM (idle) | RAM (active) | CPU |
 |---|---|---|---|
 | Ollama + sysadmin-coder (14b Q5_K_M) | ~2 GB | ~13 GB | 8-16 cores |
-| Ollama + sysadmin-fast (7b Q4_K_M) | ~1 GB | ~5 GB | 4-8 cores |
+| Ollama + sysadmin-vision (4b Q4_K_M) | ~1 GB | ~5 GB | 4-8 cores |
 | Dify (all containers) | ~2 GB | ~4 GB | 2-4 cores |
 | n8n | ~256 MB | ~512 MB | 1-2 cores |
 | OS + Docker | ~1.5 GB | ~2 GB | - |
 | **Tổng (cả 2 model loaded)** | **~7 GB** | **~24 GB** | **16 cores** |
 
-> VM 32GB RAM đủ load cả 2 model đồng thời. `OLLAMA_MAX_LOADED_MODELS=2` giữ cả smart + fast trong RAM.
-> Khi chỉ 1 model active (model kia idle): ~18-20GB → còn ~12GB headroom cho peak load.
+> VM 32GB RAM đủ load cả 2 model đồng thời. Vision model (4b) nhẹ hơn nhiều so với model 7b cũ (~5GB vs ~7GB) — còn ~8GB headroom.
+> `OLLAMA_MAX_LOADED_MODELS=2` giữ cả text + vision trong RAM. Khi chỉ 1 model active: ~16-18GB → còn ~14GB headroom cho peak load.
 
 **Backup dữ liệu:**
 
@@ -988,16 +1011,16 @@ Bài lab đã hướng dẫn xây dựng một **AI Platform hoàn chỉnh tự 
 
 | Thành phần | URL | Chức năng |
 |---|---|---|
-| Ollama | `http://<IP>:11434` | LLM inference engine (dual model) |
+| Ollama | `http://<IP>:11434` | LLM inference engine (text + vision) |
 | Dify | `http://<IP>:80` | AI app builder (chatbot, agent, RAG) |
 | n8n | `http://<IP>:5678` | Workflow automation + AI integration |
 
 **Điểm mạnh của kiến trúc:**
 - **100% self-hosted** - Không phụ thuộc API bên ngoài, dữ liệu không rời khỏi nội bộ
-- **Chiến lược dual-model** - `sysadmin-fast` (7b) phản hồi nhanh cho chatbot/triage, `sysadmin-coder` (14b) chính xác cho script gen/analysis sâu
-- **Custom GGUF từ Hugging Face** - Tải model quantized, tùy chỉnh Modelfile riêng biệt cho từng use case, chạy tốt trên CPU-only
+- **Chiến lược dual-model Text + Vision** - `sysadmin-coder` (14b) cho code/log/tài liệu/chatbot, `sysadmin-vision` (4b) cho phân tích ảnh/screenshot/diagram/OCR
+- **Custom GGUF từ Hugging Face** - Tải model quantized (text + vision + mmproj), tùy chỉnh Modelfile riêng biệt cho từng use case, chạy tốt trên CPU-only
 - **Dify** - Giao diện trực quan, dễ tạo chatbot/agent mà không cần code
-- **n8n** - Kết nối AI với hệ thống monitoring/ticketing/communication hiện có, routing smart/fast model theo severity
+- **n8n** - Kết nối AI với hệ thống monitoring/ticketing/communication hiện có, routing text/vision model theo tác vụ
 - **Chi phí bằng 0** - Tất cả đều open-source, chỉ cần 1 VM
 
 **Hướng phát triển tiếp:**
@@ -1007,3 +1030,4 @@ Bài lab đã hướng dẫn xây dựng một **AI Platform hoàn chỉnh tự 
 - Fine-tune model trên dữ liệu sự cố nội bộ
 - Deploy High Availability với nhiều node Ollama
 - Thêm model chuyên biệt (code review, security audit) khi có thêm RAM
+- Thêm workflow vision: chụp màn hình Grafana tự động → AI phân tích dashboard → báo cáo weekly
