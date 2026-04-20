@@ -243,6 +243,13 @@ sudo systemctl restart docker
 
 **Bước 1: Mount thư mục models vào container Ollama**
 
+```bash
+sudo mkdir -p /opt/ai-platform/{ollama,dify,n8n}
+sudo mkdir -p /opt/ai-platform/ollama/models
+sudo chown -R $USER:$USER /opt/ai-platform
+cd /opt/ai-platform
+```
+
 Cập nhật docker-compose để mount thư mục chứa GGUF:
 
 ```bash
@@ -256,7 +263,7 @@ services:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
-      - /opt/ai-platform/models:/models
+      - /opt/ai-platform/ollama/models:/models
     environment:
       - OLLAMA_HOST=0.0.0.0
       - OLLAMA_NUM_PARALLEL=1
@@ -299,7 +306,88 @@ docker compose up -d
 > 2. `deploy.resources.limits.cpus: '10'` trong docker-compose — hard cap ở tầng Docker
 > Kết hợp 2 giới hạn này đảm bảo Ollama dùng tối đa ~8 core thực tế, dành 6-8 core cho OS/Dify/n8n.
 
-**Bước 2: Tạo 2 custom model trong Ollama**
+**Bước 2: Tải text model GGUF từ Hugging Face + Pull vision model**
+
+```bash
+# === Model TEXT (14b Q5_K_M ~10GB) - GGUF từ Hugging Face ===
+# Cài hf CLI (Ubuntu 24.04 dùng pipx thay vì pip)
+sudo apt install -y pipx
+pipx install huggingface-hub
+pipx ensurepath && source ~/.bashrc
+
+hf download bartowski/Qwen2.5-Coder-14B-Instruct-GGUF \
+  Qwen2.5-Coder-14B-Instruct-Q5_K_M.gguf \
+  --local-dir /opt/ai-platform/ollama/models
+
+# Hoặc dùng wget nếu không cài được hf:
+# wget -P /opt/ai-platform/ollama/models/ \
+#   "https://huggingface.co/bartowski/Qwen2.5-Coder-14B-Instruct-GGUF/resolve/main/Qwen2.5-Coder-14B-Instruct-Q5_K_M.gguf"
+
+# Kiểm tra
+ls -lh /opt/ai-platform/ollama/models/
+# Qwen2.5-Coder-14B-Instruct-Q5_K_M.gguf   ~10 GB
+
+# === Model VISION (Llama 3.2 Vision 11b ~7.9GB) - từ Ollama Library ===
+# Dùng ollama pull thay vì GGUF: vision model cần language GGUF + mmproj phải match nhau,
+# ollama pull đảm bảo 2 thành phần tương thích, tránh segfault khi inference
+docker exec -it ollama ollama pull llama3.2-vision
+```
+
+> **Tại sao vision model dùng `ollama pull` thay vì GGUF?**
+> Vision model cần cả language GGUF + vision projector (mmproj) phải match chính xác phiên bản — dùng `ollama pull` đảm bảo 2 thành phần tương thích, đã test kỹ, tránh runtime crash. Llama 3.2 Vision là native multimodal của Meta, không bias tiếng Trung, context 128K, tiếng Việt tốt.
+
+<img src="/assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/01.png"/>
+
+
+**Bước 3: Tạo 2 Modelfile tùy chỉnh**
+
+```bash
+# Modelfile cho sysadmin-coder (Text 14b)
+cat <<'EOF' > /opt/ai-platform/ollama/models/Modelfile-sysadmin-coder
+FROM /models/Qwen2.5-Coder-14B-Instruct-Q5_K_M.gguf
+
+PARAMETER temperature 0.3
+PARAMETER top_p 0.9
+PARAMETER num_ctx 8192
+PARAMETER num_thread 8
+PARAMETER stop "<|im_end|>"
+PARAMETER stop "<|endoftext|>"
+
+SYSTEM """
+Bạn là System Engineer AI Assistant cấp cao, thành thạo Linux và Windows Server.
+Chuyên sinh script (Bash, PowerShell, Ansible, Terraform), phân tích log sâu, và viết tài liệu kỹ thuật.
+Trả lời bằng tiếng Việt. Cung cấp lệnh/script cụ thể, có error handling.
+Cảnh báo nếu lệnh nguy hiểm. Luôn đề xuất best practice và bảo mật.
+"""
+
+TEMPLATE """{{- if .System }}<|im_start|>system
+{{ .System }}<|im_end|>
+{{ end }}
+{{- range .Messages }}<|im_start|>{{ .Role }}
+{{ .Content }}<|im_end|>
+{{ end }}<|im_start|>assistant
+"""
+EOF
+
+# Modelfile cho sysadmin-vision (Vision 11b)
+cat <<'EOF' > /opt/ai-platform/ollama/models/Modelfile-sysadmin-vision
+FROM llama3.2-vision
+
+PARAMETER temperature 0.5
+PARAMETER top_p 0.8
+PARAMETER num_ctx 4096
+PARAMETER num_thread 8
+
+SYSTEM """
+Bạn là System Engineer Vision Assistant, chuyên phân tích hình ảnh kỹ thuật.
+Khi nhận ảnh screenshot, dashboard, diagram hoặc log: mô tả chi tiết những gì thấy,
+nhận diện lỗi/cảnh báo, và đề xuất giải pháp cụ thể.
+Trả lời bằng tiếng Việt. Nếu ảnh là dashboard/log: phân tích metric, chỉ ra vấn đề.
+"""
+EOF
+```
+
+**Bước 4: Tạo 2 custom model trong Ollama**
 
 ```bash
 # Tạo model TEXT (14b) - cho code, log, tài liệu
@@ -312,8 +400,10 @@ docker exec -it ollama ollama create sysadmin-vision -f /models/Modelfile-sysadm
 docker exec -it ollama ollama list
 ```
 
+<img src="/assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/02.png"/>
 
-**Bước 3: Test cả 2 model**
+
+**Bước 5: Test cả 2 model**
 
 ```bash
 # Test model TEXT (14b) - sinh script phức tạp
@@ -322,6 +412,13 @@ docker exec -it ollama ollama run sysadmin-coder "Viết script bash kiểm tra 
 # Test model VISION (11b) - mô tả ảnh (test text mode)
 docker exec -it ollama ollama run sysadmin-vision "Mô tả chi tiết những gì bạn thấy trong một Grafana dashboard điển hình có CPU, RAM, Disk"
 
+```
+<img src="/assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/03.png"/>
+
+<img src="/assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/04.png"/>
+
+
+```bash
 # So sánh tốc độ qua API
 echo "=== TEXT (14b) ==="
 time curl -s http://localhost:11434/api/generate -d '{
@@ -345,54 +442,14 @@ time curl -s http://localhost:11434/api/generate -d '{
 > # Khi vision model loaded: ~8-10GB RAM
 > ```
 
-> **⚠️ Troubleshooting: Lỗi "model requires more system memory"**
->
-> Nếu gặp lỗi:
-> ```
-> Error: model requires more system memory (33.3 GiB) than is available (25.1 GiB)
-> ```
-> **Nguyên nhân:** `num_ctx` quá lớn (ví dụ 32768) kết hợp `OLLAMA_NUM_PARALLEL` cao → Ollama cấp phát KV cache = `num_ctx × NUM_PARALLEL × kích thước mỗi token` → vượt RAM.
->
-> **Cách fix:**
-> ```bash
-> # 1. Giảm num_ctx trong Modelfile (đã fix ở trên: 8192 cho text, 4096 cho vision)
-> # 2. Giảm OLLAMA_NUM_PARALLEL xuống 1 (đã fix ở docker-compose)
-> # 3. Không đặt deploy.resources.limits.memory cứng trong docker-compose
-> # 4. Tạo lại model sau khi sửa Modelfile:
-> docker exec -it ollama ollama create sysadmin-coder -f /models/Modelfile-sysadmin-coder
-> docker exec -it ollama ollama create sysadmin-vision -f /models/Modelfile-sysadmin-vision
-> ```
->
-> **Công thức ước tính RAM:**
-> RAM ≈ Model weights + (num_ctx × NUM_PARALLEL × KV_size_per_token)
-> Ví dụ 14b Q5_K_M: 10GB + (32768 × 4 × ~180B) ≈ 10GB + 23GB = **33GB** → OOM!
-> Sau fix: 10GB + (8192 × 2 × ~180B) ≈ 10GB + 2.8GB = **~13GB** → OK ✓
-
-> **⚠️ Troubleshooting: Vision model GGUF crash (segfault)**
->
-> Nếu bạn thử tải vision model GGUF từ Hugging Face (ví dụ Qwen3-VL, LLaVA) và gặp lỗi:
-> ```
-> model runner has unexpectedly stopped (exit status 2)
-> ```
-> Kèm register dump trong log (`docker logs ollama`) — đây là **segfault** trong llama.cpp runner.
->
-> **Nguyên nhân:** Một số kiến trúc vision model (đặc biệt Qwen3-VL) chưa được Ollama hỗ trợ ổn định. File GGUF + mmproj có thể tải đúng, `ollama show` hiện đúng kiến trúc, nhưng runner crash khi inference.
->
-> **Giải pháp:** Dùng vision model đã được test kỹ trong Ollama library:
-> ```bash
-> ollama pull llama3.2-vision   # Llama 3.2 Vision 11b - native multimodal Meta, tiếng Việt tốt
-> ollama pull llava              # LLaVA 1.6 - nhẹ hơn (7b), nếu RAM hạn chế
-> ollama pull llava:13b          # LLaVA 13b - chất lượng cao hơn LLaVA 7b
-> ```
-> Sau đó tạo custom model với `FROM llama3.2-vision` (hoặc `FROM llava`) trong Modelfile thay vì `FROM .`.
-> **Lưu ý:** Tránh dùng MiniCPM-V, InternVL, hoặc các vision model base Qwen/Baidu — thường fallback về tiếng Trung.
-
 **(Tùy chọn) Tạo thêm model embedding cho RAG:**
 
 ```bash
 # Pull embedding model (nhỏ, dùng model có sẵn của Ollama)
 docker exec -it ollama ollama pull nomic-embed-text
 ```
+
+<img src="/assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/05.png"/>
 
 ---
 
@@ -418,7 +475,7 @@ SECRET_KEY=$(openssl rand -hex 32)
 
 # Sửa các biến quan trọng trong .env
 sed -i "s|^SECRET_KEY=.*|SECRET_KEY=${SECRET_KEY}|" .env
-sed -i "s|^INIT_PASSWORD=.*|INIT_PASSWORD=YourStrongPassword123!|" .env
+sed -i "s|^INIT_PASSWORD=.*|INIT_PASSWORD=YourStrongPassword123|" .env
 sed -i "s|^STORAGE_TYPE=.*|STORAGE_TYPE=local|" .env
 sed -i "s|^VECTOR_STORE=.*|VECTOR_STORE=weaviate|" .env
 sed -i "s|^EXPOSE_NGINX_PORT=.*|EXPOSE_NGINX_PORT=80|" .env
@@ -436,6 +493,9 @@ docker compose ps
 
 > Dify sẽ khởi chạy nhiều container: `api`, `worker`, `web`, `nginx`, `db` (PostgreSQL), `redis`, `weaviate`, `sandbox`, `ssrf_proxy`.
 
+<img src="/assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/06.png"/>
+
+
 **Chờ khoảng 1-2 phút** cho tất cả service khởi động xong, sau đó truy cập:
 
 ```
@@ -444,6 +504,12 @@ http://<IP-VM>:80
 
 - Lần đầu tiên sẽ hiện trang **đăng ký admin account**
 - Tạo tài khoản admin với email và password
+
+<img src="/assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/07.png"/>
+
+<img src="/assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/08.png"/>
+
+<img src="/assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/09.png"/>
 
 ---
 
@@ -467,11 +533,9 @@ services:
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
       - WEBHOOK_URL=http://10.10.200.11:5678/
-      - N8N_BASIC_AUTH_ACTIVE=true
-      - N8N_BASIC_AUTH_USER=admin
-      - N8N_BASIC_AUTH_PASSWORD=YourN8nPassword123!
       - GENERIC_TIMEZONE=Asia/Ho_Chi_Minh
       - N8N_AI_ENABLED=true
+      - N8N_SECURE_COOKIE=false
     networks:
       - ai-network
 
@@ -485,7 +549,7 @@ networks:
 EOF
 ```
 
-> **Lưu ý:** `N8N_AI_ENABLED=true` kích hoạt AI nodes trong n8n (LangChain, AI Agent, etc.). Network `ai-network` khai báo `external: true` vì đã được tạo bởi Ollama compose.
+> **Lưu ý:** `N8N_AI_ENABLED=true` kích hoạt AI nodes trong n8n (LangChain, AI Agent, etc.). `N8N_SECURE_COOKIE=false` bắt buộc khi truy cập qua HTTP — từ n8n v1.x mặc định bật secure cookie, truy cập qua IP:port HTTP sẽ bị chặn với lỗi *"configured to use a secure cookie"*. Network `ai-network` khai báo `external: true` vì đã được tạo bởi Ollama compose.
 
 **Khởi chạy n8n:**
 
@@ -496,10 +560,14 @@ docker compose up -d
 # Kiểm tra
 docker logs n8n -f
 ```
+<img src="/assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/10.png"/>
 
 Truy cập n8n tại: `http://10.10.200.11:5678`
 
-- Đăng nhập bằng `admin` / `YourN8nPassword123!`
+- **Lần đầu tiên** sẽ hiện trang **"Set up owner account"** — điền Email, First Name, Last Name, Password để tạo tài khoản owner
+- Từ lần sau đăng nhập bằng email/password vừa tạo
+
+<img src="/assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/11.png"/>
 
 ---
 
