@@ -39,7 +39,7 @@ Bài lab này xây dựng một **AI Platform tự host hoàn toàn nội bộ**
 
 | Thành phần | Vai trò | Port |
 |---|---|---|
-| **Ollama** | Chạy LLM model cục bộ (Text + Vision GGUF từ Hugging Face) | `11434` |
+| **Ollama** | Chạy LLM model cục bộ (Text GGUF từ Hugging Face + Vision từ Ollama Library) | `11434` |
 | **Dify** | Nền tảng xây dựng AI app, chatbot, agent, RAG pipeline | `80` |
 | **n8n** | Nền tảng workflow automation, kết nối AI với hệ thống giám sát/ticketing | `5678` |
 
@@ -49,43 +49,44 @@ Thay vì dùng 1 model text cho mọi tác vụ, lab này triển khai **2 model
 
 | Model | Base | Quantize | Size | RAM | Vai trò |
 |---|---|---|---|---|---|
-| **sysadmin-coder** | Qwen2.5-Coder:**14b** | Q5_K_M | ~10 GB | ~13 GB | **Text** - sinh script, phân tích log, viết tài liệu, chatbot Q&A |
-| **sysadmin-vision** | Qwen3-VL:**4b** | Q4_K_M | ~3.3 GB | ~5 GB | **Vision** - phân tích screenshot, đọc diagram, OCR log từ ảnh |
+| **sysadmin-coder** | Qwen2.5-Coder:**14b** | Q5_K_M | ~10 GB | ~13 GB | **Text** - suy luận, thiết kế, debug hệ thống; sinh script, phân tích log, viết tài liệu |
+| **sysadmin-vision** | Llama 3.2 Vision:**11b** | Q4 (Ollama) | ~7.9 GB | ~9 GB | **Vision** - xử lý hình ảnh từ screenshot, dashboard, diagram, OCR log |
 
 > **Tại sao dual-model Text + Vision?**
-> - Mỗi model chuyên biệt cho 1 loại tác vụ: text model cho code/analysis, vision model cho hình ảnh
-> - Model 14b text cho output chính xác, sinh script mạnh (~5-10 token/s trên CPU)
-> - Model 4b vision nhẹ (~3.3 GB GGUF), nhận diện screenshot, đọc diagram, OCR nhanh
-> - Với 32GB RAM: load cả 2 model = ~13GB + ~5GB + ~6GB (Dify/n8n/OS) = ~24GB → còn 8GB headroom
+> - `sysadmin-coder` (14b): chuyên **suy luận, thiết kế, debug hệ thống** — sinh script Bash/Ansible/Terraform, phân tích log sâu, chatbot Q&A kỹ thuật (~5-10 token/s trên CPU)
+> - `sysadmin-vision` (11b): chuyên **xử lý hình ảnh** — nhận diện lỗi từ screenshot, đọc dashboard Grafana/Zabbix, đọc diagram topology, OCR log từ ảnh chụp
+> - Với 32GB RAM: cả 2 model được load đồng thời vào RAM (`OLLAMA_MAX_LOADED_MODELS=2`) — không có swap delay khi chuyển giữa text và vision
 > - Dify/n8n cho phép chọn model khác nhau cho mỗi app/workflow
 
 **Phân công model theo Use Case:**
 
 | Use Case | Model | Lý do |
 |---|---|---|
-| Chatbot SysAdmin Q&A | `sysadmin-coder` (14b) | Chính xác cao cho hỏi đáp kỹ thuật |
-| Sinh script Bash/Ansible | `sysadmin-coder` (14b) | Cần chính xác cao, code phức tạp |
-| Phân tích log text | `sysadmin-coder` (14b) | Cần hiểu context dài, reasoning sâu |
-| Phân loại alert & triage | `sysadmin-coder` (14b) | Output JSON, phân tích nguyên nhân |
+| Chatbot SysAdmin Q&A | `sysadmin-coder` (14b) | Suy luận, trả lời kỹ thuật chính xác |
+| Sinh script Bash/Ansible | `sysadmin-coder` (14b) | Thiết kế script, có error handling |
+| Phân tích log text | `sysadmin-coder` (14b) | Debug sâu, context 128K |
+| Phân loại alert & triage | `sysadmin-coder` (14b) | Suy luận nguyên nhân, output JSON |
 | Tạo tài liệu kỹ thuật | `sysadmin-coder` (14b) | Output dài, cần chất lượng cao |
-| Phân tích screenshot lỗi | `sysadmin-vision` (4b) | Nhìn ảnh Grafana/error → đề xuất fix |
-| Đọc diagram/topology | `sysadmin-vision` (4b) | Upload sơ đồ mạng → AI mô tả kiến trúc |
-| OCR log từ ảnh | `sysadmin-vision` (4b) | Chụp màn hình log → AI đọc và phân tích |
-| Nhận diện phần cứng từ ảnh | `sysadmin-vision` (4b) | Chụp rack/switch → AI nhận diện thiết bị |
+| Phân tích screenshot lỗi | `sysadmin-vision` (11b) | Nhìn ảnh Grafana/error → đề xuất fix |
+| Đọc diagram/topology | `sysadmin-vision` (11b) | Upload sơ đồ mạng → AI mô tả kiến trúc |
+| OCR log từ ảnh | `sysadmin-vision` (11b) | Chụp màn hình log → AI đọc và phân tích |
+| Nhận diện phần cứng từ ảnh | `sysadmin-vision` (11b) | Chụp rack/switch → AI nhận diện thiết bị |
 
 **Tại sao chọn 2 model này?**
 
-| Tiêu chí | sysadmin-coder (Qwen2.5-Coder:14b) | sysadmin-vision (Qwen3-VL:4b) |
+| Tiêu chí | sysadmin-coder (Qwen2.5-Coder:14b) | sysadmin-vision (Llama 3.2 Vision:11b) |
 |---|---|---|
-| Sinh script Bash/Ansible | **Xuất sắc** (HumanEval 92.9%) | Không hỗ trợ |
-| Phân tích log text | **Rất tốt** - context 128K | Cơ bản |
-| Nhìn screenshot/dashboard | Không hỗ trợ | **Rất tốt** - mô tả + đề xuất fix |
-| Đọc diagram/topology | Không hỗ trợ | **Rất tốt** - OCR 32 ngôn ngữ |
-| OCR log từ ảnh chụp | Không hỗ trợ | **Xuất sắc** - đọc text từ ảnh |
-| Tốc độ inference (CPU) | 5-10 tok/s | **15-25 tok/s** (model nhẹ) |
-| Context window | **128K** | **256K** (hỗ trợ ảnh + text) |
-| RAM cần thiết | ~13 GB (Q5_K_M) | ~5 GB (Q4_K_M + mmproj) |
-| Nguồn GGUF | bartowski (Hugging Face) | bartowski (Hugging Face) |
+| Suy luận, debug hệ thống | **Xuất sắc** - reasoning sâu | Không chuyên |
+| Thiết kế & sinh script Bash/Ansible | **Xuất sắc** (HumanEval 92.9%) | Không chuyên |
+| Phân tích log text | **Rất tốt** - context 128K | Không chuyên |
+| Phân tích screenshot/dashboard | Không hỗ trợ | **Xuất sắc** - native multimodal Meta |
+| Đọc diagram/topology | Không hỗ trợ | **Rất tốt** - reasoning vượt LLaVA |
+| OCR log từ ảnh chụp | Không hỗ trợ | **Rất tốt** - đọc text từ ảnh chính xác |
+| Tốc độ inference (CPU) | 5-10 tok/s | 5-8 tok/s |
+| Context window | **128K** | **128K** |
+| RAM cần thiết | ~13 GB (Q5_K_M) | ~9 GB (Q4 Ollama) |
+| Ngôn ngữ đầu ra | Tiếng Việt ổn định | **Tiếng Việt ổn định** (Meta, đa ngôn ngữ) |
+| Nguồn | GGUF bartowski (Hugging Face) | `ollama pull` (Ollama Library) |
 
 > **Tip:** Nếu VM chỉ có 16GB RAM, chỉ dùng `sysadmin-coder` (14b) cho text — bỏ vision model
 
@@ -117,8 +118,8 @@ Thay vì dùng 1 model text cho mọi tác vụ, lab này triển khai **2 model
 │  │ │Text 14b │ │◄──┤ │ Script Gen   │ │   │ │ Alert Triage │ │  │
 │  │ │ (Q5_K_M)│ │   │ │ Deep Analyze │ │   │ │ Chatbot Q&A  │ │  │
 │  │ ├─────────┤ │   │ │ Tech Docs    │ │   │ ├──────────────┤ │  │
-│  │ │Vision 4b│ │◄──┤ ├──────────────┤ │   │ │ Screenshot   │ │  │
-│  │ │(Qwen3VL)│ │   │ │ Chatbot Q&A  │ │   │ │ Analysis     │ │  │
+│  │ │Vision 11b││◄──┤ ├──────────────┤ │   │ │ Screenshot   │ │  │
+│  │ │(Llama3.2)││   │ │ Chatbot Q&A  │ │   │ │ Analysis     │ │  │
 │  │ └─────────┘ │   │ │ OCR Ảnh      │ │   │ └──────┬───────┘ │  │
 │  └──────▲──────┘   └──────────────────┘   └────────┼─────────┘  │
 │         │                                          │            │
@@ -134,7 +135,7 @@ Thay vì dùng 1 model text cho mọi tác vụ, lab này triển khai **2 model
 
 **Luồng hoạt động:**
 1. **User → Dify**: Truy cập giao diện web Dify để chat, hỏi đáp với AI chatbot
-2. **Dify → Ollama**: Dify gửi prompt/ảnh đến Ollama API — text query dùng `sysadmin-coder` (14b), ảnh dùng `sysadmin-vision` (4b)
+2. **Dify → Ollama**: Dify gửi prompt/ảnh đến Ollama API — text query dùng `sysadmin-coder` (14b), ảnh dùng `sysadmin-vision` (11b)
 3. **n8n → Ollama/Dify**: n8n nhận webhook từ hệ thống giám sát (Prometheus, Zabbix...), gọi AI phân tích, rồi tạo ticket/gửi thông báo
 4. **Dify RAG**: Upload tài liệu kỹ thuật (runbook, KB) → Dify vector hóa và lưu vào vector database → AI trả lời dựa trên knowledge base nội bộ
 
@@ -152,7 +153,7 @@ Thay vì dùng 1 model text cho mọi tác vụ, lab này triển khai **2 model
 | Hard Disk | 100 GB |
 | Network | 10.10.200.11 |
 
-> **Lưu ý:** 100 GB disk cần phân bổ hợp lý: ~25GB cho OS + Docker images, ~15GB cho model text (14b) + vision (4b), ~30GB cho Dify data/vector DB, ~30GB còn lại cho log/data.
+> **Lưu ý:** 100 GB disk cần phân bổ hợp lý: ~25GB cho OS + Docker images, ~22GB cho model text (14b GGUF) + vision (11b Ollama), ~30GB cho Dify data/vector DB, ~23GB còn lại cho log/data.
 
 **Cài đặt Ubuntu Server 24.04 LTS** với cấu hình cơ bản:
 
@@ -263,12 +264,9 @@ services:
       - ollama_data:/root/.ollama
     environment:
       - OLLAMA_HOST=0.0.0.0
-      - OLLAMA_NUM_PARALLEL=4
-      - OLLAMA_MAX_LOADED_MODELS=2
-    deploy:
-      resources:
-        limits:
-          memory: 20G
+      - OLLAMA_NUM_PARALLEL=2
+      - OLLAMA_MAX_LOADED_MODELS=1
+      - OLLAMA_KEEP_ALIVE=10m
     networks:
       - ai-network
 
@@ -281,6 +279,8 @@ networks:
     driver: bridge
 EOF
 ```
+
+> **Lưu ý:** Đây là config khởi tạo Ollama ban đầu (chưa mount models, chưa cấu hình tài nguyên). Config đầy đủ với volume mount, CPU limit và 2 model loaded sẽ được cập nhật ở **Bước 3** bên dưới.
 
 **Khởi chạy Ollama:**
 
@@ -296,24 +296,22 @@ curl http://localhost:11434
 
 **Tải model GGUF từ Hugging Face và tạo custom model:**
 
-Thay vì pull model mặc định từ Ollama library, ta tải bản GGUF quantized từ Hugging Face để chọn đúng mức quantize phù hợp và tạo 2 custom model: **text** (14b) và **vision** (4b).
+Thay vì pull model mặc định từ Ollama library, ta tải bản GGUF quantized từ Hugging Face cho **text model** (kiểm soát mức quantize), và dùng `ollama pull` cho **vision model** (Llama 3.2 Vision đã được tối ưu sẵn trong Ollama Library).
 
-> **Các mức quantize phổ biến:**
+> **Các mức quantize phổ biến (cho GGUF):**
 >
 > | Quantize | Đặc điểm | Khi nào dùng |
 > |---|---|---|
 > | Q8_0 | Gần gốc, nặng | Khi có GPU hoặc RAM dư thừa |
 > | **Q5_K_M** | Cân bằng chất lượng/tốc độ | **Khuyến nghị cho model text (14b)** |
-> | **Q4_K_M** | Nhẹ, nhanh | **Khuyến nghị cho model vision (4b)** |
+> | Q4_K_M | Nhẹ, nhanh | Khi RAM hạn chế |
 > | Q3_K_M | Rất nhẹ, giảm chất lượng | Chỉ khi RAM rất hạn chế |
 
-**Bước 1: Tải 2 GGUF model từ Hugging Face**
+**Bước 1: Tải text model GGUF từ Hugging Face + Pull vision model từ Ollama**
 
 ```bash
-# Tạo thư mục chứa model
-# Text model: chung thư mục models/
-# Vision model: thư mục riêng (Ollama cần FROM . để quét cả language + mmproj)
-mkdir -p /opt/ai-platform/models/qwen3-vl-4b
+# Tạo thư mục chứa model GGUF (cho text model)
+mkdir -p /opt/ai-platform/models
 
 # Cài hf CLI (Ubuntu 24.04 dùng pipx thay vì pip)
 sudo apt install -y pipx
@@ -321,45 +319,29 @@ pipx install huggingface-hub
 pipx ensurepath
 source ~/.bashrc
 
-# === Model TEXT (14b Q5_K_M ~10GB) - cho code, log, tài liệu ===
+# === Model TEXT (14b Q5_K_M ~10GB) - GGUF từ Hugging Face ===
 hf download bartowski/Qwen2.5-Coder-14B-Instruct-GGUF \
   Qwen2.5-Coder-14B-Instruct-Q5_K_M.gguf \
   --local-dir /opt/ai-platform/models
-
-# === Model VISION (4b Q4_K_M ~2.5GB + mmproj ~836MB) - cho ảnh ===
-# Vision model cần 2 file: language GGUF + vision projector (mmproj)
-# QUAN TRỌNG: Tải vào thư mục riêng, chỉ chứa đúng 2 file này
-hf download bartowski/Qwen_Qwen3-VL-4B-Instruct-GGUF \
-  Qwen_Qwen3-VL-4B-Instruct-Q4_K_M.gguf \
-  mmproj-Qwen_Qwen3-VL-4B-Instruct-f16.gguf \
-  --local-dir /opt/ai-platform/models/qwen3-vl-4b
 
 # Kiểm tra file đã tải
 ls -lh /opt/ai-platform/models/
 # Qwen2.5-Coder-14B-Instruct-Q5_K_M.gguf         ~10 GB (text)
 
-ls -lh /opt/ai-platform/models/qwen3-vl-4b/
-# Qwen_Qwen3-VL-4B-Instruct-Q4_K_M.gguf          ~2.5 GB (vision language)
-# mmproj-Qwen_Qwen3-VL-4B-Instruct-f16.gguf       ~836 MB (vision projector)
+# === Model VISION (Llama 3.2 Vision 11b ~7.9GB) - từ Ollama Library ===
+# Llama 3.2 Vision: native multimodal của Meta, không bias tiếng Trung, reasoning vượt LLaVA
+docker exec -it ollama ollama pull llama3.2-vision
 ```
 
 > **Lưu ý:** Nếu không cài được `hf`, dùng `wget` trực tiếp:
 > ```bash
-> # Model Text 14b
 > wget -P /opt/ai-platform/models/ \
 >   "https://huggingface.co/bartowski/Qwen2.5-Coder-14B-Instruct-GGUF/resolve/main/Qwen2.5-Coder-14B-Instruct-Q5_K_M.gguf"
->
-> # Model Vision 4b (language + projector) → thư mục riêng
-> wget -P /opt/ai-platform/models/qwen3-vl-4b/ \
->   "https://huggingface.co/bartowski/Qwen_Qwen3-VL-4B-Instruct-GGUF/resolve/main/Qwen_Qwen3-VL-4B-Instruct-Q4_K_M.gguf"
-> wget -P /opt/ai-platform/models/qwen3-vl-4b/ \
->   "https://huggingface.co/bartowski/Qwen_Qwen3-VL-4B-Instruct-GGUF/resolve/main/mmproj-Qwen_Qwen3-VL-4B-Instruct-f16.gguf"
 > ```
 
-> **Tại sao vision model cần thư mục riêng?**
-> Ollama hỗ trợ cú pháp `FROM .` để quét toàn bộ thư mục — tự nhận diện đâu là file language GGUF, đâu là file mmproj projector, rồi liên kết chúng lại. Thư mục chỉ nên chứa đúng 2 file vision (không lẫn file GGUF khác) để tránh Ollama nhầm lẫn.
+> **Tại sao vision model dùng `ollama pull` thay vì GGUF?**
+> Vision model cần cả language GGUF + vision projector (mmproj), phải match chính xác phiên bản. Dùng `ollama pull` đảm bảo 2 thành phần tương thích, đã được test kỹ, tránh lỗi runtime crash. **Lý do chọn Llama 3.2 Vision:** Native multimodal của Meta, không bias tiếng Trung, reasoning vượt trội hơn LLaVA, context 128K, hỗ trợ tiếng Việt tốt. Text model dùng GGUF từ HF vì chỉ có 1 file đơn giản, dễ kiểm soát quantize.
 
-![](../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/01.png)
 
 **Bước 2: Tạo 2 Modelfile tùy chỉnh**
 
@@ -373,7 +355,8 @@ FROM /models/Qwen2.5-Coder-14B-Instruct-Q5_K_M.gguf
 
 PARAMETER temperature 0.3
 PARAMETER top_p 0.9
-PARAMETER num_ctx 32768
+PARAMETER num_ctx 8192
+PARAMETER num_thread 8
 PARAMETER stop "<|im_end|>"
 PARAMETER stop "<|endoftext|>"
 
@@ -394,18 +377,19 @@ TEMPLATE """{{- if .System }}<|im_start|>system
 EOF
 ```
 
-**Modelfile cho `sysadmin-vision` (Vision - 4b):**
+**Modelfile cho `sysadmin-vision` (Vision - Llama 3.2 Vision 11b):**
 
 ```bash
-cat <<'EOF' > /opt/ai-platform/models/qwen3-vl-4b/Modelfile-sysadmin-vision
-# Model VISION: Qwen3-VL 4b Q4_K_M + mmproj
+cat <<'EOF' > /opt/ai-platform/models/Modelfile-sysadmin-vision
+# Model VISION: Llama 3.2 Vision (11b) - từ Ollama Library
 # Dùng cho: phân tích screenshot, đọc diagram, OCR log từ ảnh
-# FROM . = Ollama quét thư mục hiện tại, tự nhận diện language GGUF + mmproj projector
-FROM .
+# Native multimodal của Meta, không bias tiếng Trung, hỗ trợ tiếng Việt tốt
+FROM llama3.2-vision
 
 PARAMETER temperature 0.5
 PARAMETER top_p 0.8
-PARAMETER num_ctx 8192
+PARAMETER num_ctx 4096
+PARAMETER num_thread 8
 
 SYSTEM """
 Bạn là System Engineer Vision Assistant, chuyên phân tích hình ảnh kỹ thuật.
@@ -416,18 +400,17 @@ Trả lời bằng tiếng Việt. Nếu ảnh là dashboard/log: phân tích me
 EOF
 ```
 
-> **Cách `FROM .` hoạt động:**
-> Cú pháp `FROM .` (từ thư mục hiện tại) ra lệnh cho Ollama **quét toàn bộ thư mục**, tự nhận diện đâu là file language GGUF chính, đâu là file mmproj vision projector, rồi **tự động liên kết** chúng lại thành 1 model hoàn chỉnh. Đây là cách chính thức để import vision model GGUF vào Ollama mà không cần `ollama pull` từ thư viện online.
 
 > **Sự khác biệt giữa 2 Modelfile:**
 >
-> | Tham số | sysadmin-coder (Text 14b) | sysadmin-vision (Vision 4b) |
+> | Tham số | sysadmin-coder (Text 14b) | sysadmin-vision (Vision 11b) |
 > |---|---|---|
-> | Base model | Qwen2.5-Coder-14B (GGUF) | Qwen3-VL-4B (GGUF + mmproj) |
-> | `FROM` | Trỏ file GGUF cụ thể | `FROM .` (quét thư mục, auto-detect) |
+> | Base model | Qwen2.5-Coder-14B (GGUF từ HF) | Llama 3.2 Vision 11b (`ollama pull`) |
+> | `FROM` | Trỏ file GGUF cụ thể | `FROM llama3.2-vision` (model đã pull) |
 > | `temperature` | 0.3 (chính xác cho code) | 0.5 (linh hoạt cho mô tả ảnh) |
-> | `num_ctx` | 32768 (32K - cho log/doc dài) | 8192 (8K - đủ cho ảnh + prompt) |
-> | System prompt | Hướng dẫn sinh script, phân tích log | Hướng dẫn phân tích ảnh, OCR, diagram |
+> | `num_ctx` | 8192 (8K - cân bằng RAM/context) | 4096 (4K - đủ cho ảnh + prompt) |
+> | `num_thread` | 8 (dùng 8/16 core) | 8 (dùng 8/16 core) |
+> | System prompt | Suy luận, thiết kế, debug; sinh script, phân tích log | Xử lý hình ảnh: screenshot, dashboard, diagram, OCR |
 > | Khả năng | Text only | **Text + Image input** |
 
 **Bước 3: Mount thư mục models vào container Ollama**
@@ -448,12 +431,13 @@ services:
       - /opt/ai-platform/models:/models
     environment:
       - OLLAMA_HOST=0.0.0.0
-      - OLLAMA_NUM_PARALLEL=4
+      - OLLAMA_NUM_PARALLEL=1
       - OLLAMA_MAX_LOADED_MODELS=2
+      - OLLAMA_KEEP_ALIVE=60m
     deploy:
       resources:
         limits:
-          memory: 24G
+          cpus: '10'
     networks:
       - ai-network
 
@@ -467,7 +451,14 @@ networks:
 EOF
 ```
 
-> **Lưu ý:** `OLLAMA_MAX_LOADED_MODELS=2` cho phép load cả 2 model đồng thời. Memory limit tăng lên `24G` để đủ chứa cả text (14b ~13GB) + vision (4b ~5GB).
+> **Lưu ý cấu hình Ollama:**
+> - `OLLAMA_MAX_LOADED_MODELS=2` — load cả 2 model (`sysadmin-coder` + `sysadmin-vision`) vào RAM đồng thời, không có swap delay (~3-5s) khi chuyển model
+> - `OLLAMA_NUM_PARALLEL=1` — giảm xuống 1 request đồng thời để tiết kiệm KV cache RAM (đủ cho lab 1-2 user)
+> - `OLLAMA_KEEP_ALIVE=60m` — giữ model trong RAM lâu hơn, tránh reload
+> - `deploy.resources.limits.cpus: '10'` — hard cap CPU ở tầng Docker, Ollama chỉ dùng tối đa 10/16 core, dành 6 core cho OS/Dify/n8n — **tránh VM bị treo khi inference**
+> - Không đặt `deploy.resources.limits.memory` — để Ollama dùng toàn bộ RAM host tự do
+>
+> **Tính toán RAM với 2 model loaded:** ~13GB (text) + ~9GB (vision) + ~6GB (services/OS) = **~28GB/32GB** → còn ~4GB free + 8GB swap làm đệm an toàn.
 
 ```bash
 # Restart Ollama với volume mới
@@ -475,28 +466,24 @@ cd /opt/ai-platform/ollama
 docker compose up -d
 ```
 
+> **⚠️ Lưu ý hiệu năng CPU:** Khi Ollama inference, llama.cpp mặc định dùng **tất cả CPU core** có sẵn — trên VM 16 core sẽ thấy `~1500% CPU` trong `top`. Để tránh treo VM, cần giới hạn ở 2 tầng:
+> 1. `PARAMETER num_thread 8` trong Modelfile — giới hạn inference thread của llama.cpp
+> 2. `deploy.resources.limits.cpus: '10'` trong docker-compose — hard cap ở tầng Docker
+> Kết hợp 2 giới hạn này đảm bảo Ollama dùng tối đa ~8 core thực tế, dành 6-8 core cho OS/Dify/n8n.
+
 **Bước 4: Tạo 2 custom model trong Ollama**
 
 ```bash
 # Tạo model TEXT (14b) - cho code, log, tài liệu
 docker exec -it ollama ollama create sysadmin-coder -f /models/Modelfile-sysadmin-coder
 
-# Tạo model VISION (4b) - cho phân tích ảnh
-# Lưu ý: Modelfile vision dùng FROM . nên phải chạy từ đúng thư mục chứa GGUF + mmproj
-docker exec -w /models/qwen3-vl-4b -it ollama ollama create sysadmin-vision -f /models/qwen3-vl-4b/Modelfile-sysadmin-vision
+# Tạo model VISION (11b) - cho xử lý hình ảnh screenshot, dashboard, diagram
+docker exec -it ollama ollama create sysadmin-vision -f /models/Modelfile-sysadmin-vision
 
 # Kiểm tra cả 2 model đã tạo
 docker exec -it ollama ollama list
 ```
 
-> Output kỳ vọng:
-> ```
-> NAME                       SIZE      MODIFIED
-> sysadmin-coder:latest      10 GB     just now
-> sysadmin-vision:latest     3.3 GB    just now
-> ```
-
-<img src="../assets/img/2026-04-20-ollama-dify-n8n-ai-platform-system-engineer/01.png"/>
 
 **Bước 5: Test cả 2 model**
 
@@ -504,7 +491,7 @@ docker exec -it ollama ollama list
 # Test model TEXT (14b) - sinh script phức tạp
 docker exec -it ollama ollama run sysadmin-coder "Viết script bash kiểm tra disk usage trên Linux, cảnh báo khi partition vượt 80%"
 
-# Test model VISION (4b) - mô tả ảnh (test text mode)
+# Test model VISION (11b) - mô tả ảnh (test text mode)
 docker exec -it ollama ollama run sysadmin-vision "Mô tả chi tiết những gì bạn thấy trong một Grafana dashboard điển hình có CPU, RAM, Disk"
 
 # So sánh tốc độ qua API
@@ -515,7 +502,7 @@ time curl -s http://localhost:11434/api/generate -d '{
   "stream": false
 }' | python3 -c "import sys,json; print(json.load(sys.stdin)['response'][:200])"
 
-echo "=== VISION (4b) ==="
+echo "=== VISION (11b) ==="
 time curl -s http://localhost:11434/api/generate -d '{
   "model": "sysadmin-vision",
   "prompt": "Liệt kê 5 lệnh kiểm tra disk trên Linux",
@@ -526,9 +513,51 @@ time curl -s http://localhost:11434/api/generate -d '{
 > **Kiểm tra resource tiêu thụ:**
 > ```bash
 > docker stats ollama
-> # Khi cả 2 model loaded: ~16-18GB RAM
-> # Khi chỉ 1 model active: ~12-15GB RAM
+> # Khi text model loaded: ~12-14GB RAM
+> # Khi vision model loaded: ~8-10GB RAM
 > ```
+
+> **⚠️ Troubleshooting: Lỗi "model requires more system memory"**
+>
+> Nếu gặp lỗi:
+> ```
+> Error: model requires more system memory (33.3 GiB) than is available (25.1 GiB)
+> ```
+> **Nguyên nhân:** `num_ctx` quá lớn (ví dụ 32768) kết hợp `OLLAMA_NUM_PARALLEL` cao → Ollama cấp phát KV cache = `num_ctx × NUM_PARALLEL × kích thước mỗi token` → vượt RAM.
+>
+> **Cách fix:**
+> ```bash
+> # 1. Giảm num_ctx trong Modelfile (đã fix ở trên: 8192 cho text, 4096 cho vision)
+> # 2. Giảm OLLAMA_NUM_PARALLEL xuống 1 (đã fix ở docker-compose)
+> # 3. Không đặt deploy.resources.limits.memory cứng trong docker-compose
+> # 4. Tạo lại model sau khi sửa Modelfile:
+> docker exec -it ollama ollama create sysadmin-coder -f /models/Modelfile-sysadmin-coder
+> docker exec -it ollama ollama create sysadmin-vision -f /models/Modelfile-sysadmin-vision
+> ```
+>
+> **Công thức ước tính RAM:**
+> RAM ≈ Model weights + (num_ctx × NUM_PARALLEL × KV_size_per_token)
+> Ví dụ 14b Q5_K_M: 10GB + (32768 × 4 × ~180B) ≈ 10GB + 23GB = **33GB** → OOM!
+> Sau fix: 10GB + (8192 × 2 × ~180B) ≈ 10GB + 2.8GB = **~13GB** → OK ✓
+
+> **⚠️ Troubleshooting: Vision model GGUF crash (segfault)**
+>
+> Nếu bạn thử tải vision model GGUF từ Hugging Face (ví dụ Qwen3-VL, LLaVA) và gặp lỗi:
+> ```
+> model runner has unexpectedly stopped (exit status 2)
+> ```
+> Kèm register dump trong log (`docker logs ollama`) — đây là **segfault** trong llama.cpp runner.
+>
+> **Nguyên nhân:** Một số kiến trúc vision model (đặc biệt Qwen3-VL) chưa được Ollama hỗ trợ ổn định. File GGUF + mmproj có thể tải đúng, `ollama show` hiện đúng kiến trúc, nhưng runner crash khi inference.
+>
+> **Giải pháp:** Dùng vision model đã được test kỹ trong Ollama library:
+> ```bash
+> ollama pull llama3.2-vision   # Llama 3.2 Vision 11b - native multimodal Meta, tiếng Việt tốt
+> ollama pull llava              # LLaVA 1.6 - nhẹ hơn (7b), nếu RAM hạn chế
+> ollama pull llava:13b          # LLaVA 13b - chất lượng cao hơn LLaVA 7b
+> ```
+> Sau đó tạo custom model với `FROM llama3.2-vision` (hoặc `FROM llava`) trong Modelfile thay vì `FROM .`.
+> **Lưu ý:** Tránh dùng MiniCPM-V, InternVL, hoặc các vision model base Qwen/Baidu — thường fallback về tiếng Trung.
 
 **(Tùy chọn) Tạo thêm model embedding cho RAG:**
 
@@ -648,7 +677,7 @@ Truy cập n8n tại: `http://10.10.200.11:5678`
 
 ### 8. Tích hợp Ollama vào Dify
 
-**Bước 1: Thêm Model Provider - Smart (14b)**
+**Bước 1: Thêm Model Provider - sysadmin-coder (14b)**
 
 1. Đăng nhập Dify → vào **Settings** (icon bánh răng góc trên phải)
 2. Chọn **Model Provider** → tìm **Ollama**
@@ -656,11 +685,11 @@ Truy cập n8n tại: `http://10.10.200.11:5678`
    - **Model Name:** `sysadmin-coder`
    - **Base URL:** `http://ollama:11434` (nếu Dify chạy cùng Docker network) hoặc `http://<IP-VM>:11434`
    - **Model Type:** LLM
-   - **Context Size:** `32768` (32K - theo cấu hình trong Modelfile)
+   - **Context Size:** `8192` (8K - theo cấu hình trong Modelfile)
 
 4. Click **Save** → Dify sẽ test kết nối đến Ollama
 
-**Bước 2: Thêm Model Provider - Vision (4b)**
+**Bước 2: Thêm Model Provider - Vision (11b)**
 
 1. Quay lại **Model Provider** → **Ollama** → **Add Model**
 2. Điền:
@@ -668,7 +697,7 @@ Truy cập n8n tại: `http://10.10.200.11:5678`
    - **Base URL:** `http://ollama:11434`
    - **Model Type:** LLM
    - **Model Features:** ☑ Vision (tick chọn hỗ trợ ảnh)
-   - **Context Size:** `8192` (8K)
+   - **Context Size:** `4096` (4K)
 
 **Bước 3: Thêm Embedding Model (cho RAG)**
 
@@ -848,10 +877,10 @@ receivers:
 **Bước 4: Thêm logic xử lý kết quả**
 
 - Node **IF**: Kiểm tra priority
-  - `critical/high` → Gọi `sysadmin-coder` (14b) phân tích sâu + `sysadmin-vision` (4b) nếu có ảnh đính kèm → Gửi Telegram + tạo ticket kèm root cause analysis
+  - `critical/high` → Gọi `sysadmin-coder` (14b) phân tích sâu + `sysadmin-vision` (11b) nếu có ảnh đính kèm → Gửi Telegram + tạo ticket kèm root cause analysis
   - `medium/low` → Ghi log + gửi email summary
 
-> **Dual-model trong workflow:** `sysadmin-coder` (14b) phân tích log text và phân loại alert. Khi alert có đính kèm screenshot (Grafana, Zabbix screen capture), gọi thêm `sysadmin-vision` (4b) để AI nhìn ảnh và bổ sung phân tích.
+> **Dual-model trong workflow:** `sysadmin-coder` (14b) phân tích log text và phân loại alert. Khi alert có đính kèm screenshot (Grafana, Zabbix screen capture), gọi thêm `sysadmin-vision` (11b) để AI nhìn ảnh và bổ sung phân tích.
 
 ---
 
@@ -943,26 +972,45 @@ docker system df -v
 curl -s http://localhost:11434/api/ps | python3 -m json.tool
 ```
 
-**Tối ưu Ollama cho CPU-only inference:**
+**Tối ưu Ollama cho CPU-only inference (config tham khảo cho VM <32GB RAM):**
+
+> **Lưu ý:** Config bên dưới là ví dụ tham khảo cho VM có RAM hạn chế (16-24GB). **Với lab 32GB này**, config thực tế đã được đặt ở Bước 3 Section 5 (`NUM_PARALLEL=1, MAX_LOADED_MODELS=2, KEEP_ALIVE=60m`).
 
 ```bash
-# Thêm biến môi trường tối ưu CPU
+# Tham khảo: cấu hình bảo thủ cho VM <32GB RAM
 docker exec -it ollama bash
-export OLLAMA_NUM_PARALLEL=2        # Giảm nếu RAM không đủ
-export OLLAMA_MAX_LOADED_MODELS=2   # Load cả 2 model (text + vision) đồng thời
+export OLLAMA_NUM_PARALLEL=1        # 1 request đồng thời, tiết kiệm KV cache RAM
+export OLLAMA_MAX_LOADED_MODELS=1   # Load 1 model tại 1 thời điểm, tự swap khi cần
 ```
 
-**Hoặc chỉnh docker-compose Ollama:**
+**Hoặc chỉnh docker-compose Ollama (cho VM <32GB RAM):**
 
 ```yaml
 environment:
   - OLLAMA_HOST=0.0.0.0
-  - OLLAMA_NUM_PARALLEL=2
-  - OLLAMA_MAX_LOADED_MODELS=2      # Giữ cả sysadmin-coder + sysadmin-vision trong RAM
-  - OLLAMA_KEEP_ALIVE=30m           # Unload model sau 30 phút không dùng
+  - OLLAMA_NUM_PARALLEL=1
+  - OLLAMA_MAX_LOADED_MODELS=1      # Ollama tự swap model khi gọi model khác
+  - OLLAMA_KEEP_ALIVE=10m           # Unload model sau 10 phút không dùng
 ```
 
-> **Tip:** Nếu RAM không đủ 20GB active, đặt `OLLAMA_MAX_LOADED_MODELS=1` và `OLLAMA_KEEP_ALIVE=5m` — Ollama sẽ tự swap model khi cần.
+> **Tip: Load cả 2 model đồng thời để loại bỏ swap delay (~3-5s)**
+> Với VM 32GB RAM, có thể load cả 2 model vào RAM cùng lúc — không cần chờ swap khi chuyển model:
+> ```yaml
+> # Cập nhật docker-compose Ollama (environment):
+>   - OLLAMA_MAX_LOADED_MODELS=2    # Load cả 2 model đồng thời
+>   - OLLAMA_NUM_PARALLEL=1         # Giảm xuống 1 để tiết kiệm KV cache RAM
+>   - OLLAMA_KEEP_ALIVE=60m         # Giữ model lâu hơn trong RAM
+> ```
+> Sau khi restart Ollama, pre-warm cả 2 model:
+> ```bash
+> # Pre-load cả 2 model vào RAM ngay lập tức
+> curl -s http://localhost:11434/api/generate -d '{"model":"sysadmin-coder","prompt":"","keep_alive":"60m"}' > /dev/null
+> curl -s http://localhost:11434/api/generate -d '{"model":"sysadmin-vision","prompt":"","keep_alive":"60m"}' > /dev/null
+> # Kiểm tra cả 2 đang loaded trong RAM
+> curl -s http://localhost:11434/api/ps | python3 -m json.tool
+> ```
+> **Tính toán RAM:** ~13GB (text) + ~9GB (vision) + ~6GB (services/OS) = **~28GB** → còn ~4GB free + 8GB swap làm đệm an toàn.
+> **Đánh đổi:** `OLLAMA_NUM_PARALLEL=1` (1 request đồng thời) thay vì 2 — đủ cho lab 1-2 user. Nếu cần nhiều user đồng thời, giữ `MAX_LOADED_MODELS=1`.
 
 **Monitoring với ctop:**
 
@@ -977,15 +1025,16 @@ ctop
 
 | Service | RAM (idle) | RAM (active) | CPU |
 |---|---|---|---|
-| Ollama + sysadmin-coder (14b Q5_K_M) | ~2 GB | ~13 GB | 8-16 cores |
-| Ollama + sysadmin-vision (4b Q4_K_M) | ~1 GB | ~5 GB | 4-8 cores |
+| Ollama + sysadmin-coder (14b Q5_K_M) | ~2 GB | ~13 GB | **~8 core** (num_thread=8) |
+| Ollama + sysadmin-vision (Llama 3.2 Vision 11b) | ~1 GB | ~9 GB | 4-8 cores |
 | Dify (all containers) | ~2 GB | ~4 GB | 2-4 cores |
 | n8n | ~256 MB | ~512 MB | 1-2 cores |
 | OS + Docker | ~1.5 GB | ~2 GB | - |
-| **Tổng (cả 2 model loaded)** | **~7 GB** | **~24 GB** | **16 cores** |
+| **Tổng (1 model loaded + services)** | **~7 GB** | **~19 GB** | **16 cores** |
+| **Tổng (2 model loaded đồng thời)** | **~7 GB** | **~28 GB** | **16 cores** |
 
-> VM 32GB RAM đủ load cả 2 model đồng thời. Vision model (4b) nhẹ hơn nhiều so với model 7b cũ (~5GB vs ~7GB) — còn ~8GB headroom.
-> `OLLAMA_MAX_LOADED_MODELS=2` giữ cả text + vision trong RAM. Khi chỉ 1 model active: ~16-18GB → còn ~14GB headroom cho peak load.
+> Với `OLLAMA_MAX_LOADED_MODELS=1` (mặc định): swap khi đổi model mất ~3-5s, an toàn nhất, headroom ~13GB. Với `OLLAMA_MAX_LOADED_MODELS=2`: cả 2 model loaded sẵn trong RAM, **không có swap delay**, tổng ~28GB/32GB — phù hợp lab 32GB có swap 8GB làm đệm.
+> `num_ctx` được đặt 8192 (text) và 4096 (vision) để cân bằng giữa chất lượng và RAM. Nếu cần context dài hơn, tăng `num_ctx` nhưng phải giảm `OLLAMA_NUM_PARALLEL`.
 
 **Backup dữ liệu:**
 
@@ -1017,8 +1066,8 @@ Bài lab đã hướng dẫn xây dựng một **AI Platform hoàn chỉnh tự 
 
 **Điểm mạnh của kiến trúc:**
 - **100% self-hosted** - Không phụ thuộc API bên ngoài, dữ liệu không rời khỏi nội bộ
-- **Chiến lược dual-model Text + Vision** - `sysadmin-coder` (14b) cho code/log/tài liệu/chatbot, `sysadmin-vision` (4b) cho phân tích ảnh/screenshot/diagram/OCR
-- **Custom GGUF từ Hugging Face** - Tải model quantized (text + vision + mmproj), tùy chỉnh Modelfile riêng biệt cho từng use case, chạy tốt trên CPU-only
+- **Chiến lược dual-model Text + Vision** - `sysadmin-coder` (14b) cho code/log/tài liệu/chatbot, `sysadmin-vision` (Llama 3.2 Vision 11b) cho phân tích ảnh/screenshot/diagram/OCR
+- **Linh hoạt nguồn model** - Text model: GGUF từ Hugging Face (kiểm soát quantize), Vision model: `ollama pull llama3.2-vision` (native multimodal Meta, tiếng Việt ổn định), tùy chỉnh Modelfile riêng cho từng use case, chạy tốt trên CPU-only
 - **Dify** - Giao diện trực quan, dễ tạo chatbot/agent mà không cần code
 - **n8n** - Kết nối AI với hệ thống monitoring/ticketing/communication hiện có, routing text/vision model theo tác vụ
 - **Chi phí bằng 0** - Tất cả đều open-source, chỉ cần 1 VM
