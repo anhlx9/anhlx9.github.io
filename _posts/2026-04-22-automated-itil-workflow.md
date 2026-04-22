@@ -5,7 +5,7 @@ categories:
 - ITIL
 - Docker
 
-feature_image: "../assets/postbanner.jpg"
+feature_image: "/assets/postbanner.jpg"
 feature_text: |
   ### Lab Automated ITIL Workflow: Zabbix phát hiện sự cố → tự động tạo ticket SDP → Grafana dashboard → Confluence báo cáo
 ---
@@ -203,7 +203,7 @@ docker version
 docker compose version
 ```
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/01.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/01.png"/>
 
 #### 3.2. Cấu trúc thư mục dự án
 
@@ -375,7 +375,7 @@ docker compose ps postgres
 docker exec -it itil-postgres psql -U postgres -c "\l"
 ```
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/02.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/02.png"/>
 
 Kết quả hiển thị danh sách database mặc định (postgres, template0, template1) là PostgreSQL đã sẵn sàng.
 
@@ -406,7 +406,7 @@ Kiểm tra database `zabbix` đã xuất hiện trong danh sách:
 docker exec -it itil-postgres psql -U postgres -c "\l"
 ```
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/03.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/03.png"/>
 
 #### 5.2. Khởi động Zabbix Server + Web + Agent
 
@@ -428,19 +428,19 @@ Kiểm tra trạng thái:
 docker compose ps zabbix-server zabbix-web zabbix-agent
 ```
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/04.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/04.png"/>
 
 #### 5.3. Cấu hình Zabbix Web lần đầu
 
 Truy cập `http://10.10.200.11:8080`, đăng nhập bằng `Admin / zabbix`.
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/05.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/05.png"/>
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/06.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/06.png"/>
 
 Đổi mật khẩu ngay sau khi đăng nhập: **User Settings → Change Password**.
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/07.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/07.png"/>
 
 **Sửa host "Zabbix server" mặc định:**
 
@@ -454,11 +454,11 @@ Zabbix tự tạo sẵn host "Zabbix server" trỏ về `127.0.0.1` — không h
 Click **Update** để lưu.
 
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/08.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/08.png"/>
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/09.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/09.png"/>
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/10.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/10.png"/>
 
 #### 5.4. Cài Zabbix Agent trên Windows Server 2022
 
@@ -479,13 +479,13 @@ Chạy installer, điền các field theo UI:
 | **Add agent location to the PATH** | ☑ |
 
 > **PSK** (Pre-Shared Key) — mã hóa TLS giữa Agent và Server. Không bắt buộc trong môi trường lab nội bộ.
-<img src="../assets/img/2026-04-22-automated-itil-workflow/11.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/11.png"/>
  
-<img src="../assets/img/2026-04-22-automated-itil-workflow/12.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/12.png"/>
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/13.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/13.png"/>
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/14.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/14.png"/>
 
 Khởi động service:
 
@@ -503,7 +503,7 @@ Mở firewall cho port 10050:
 New-NetFirewallRule -DisplayName "Zabbix Agent" -Direction Inbound -Protocol TCP -LocalPort 10050 -Action Allow
 ```
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/15.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/15.png"/>
 
 #### 5.5. Add hosts vào Zabbix
 
@@ -521,11 +521,11 @@ New-NetFirewallRule -DisplayName "Zabbix Agent" -Direction Inbound -Protocol TCP
 > Hostname phải khớp chính xác với **Host name** đã khai báo khi cài agent trên Windows (`win2022`).
 
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/16.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/16.png"/>
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/17.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/17.png"/>
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/18.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/18.png"/>
 
 
 **Host 2: itil-stack (self-monitoring)**
@@ -541,9 +541,9 @@ New-NetFirewallRule -DisplayName "Zabbix Agent" -Direction Inbound -Protocol TCP
 
 Đợi vài phút để Zabbix thu thập dữ liệu — trạng thái host chuyển sang màu xanh lá (Available).
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/19.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/19.png"/>
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/20.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/20.png"/>
 
 #### 5.6. Khởi động Grafana
 
@@ -557,17 +557,17 @@ Kiểm tra:
 ```bash
 docker compose ps grafana
 ```
-<img src="../assets/img/2026-04-22-automated-itil-workflow/21.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/21.png"/>
 
 #### 5.7. Thêm Zabbix datasource
 
 Truy cập `http://10.10.200.11:3000`, đăng nhập `admin / Admin@2024`.
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/22.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/22.png"/>
 
 **Configuration → Plugins** — tìm plugin **Zabbix**, click **Enable**:
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/23.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/23.png"/>
 
 **Configuration → Data Sources → Add data source → Zabbix**
 
@@ -579,11 +579,11 @@ Truy cập `http://10.10.200.11:3000`, đăng nhập `admin / Admin@2024`.
 
 Click **Save & Test** — hiển thị "Zabbix API version: 7.2.x" là thành công.
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/24.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/24.png"/>
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/25.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/25.png"/>
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/26.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/26.png"/>
 
 #### 5.8. Import Zabbix Dashboards
 
@@ -608,9 +608,9 @@ Nhập ID rồi click **Load**, chọn **Datasource → Zabbix** rồi click **I
 > docker compose up -d --force-recreate grafana
 > ```
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/27.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/27.png"/>
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/28.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/28.png"/>
 
 ---
 
@@ -659,7 +659,7 @@ Trong quá trình cài (interactive console), điền:
 | Web server port | `8400` |
 | Start as service | `Yes` |
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/29.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/29.png"/>
 
 
 **Cấu hình SDP dùng PostgreSQL Docker dùng chung** (không dùng bundled PostgreSQL của SDP):
@@ -724,9 +724,9 @@ tail -f /opt/ManageEngine/ServiceDesk/logs/serverOut.txt
 # Chờ đến khi thấy: "Server startup in ... ms"
 ```
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/30.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/30.png"/>
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/31.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/31.png"/>
 
 **Tạo systemd service để SDP tự khởi động :**
 
@@ -766,9 +766,9 @@ sudo systemctl status sdp
 ```
 
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/32.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/32.png"/>
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/33.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/33.png"/>
 
 
 #### 6.2. Đăng nhập lần đầu vào SDP
@@ -780,15 +780,15 @@ Truy cập `http://10.10.200.11:8400`, đăng nhập bằng tài khoản mặc �
 | Username | `administrator` |
 | Password | `administrator` |
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/34.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/34.png"/>
 
 SDP yêu cầu đổi mật khẩu ngay lần đầu đăng nhập:
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/35.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/35.png"/>
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/36.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/36.png"/>
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/37.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/37.png"/>
 
 #### 6.3. Tạo 3 kỹ thuật viên
 
@@ -798,7 +798,7 @@ SDP yêu cầu đổi mật khẩu ngay lần đầu đăng nhập:
 
 **Admin → Users & Permission → Technicians** — chọn tất cả 5 technician mẫu → **Actions → Delete**
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/38.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/38.png"/>
 
 **Tạo 3 technician mới — Admin → Users & Permission → Technicians → Add New**
 
@@ -822,9 +822,9 @@ SDP yêu cầu đổi mật khẩu ngay lần đầu đăng nhập:
 >   - `SDGuest` — Chỉ xem, không xử lý được ticket *(không dùng)*
 > - Điền xong click **Save and Add New** để tạo tiếp KTV tiếp theo.
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/39.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/39.png"/>
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/40.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/40.png"/>
  
 #### 6.4. Cấu hình Round-Robin Auto Assign
 
@@ -847,17 +847,17 @@ Bật toggle **Enabled**, sau đó cấu hình:
 
 Click **Save**.
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/41.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/41.png"/>
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/42.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/42.png"/>
 
 #### 6.5. Lấy API Token — cập nhật macro Zabbix
 
 Trong SDP, API authtoken là **per-technician** — mỗi KTV có key riêng. Lấy key của `administrator` (tài khoản dùng để tạo ticket qua webhook):
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/43.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/43.png"/>
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/44.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/44.png"/>
 
 
 Sau đó cập nhật macro global trong Zabbix:
@@ -868,7 +868,7 @@ Sau đó cập nhật macro global trong Zabbix:
 |---|---|
 | `{$SDP_API_TOKEN}` | `<authtoken-vừa-copy>` |
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/45.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/45.png"/>
 
 #### 6.6. Tạo Webhook Media Type gọi SDP API
 
@@ -952,7 +952,7 @@ if (respJson.response_status && respJson.response_status.status_code === 2000) {
 > **Lỗi `SyntaxError: invalid json (at offset 1)` khi test:**  
 > Nguyên nhân: script bị lỗi encoding khi copy-paste (ký tự Unicode trong comment/string bị hỏng), khiến `value` thành `undefined`. Cách kiểm tra: thay toàn bộ nội dung script bằng một dòng duy nhất `return value;` rồi Test lại — nếu response hiển thị JSON thì script cũ bị lỗi encoding, xóa đi và nhập lại script sạch ở trên.
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/46.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/46.png"/>
 
 #### 6.7. Tạo Action tự động tạo ticket
 
@@ -965,9 +965,9 @@ if (respJson.response_status && respJson.response_status.status_code === 2000) {
 | Name | `Auto Create SDP Ticket` |
 | Conditions | Trigger severity >= Warning |
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/47.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/47.png"/>
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/48.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/48.png"/>
 
 **Operations tab → Add operation:**
 
@@ -977,11 +977,11 @@ if (respJson.response_status && respJson.response_status.status_code === 2000) {
 | Send to users | Admin |
 | Send only to | ServiceDesk Plus |
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/49.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/49.png"/>
 
 **Recovery operations:** thêm operation Send message để thông báo khi RESOLVED.
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/49.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/49.png"/>
 
 > **Lưu ý quan trọng:** Tạo action xong **vẫn chưa đủ**. Zabbix yêu cầu mỗi user phải được gán media type trong profile thì mới gửi được alert. Tiếp tục bước dưới.
 
@@ -998,7 +998,7 @@ if (respJson.response_status && respJson.response_status.status_code === 2000) {
 
 Click **Add → Update**.
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/50.png"/> 
+<img src="/assets/img/2026-04-22-automated-itil-workflow/50.png"/> 
 
 **Kiểm tra webhook hoạt động — Test thủ công:**
 
@@ -1019,7 +1019,7 @@ Zabbix hiện form test với các parameter hiển thị nguyên macro `{EVENT.
 
 Click **Test**.
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/51.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/51.png"/>
 
 - **Thành công:** Response hiển thị `Ticket created: <số ID> → Assigned to: Nguyen Van A`
 - **Thất bại:** Response hiển thị lỗi JSON hoặc `false` → kiểm tra:
@@ -1033,7 +1033,7 @@ docker compose -f /opt/itil-stack/docker-compose.yml logs --tail=30 zabbix-serve
 
 Sau khi test thành công, vào SDP kiểm tra ticket vừa tạo tại **Requests** — sẽ thấy ticket mới với subject `[High] Test trigger - win2022`.
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/52.png"/> 
+<img src="/assets/img/2026-04-22-automated-itil-workflow/52.png"/> 
 
 #### 6.8. Thêm SDP datasource Grafana
 
@@ -1055,7 +1055,7 @@ docker restart itil-grafana
 
 Click **Save & Test**.
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/sdp-grafana-datasource.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/sdp-grafana-datasource.png"/>
 
 #### 6.9. Tạo dashboard ITIL Overview
 
@@ -1069,7 +1069,7 @@ Click **Save & Test**.
 | Disk Usage | Zabbix | Used disk space on `/` | Gauge |
 | SDP Open Tickets | Infinity | `/requests?input_data={"list_info":{"search_fields":{"status.name":"Open"}}}` | Stat |
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/sdp-grafana-dashboard.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/sdp-grafana-dashboard.png"/>
 
 ---
 
@@ -1099,7 +1099,7 @@ Kiểm tra cả 2 database `zabbix` và `confluence` đã tồn tại:
 docker exec -it itil-postgres psql -U postgres -c "\l"
 ```
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/19-postgres-both-db.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/19-postgres-both-db.png"/>
 
 #### 7.2. Khởi động Confluence
 
@@ -1112,7 +1112,7 @@ docker compose logs -f confluence
 # Chờ đến khi thấy: "Confluence is ready to serve"
 ```
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/20-confluence-up.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/20-confluence-up.png"/>
 
 #### 7.3. Setup wizard + trial license
 
@@ -1127,7 +1127,7 @@ Truy cập `http://10.10.200.11:8090`, hoàn tất setup wizard:
    - Password: `confluence_pass_2024`
 3. **License:** vào [Atlassian Trial](https://www.atlassian.com/try) để nhận trial license, nhập vào
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/21-confluence-setup.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/21-confluence-setup.png"/>
 
 #### 7.4. Tạo Space và Page báo cáo
 
@@ -1142,7 +1142,7 @@ curl -u admin:admin_password \
   | python3 -m json.tool | grep '"id"' | head -1
 ```
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/22-confluence-page.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/22-confluence-page.png"/>
 
 #### 7.5. Script cập nhật Confluence qua API
 
@@ -1264,7 +1264,7 @@ docker exec itil-zabbix-server python3 --version || \
   Event ID: {EVENT.ID}
   ```
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/23-zabbix-confluence-action.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/23-zabbix-confluence-action.png"/>
 
 ---
 
@@ -1304,9 +1304,9 @@ Get-PSDrive C
 4. Grafana cập nhật số lượng active problems
 5. Confluence page được thêm row mới
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/24-test-disk-full.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/24-test-disk-full.png"/>
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/25-sdp-ticket-created.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/25-sdp-ticket-created.png"/>
 
 **Dọn dẹp sau test:**
 
@@ -1335,15 +1335,15 @@ Zabbix phát hiện host unreachable sau **~5 phút**.
 3. Round-robin assign cho kỹ thuật viên tiếp theo
 4. Confluence cập nhật báo cáo
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/26-test-host-down.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/26-test-host-down.png"/>
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/27-grafana-overview.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/27-grafana-overview.png"/>
 
 ---
 
 ### 9. Kết quả
 
-<img src="../assets/img/2026-04-22-automated-itil-workflow/28-full-workflow-result.png"/>
+<img src="/assets/img/2026-04-22-automated-itil-workflow/28-full-workflow-result.png"/>
 
 | Sự kiện | Zabbix | SDP | Grafana | Confluence |
 |---|---|---|---|---|
