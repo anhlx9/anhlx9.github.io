@@ -19,6 +19,14 @@ Bài viết xây dựng lab **Automated ITIL Workflow** trên **Ubuntu Server 22
 3. **Telegram Bot** gửi thông báo tức thì đến group/channel
 4. **Grafana** hiển thị realtime metrics và trạng thái ticket
 
+<img src="/assets/img/2026-04-23-automated-itil-workflow/85.png"/>
+
+<img src="/assets/img/2026-04-23-automated-itil-workflow/86.png"/>
+
+<img src="/assets/img/2026-04-23-automated-itil-workflow/87.png"/>
+
+<img src="/assets/img/2026-04-23-automated-itil-workflow/88.png"/>
+
 - [1. Giới thiệu](#1-giới-thiệu)
 - [2. Kiến trúc lab](#2-kiến-trúc-lab)
   - [2.1. Topology](#21-topology)
