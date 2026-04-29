@@ -91,14 +91,14 @@ Lab triển khai trên **Ubuntu Server 22.04 LTS** với **Active Directory Doma
 │  ┌────────────────────────────────────────────┐                      │
 │  │  itil-stack  (10.10.200.11)                │                      │
 │  │  Ubuntu Server 22.04 — 16 vCPU, 24GB RAM   │                      │
-│  │  100GB Disk                                 │                      │
-│  │                                             │                      │
+│  │  100GB Disk                                │                      │
+│  │                                            │                      │
 │  │  ┌────────────┐  ┌──────────────────────┐  │                      │
 │  │  │ Zabbix 7.4 │  │ ServiceDesk Plus 14  │  │                      │
 │  │  │ :8080      │  │ :8400                │  │                      │
 │  │  └────────────┘  └──────────────────────┘  │                      │
 │  │  ┌────────────┐  ┌──────────────────────┐  │                      │
-│  │  │  Grafana   │  │   PostgreSQL 16       │  │                      │
+│  │  │  Grafana   │  │   PostgreSQL 16      │  │                      │
 │  │  │  :3000     │  │   :5432              │  │                      │
 │  │  └────────────┘  └──────────────────────┘  │                      │
 │  └────────────────────────────────────────────┘                      │
@@ -106,11 +106,11 @@ Lab triển khai trên **Ubuntu Server 22.04 LTS** với **Active Directory Doma
 │    ┌─────────┴──────────┐   ┌───────┴────────────────────┐           │
 │    ▼                    ▼   ▼                            │           │
 │  ┌───────────────────────────────────────────────────────┴──┐        │
-│  │  dc  (10.10.200.12)                                       │        │
-│  │  Windows Server 2022 — AD DC, DNS                         │        │
-│  │  Domain: anhlx.lab                                        │        │
-│  │  Zabbix Agent 2 :10050                                    │        │
-│  └───────────────────────────────────────────────────────────┘        │
+│  │  dc  (10.10.200.12)                                      │        │
+│  │  Windows Server 2022 — AD DC, DNS                        │        │
+│  │  Domain: anhlx.lab                                       │        │
+│  │  Zabbix Agent 2 :10050                                   │        │
+│  └──────────────────────────────────────────────────────────┘        │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -172,21 +172,21 @@ Lab triển khai trên **Ubuntu Server 22.04 LTS** với **Active Directory Doma
 └────────┬────────┘  └─────────────────┘  └────────────────┘
          │
 ┌────────▼──────────────────────────────────────────────┐
-│  Level 1 — Round-robin (xử lý ban đầu):              │
-│  Ticket 1 → nguyenvana@anhlx.lab                     │
-│  Ticket 2 → tranthib@anhlx.lab                       │
-│  Ticket 3 → levanc@anhlx.lab                         │
-│  Ticket 4 → nguyenvana@anhlx.lab ...                 │
+│  Level 1 — Round-robin (xử lý ban đầu):               │
+│  Ticket 1 → nguyenvana@anhlx.lab                      │
+│  Ticket 2 → tranthib@anhlx.lab                        │
+│  Ticket 3 → levanc@anhlx.lab                          │
+│  Ticket 4 → nguyenvana@anhlx.lab ...                  │
 └──────────────────────────┬────────────────────────────┘
                            │ Quá SLA / Không xử lý được
              ┌─────────────▼─────────────┐
-             │  Level 2 — phamvand        │
-             │  (Escalation từ L1)        │
+             │  Level 2 — phamvand       │
+             │  (Escalation từ L1)       │
              └─────────────┬─────────────┘
                            │ Quá SLA
              ┌─────────────▼─────────────┐
-             │  Level 3 — hoangvane       │
-             │  (Escalation từ L2)        │
+             │  Level 3 — hoangvane      │
+             │  (Escalation từ L2)       │
              └───────────────────────────┘
 ```
 
