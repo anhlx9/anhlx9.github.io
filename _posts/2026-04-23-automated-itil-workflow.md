@@ -5,7 +5,7 @@ categories:
 - ITIL
 - Active Directory
 
-feature_image: "../assets/postbanner.jpg"
+feature_image: "/assets/postbanner.jpg"
 feature_text: |
   ### Lab Automated ITIL Workflow trên Ubuntu 22.04: Zabbix phát hiện sự cố → SDP ticket round-robin → Grafana, xác thực tập trung qua Active Directory
 ---
@@ -55,7 +55,6 @@ Bài viết xây dựng lab **Automated ITIL Workflow** trên **Ubuntu Server 22
   - [8.8. Tích hợp Telegram Alert](#88-tích-hợp-telegram-alert)
 - [9. Test Automated Workflow](#9-test-automated-workflow)
   - [9.1. Test: Disk Full](#91-test-disk-full)
-  - [9.2. Test: Host Down](#92-test-host-down)
 - [10. Kết quả](#10-kết-quả)
 
 ---
@@ -131,7 +130,7 @@ Lab triển khai trên **Ubuntu Server 22.04 LTS** với **Active Directory Doma
 | Zabbix Server | 10051 | TCP |
 | Zabbix Agent | 10050 | TCP |
 | Grafana | 3000 | `http://10.10.200.11:3000` |
-| ServiceDesk Plus | 8400 | `http://10.10.200.11:8400` |
+| ServiceDesk Plus | 8400 | `https://10.10.200.11:8400` |
 
 **Thông tin AD Domain:**
 
@@ -237,7 +236,7 @@ Install-ADDSForest `
     -SafeModeAdministratorPassword (ConvertTo-SecureString "Admin@2026DC" -AsPlainText -Force) `
     -Force
 ```
-<img src="../assets/img/2026-04-23-automated-itil-workflow/01.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/01.png"/>
 
 > Máy sẽ tự động khởi động lại sau khi promote thành công. Sau khi reboot, đăng nhập bằng `ANHLX\Administrator`.
 
@@ -251,7 +250,7 @@ Get-ADDomain
 Resolve-DnsName anhlx.lab
 ```
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/02.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/02.png"/>
 
 #### 3.3. Cấu hình DNS Forwarder trên DC
 
@@ -274,7 +273,7 @@ Resolve-DnsName dc.anhlx.lab
 # Resolve domain external qua forwarder
 Resolve-DnsName google.com
 ```
-<img src="../assets/img/2026-04-23-automated-itil-workflow/02b.png"/> 
+<img src="/assets/img/2026-04-23-automated-itil-workflow/02b.png"/> 
 
 > Từ đây, tất cả VM trong lab chỉ cần đặt DNS duy nhất là `10.10.200.12`. DC sẽ tự phân giải `anhlx.lab` nội bộ và forward query còn lại (apt, wget, ...) ra internet.
 
@@ -346,7 +345,7 @@ Get-ADGroupMember "L1" | Select-Object Name
 Get-ADGroupMember "L2" | Select-Object Name
 Get-ADGroupMember "L3" | Select-Object Name
 ```
-<img src="../assets/img/2026-04-23-automated-itil-workflow/03.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/03.png"/>
 
 **Cấu trúc KTV theo level:**
 
@@ -373,9 +372,9 @@ Chạy installer, điền:
 | **Agent listen port** | `10050` |
 | **Server or Proxy for active checks** | `10.10.200.11` |
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/05.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/05.png"/>
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/06.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/06.png"/>
 
 ```powershell
 # Kiểm tra service
@@ -386,7 +385,7 @@ New-NetFirewallRule -DisplayName "Zabbix Agent" -Direction Inbound `
     -Protocol TCP -LocalPort 10050 -Action Allow
 ```
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/07.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/07.png"/>
 
 ---
 
@@ -416,7 +415,7 @@ sudo systemctl restart systemd-resolved
 nslookup dc.anhlx.lab
 ```
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/08.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/08.png"/>
 
 ---
 
@@ -438,7 +437,7 @@ sudo systemctl start postgresql
 sudo systemctl status postgresql
 ```
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/09.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/09.png"/>
 
 **Tạo database cho Zabbix:**
 
@@ -467,7 +466,7 @@ GRANT ALL PRIVILEGES ON DATABASE servicedesk TO sdpadmin;
 EOF
 ```
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/10.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/10.png"/>
 
 ---
 
@@ -538,7 +537,7 @@ sudo systemctl start zabbix-server zabbix-agent2
 sudo systemctl status zabbix-server
 ```
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/11.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/11.png"/>
 
 #### 6.4. Cấu hình Nginx và PHP cho Zabbix Frontend
 
@@ -564,7 +563,7 @@ sudo systemctl restart nginx php8.1-fpm zabbix-server
 
 Truy cập `http://10.10.200.11:8080`, làm theo wizard:
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/12.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/12.png"/>
 
 
 | Step | Giá trị |
@@ -578,23 +577,23 @@ Truy cập `http://10.10.200.11:8080`, làm theo wizard:
 | Password | `zabbix_pass_2026` |
 | Database TLS encryption | ☐ _(không cần — kết nối localhost)_ |
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/13.png"/>
-<img src="../assets/img/2026-04-23-automated-itil-workflow/14.png"/>
-<img src="../assets/img/2026-04-23-automated-itil-workflow/15.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/13.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/14.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/15.png"/>
 
 
 Đăng nhập `Admin / zabbix`, đổi mật khẩu ngay: **User Settings → Change Password**.
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/16.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/16.png"/>
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/17.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/17.png"/>
 
 **Sửa host "Zabbix server" mặc định** — **Data Collection → Hosts → Zabbix server → Interfaces → Agent:**
 - Loại: **IP**
 - IP: `10.10.200.11`
 - Port: `10050`
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/18.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/18.png"/>
 
 #### 6.6. Add hosts vào Zabbix
 
@@ -609,9 +608,9 @@ Truy cập `http://10.10.200.11:8080`, làm theo wizard:
 
 > Hostname phải khớp chính xác với giá trị đã khai báo khi cài agent trên Windows (`DC`).
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/19.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/19.png"/>
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/20.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/20.png"/>
 
 **Host 2: itil-stack (self-monitoring)**
 
@@ -624,7 +623,7 @@ Truy cập `http://10.10.200.11:8080`, làm theo wizard:
 | Interfaces > Agent | IP: `10.10.200.11`, Port: `10050` |
 | Templates | `Linux by Zabbix agent active` |
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/21.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/21.png"/>
 
 
 Đợi vài phút để hosts chuyển sang màu xanh (Available).
@@ -647,11 +646,11 @@ Click **Test authentication** — nhập `nguyenvana / Ktv@Abc2026` → hiện *
 
 Click **Update** để lưu.
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/22.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/22.png"/>
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/23.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/23.png"/>
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/24.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/24.png"/>
 
 > **Lưu ý:** Người dùng AD đăng nhập lần đầu vào Zabbix sẽ tự động được tạo account với role mặc định **User**. Để cấp quyền admin, vào **Users → Users → <tên user> → Role → chọn Zabbix Admin hoặc Super Admin**.
 
@@ -698,9 +697,9 @@ for data in "nguyenvana:Nguyen Van A" "tranthib:Tran Thi B" "levanc:Le Van C" \
 done
 ```
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/25.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/25.png"/>
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/26.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/26.png"/>
 
 ---
 
@@ -726,18 +725,18 @@ sudo systemctl start grafana-server
 sudo systemctl status grafana-server
 ```
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/27.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/27.png"/>
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/28.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/28.png"/>
 
 Truy cập `http://10.10.200.11:3000`, đăng nhập `admin / admin`, đổi mật khẩu.
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/29.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/29.png"/>
 
 
 **Kích hoạt plugin:** Administration → Plugins → tìm **Zabbix** → Enable.
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/30.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/30.png"/>
 
 #### 7.2. Cấu hình Grafana LDAP / Active Directory
 
@@ -785,13 +784,13 @@ grep -A3 '\[auth.ldap\]' /etc/grafana/grafana.ini
 sudo systemctl restart grafana-server
 ```
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/31.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/31.png"/>
 
 **Kiểm tra:** Đăng nhập bằng `nguyenvana / Ktv@Abc2026` → Grafana tự tạo account với role **Editor** (theo group mapping Technicians).
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/32.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/32.png"/>
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/33.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/33.png"/>
 
 #### 7.3. Kết nối Zabbix datasource và import dashboard
 
@@ -806,20 +805,20 @@ sudo systemctl restart grafana-server
 Click **Save & Test** → hiển thị "Zabbix API version: 7.4.x".
 
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/34.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/34.png"/>
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/35.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/35.png"/>
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/36.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/36.png"/>
 
 
 **Import dashboard:** Dashboards → New → Import → nhập ID `5363` → Load → Import.
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/37.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/37.png"/>
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/38.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/38.png"/>
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/39.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/39.png"/>
 
 ---
 
@@ -846,7 +845,7 @@ sudo env -i \
   /tmp/ManageEngine_ServiceDesk_Plus.bin -i console
 ```
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/40.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/40.png"/>
 
 | Prompt | Giá trị |
 |---|---|
@@ -854,13 +853,13 @@ sudo env -i \
 | Web server port | `8400` |
 | Start as service | `Yes` |
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/41.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/41.png"/>
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/42.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/42.png"/>
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/43.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/43.png"/>
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/44.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/44.png"/>
 
 **Chuyển SDP sang dùng PostgreSQL 16:**
 
@@ -897,7 +896,7 @@ DBEOF
 cd /opt/ManageEngine/ServiceDesk/bin
 sudo ./run.sh start
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/45.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/45.png"/>
 
 # Theo dõi log — chờ "Server startup in ... ms"
 tail -f /opt/ManageEngine/ServiceDesk/logs/serverOut.txt
@@ -932,19 +931,19 @@ sudo systemctl daemon-reload
 sudo systemctl enable sdp
 ```
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/46.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/46.png"/>
 
 #### 8.2. Đăng nhập lần đầu
 
-Truy cập `http://10.10.200.11:8400`, đăng nhập `administrator / administrator`, đổi mật khẩu theo yêu cầu.
+Truy cập `https://10.10.200.11:8400`, đăng nhập `administrator / administrator`, đổi mật khẩu theo yêu cầu.
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/47.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/47.png"/>
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/48.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/48.png"/>
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/49.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/49.png"/>
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/50.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/50.png"/>
 
 #### 8.3. Tích hợp LDAP / Active Directory
 
@@ -958,7 +957,7 @@ Truy cập `http://10.10.200.11:8400`, đăng nhập `administrator / administra
 
 Tích **Enable LDAP Authentication** → **Save**
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/51.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/51.png"/>
 
 **Bước 2 — Add New Domain Controller:**
 
@@ -978,9 +977,9 @@ Cuộn xuống phần **Add New Domain Controller**, điền:
 
 Click **Save** → domain xuất hiện trong danh sách **Domain Controllers** phía dưới.
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/52.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/52.png"/>
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/53.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/53.png"/>
 
 #### 8.4. Tạo kỹ thuật viên từ AD, cấu hình Round-Robin và Escalation
 
@@ -1026,11 +1025,11 @@ Sau khi import, user được tạo với role **User** — cần đổi thành 
 
 > Hoặc ngay trên trang Technicians, dùng dropdown **"Change as Technician"** để chọn lần lượt từng user.
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/54.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/54.png"/>
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/55.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/55.png"/>
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/56.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/56.png"/>
 
 **Cấu hình Round-Robin Auto Assign (chỉ L1):**
 
@@ -1048,9 +1047,9 @@ Sau khi import, user được tạo với role **User** — cần đổi thành 
 
 Click **Save**.
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/57.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/57.png"/>
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/58.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/58.png"/>
 
 **Cấu hình Escalation Rules:**
 
@@ -1059,11 +1058,11 @@ SDP có sẵn 4 SLA mặc định. Escalation được cấu hình **ngay trong 
 **Admin → Automation → Service Level Agreements** → click icon bút chì (✏) hoặc tên **High SLA**
 
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/59.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/59.png"/>
 
 Trong form **Edit SLA - High SLA**, có 2 section escalation riêng biệt:
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/60.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/60.png"/>
 
 **Section "If response time is elapsed then escalate:"**
 
@@ -1073,7 +1072,7 @@ Trong form **Edit SLA - High SLA**, có 2 section escalation riêng biệt:
 
 > ⚠️ Escalation target phải là L2/L3 — **không** chọn L1 technician (nguyenvana, tranthib, levanc) vì đó là nhóm ban đầu nhận ticket.
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/61.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/61.png"/>
 
 Click **Save**. Lặp lại tương tự cho **Medium SLA**, **Normal SLA**, **Low SLA**.
 
@@ -1081,20 +1080,28 @@ Click **Save**. Lặp lại tương tự cho **Medium SLA**, **Normal SLA**, **L
 
 #### 8.5. Lấy API Token — cập nhật macro Zabbix
 
-**SDP → Profile → Authtoken details → Generate**
+> Trong môi trường lab tôi dùng account Administrator , thực tế cần phân quyền hợp lý .
+
+Click vào **avatar** (góc trên phải) → chọn **Generate Authtoken**.
+
+<img src="/assets/img/2026-04-23-automated-itil-workflow/62.png"/>
+
+Trên popup, chọn tab **Generate Authtoken** → chọn **Never expires** → click **Generate** → copy Authtoken hiển thị trong ô vàng.
+
+<img src="/assets/img/2026-04-23-automated-itil-workflow/63.png"/>
 
 Copy authtoken, sau đó vào Zabbix:
 
-**Administration → General → Macros**
+**Administration → Macros**
 
 | Macro | Value |
 |---|---|
 | `{$SDP_API_TOKEN}` | `<authtoken-vừa-copy>` |
-| `{$SDP_URL}` | `http://10.10.200.11:8400` |
+| `{$SDP_URL}` | `https://10.10.200.11:8400` |
 | `{$TG_BOT_TOKEN}` | `<bot-token-từ-BotFather>` |
 | `{$TG_CHAT_ID}` | `<chat-id-group-hoặc-channel>` |
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/38.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/64.png"/>
 
 #### 8.6. Tạo Webhook Media Type gọi SDP API
 
@@ -1174,7 +1181,20 @@ if (respJson.response_status && respJson.response_status.status_code === 2000) {
 }
 ```
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/39.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/65.png"/>
+
+**Thêm Message templates cho ServiceDesk Plus:**
+
+> ⚠️ Zabbix yêu cầu mỗi media type phải có ít nhất 1 **Message template** — dù webhook script xử lý qua `value`/params, không dùng nội dung template. Thiếu template → lỗi **"No message defined for media type"** → action Failed.
+
+Trong form media type **ServiceDesk Plus** → tab **Message templates** → **Add**:
+
+| Message type | Subject | Message |
+|---|---|---|
+| `Problem` | `{TRIGGER.NAME}` | `{TRIGGER.NAME}` |
+| `Problem recovery` | `{TRIGGER.NAME}` | `{TRIGGER.NAME}` |
+
+Click **Add** sau mỗi dòng → **Update** để lưu.
 
 #### 8.7. Tạo Action tự động tạo ticket
 
@@ -1187,13 +1207,18 @@ if (respJson.response_status && respJson.response_status.status_code === 2000) {
 | Name | `Auto Create SDP Ticket` |
 | Conditions | Trigger severity >= Warning |
 
+<img src="/assets/img/2026-04-23-automated-itil-workflow/66.png"/>
+
+
 **Operations tab → Add operation:**
 
 | Field | Value |
 |---|---|
 | Operation type | Send message |
-| Send to users | Admin |
-| Send only to | ServiceDesk Plus |
+| Send to users | `Admin (Zabbix Administrator)` |
+| Send to media type | `ServiceDesk Plus` |
+
+<img src="/assets/img/2026-04-23-automated-itil-workflow/67.png"/>
 
 **Recovery operations:** thêm Send message để thông báo RESOLVED.
 
@@ -1208,15 +1233,33 @@ if (respJson.response_status && respJson.response_status.status_code === 2000) {
 | When active | `1-7,00:00-24:00` |
 | Use if severity | Tích hết |
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/40.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/68.png"/>
 
 **Test webhook thủ công:**
 
-**Alerts → Media types → ServiceDesk Plus → Test** — nhập giá trị thật vào các ô, click **Test**.
+**Alerts → Media types → ServiceDesk Plus → Test**
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/41.png"/>
+Popup hiện ra các field — điền giá trị thật:
 
-Kết quả: `Ticket created: <ID> -> Assigned: Nguyen Van A`
+
+| Field | Giá trị điền vào |
+|---|---|
+| `event_id` | `1` |
+| `event_status` | `PROBLEM` |
+| `event_time` | `12:00:00 2026-04-23` |
+| `host` | `itil-stack` |
+| `sdp_token` | `<authtoken-thật-vừa-copy-từ-SDP>` |
+| `sdp_url` | `https://10.10.200.11:8400` |
+| `trigger_name` | `Disk space is critically low` |
+| `trigger_severity` | `High` |
+
+Click **Test**.
+
+Kết quả hiện trong ô **Response**: `Ticket created: <ID> -> Assigned: Nguyen Van A`
+
+<img src="/assets/img/2026-04-23-automated-itil-workflow/71.png"/>
+
+<img src="/assets/img/2026-04-23-automated-itil-workflow/72.png"/>
 
 ---
 
@@ -1224,19 +1267,7 @@ Kết quả: `Ticket created: <ID> -> Assigned: Nguyen Van A`
 
 **Tạo Telegram Bot:**
 
-1. Mở Telegram, tìm **@BotFather** → `/newbot`
-2. Đặt tên bot: `ITIL Lab Alert`
-3. Đặt username: `itil_lab_alert_bot`
-4. Copy **Bot Token**: `123456789:AABBCCddEEFFggHHiiJJkkLLmmNNoo`
-
-**Lấy Chat ID của group/channel:**
-
-```bash
-# Thêm bot vào group, sau đó gọi getUpdates
-curl -s "https://api.telegram.org/bot<BOT_TOKEN>/getUpdates" | python3 -m json.tool
-```
-
-Tìm `"chat": {"id": -1001234567890}` — đó là `chat_id` của group (số âm = group/supergroup).
+<img src="/assets/img/2026-04-23-automated-itil-workflow/73.png"/>
 
 **Cập nhật macro Zabbix** tại **Administration → General → Macros** (đã thêm `{$TG_BOT_TOKEN}` và `{$TG_CHAT_ID}` ở mục 8.5).
 
@@ -1305,7 +1336,18 @@ if (resp.ok) {
 }
 ```
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/42-telegram-mediatype.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/74.png"/>
+
+**Thêm Message templates cho Telegram:**
+
+Trong form media type **Telegram** → tab **Message templates** → **Add**:
+
+| Message type | Subject | Message |
+|---|---|---|
+| `Problem` | `{TRIGGER.NAME}` | `{TRIGGER.NAME}` |
+| `Problem recovery` | `{TRIGGER.NAME}` | `{TRIGGER.NAME}` |
+
+Click **Add** sau mỗi dòng → **Update** để lưu.
 
 **Gán media "Telegram" cho user Admin:**
 
@@ -1318,6 +1360,8 @@ if (resp.ok) {
 | When active | `1-7,00:00-24:00` |
 | Use if severity | Tích hết |
 
+<img src="/assets/img/2026-04-23-automated-itil-workflow/75.png"/>
+
 **Thêm Telegram vào Action đã tạo:**
 
 **Alerts → Actions → Auto Create SDP Ticket → Operations → Add operation:**
@@ -1328,15 +1372,32 @@ if (resp.ok) {
 | Send to users | Admin |
 | Send only to | `Telegram` |
 
-**Recovery operations:** thêm operation Telegram tương tự để nhận thông báo RESOLVED.
+<img src="/assets/img/2026-04-23-automated-itil-workflow/76.png"/>
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/43-telegram-action.png"/>
+**Recovery operations:** thêm operation Telegram tương tự để nhận thông báo RESOLVED.
 
 **Test thủ công:**
 
-**Alerts → Media types → Telegram → Test** — điền giá trị thật, click **Test** → kiểm tra Telegram group nhận được tin nhắn.
+**Alerts → Media types → Telegram → Test**
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/44-telegram-test.png"/>
+> ⚠️ Popup test **không tự resolve global macro** — phải nhập giá trị thật vào `bot_token` và `chat_id`.
+
+| Field | Giá trị điền vào |
+|---|---|
+| `bot_token` | `<bot-token-thật-từ-BotFather>` |
+| `chat_id` | `<chat_id-thật-của-group>` _(số âm, ví dụ `-1001234567890`)_ |
+| `event_id` | `1` |
+| `event_status` | `PROBLEM` |
+| `event_time` | `12:00:00 2026-04-23` |
+| `host` | `itil-stack` |
+| `trigger_name` | `Disk space is critically low` |
+| `trigger_severity` | `High` |
+
+Click **Test** → kiểm tra Telegram group nhận được tin nhắn.
+
+<img src="/assets/img/2026-04-23-automated-itil-workflow/77.png"/>
+
+<img src="/assets/img/2026-04-23-automated-itil-workflow/78.png"/>
 
 ---
 
@@ -1348,25 +1409,35 @@ if (resp.ok) {
 
 ```bash
 # Kiểm tra dung lượng trống trước
-df -h /
+df -hT /
 
-# Tạo file chiếm >90% disk (điều chỉnh count phù hợp)
-dd if=/dev/zero of=/tmp/fill_disk_test bs=1M count=85000 status=progress
+# Tính count cần thiết để đạt >90% disk:
+# count = (total_GB * 0.90 - used_GB) * 1024
+# Ví dụ disk 194G, used 14G: count = (194*0.9 - 14)*1024 = 160,768 → dùng 163000 cho chắc
+dd if=/dev/zero of=/tmp/fill_disk_test bs=1M count=163000 status=progress
 
-# Kiểm tra
-df -h /
+# Kiểm tra — Use% phải >90%
+df -hT /
 ```
+
+<img src="/assets/img/2026-04-23-automated-itil-workflow/79.png"/>
 
 **Trên dc (Windows):**
 
 ```powershell
 # Tạo file lớn chiếm dung lượng C:
+# Tính: disk 199GB, used ~15GB → cần fill ~164GB để vượt 90%
+# (total_GB * 0.90 - used_GB) = (199*0.9 - 15) ≈ 164GB → dùng 170GB cho chắc
 $path = "C:\fill_disk_test.tmp"
 $fs = [System.IO.File]::Create($path)
-$fs.SetLength(80GB)
+$fs.SetLength(170GB)
 $fs.Close()
+
+# Kiểm tra — Used% phải >90%
 Get-PSDrive C
 ```
+
+<img src="/assets/img/2026-04-23-automated-itil-workflow/80.png"/>
 
 **Kết quả mong đợi (1–2 phút):**
 
@@ -1375,9 +1446,13 @@ Get-PSDrive C
 3. ✅ Telegram gửi tin nhắn 🔥 `PROBLEM | itil-stack | Disk space is critically low`
 4. ✅ Grafana panel cập nhật active problems
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/42.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/81.png"/>
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/43.png"/>
+<img src="/assets/img/2026-04-23-automated-itil-workflow/82.png"/>
+
+<img src="/assets/img/2026-04-23-automated-itil-workflow/83.png"/>
+
+<img src="/assets/img/2026-04-23-automated-itil-workflow/84.png"/>
 
 **Dọn dẹp:**
 
@@ -1389,37 +1464,14 @@ rm /tmp/fill_disk_test
 Remove-Item "C:\fill_disk_test.tmp"
 ```
 
-#### 9.2. Test: Host Down
-
-Shutdown VM `dc` từ vSphere Client hoặc:
-
-```powershell
-Stop-Computer -Force
-```
-
-Zabbix phát hiện host unreachable sau ~5 phút:
-
-1. ✅ Trigger `Zabbix agent is not available` kích hoạt
-2. ✅ SDP tạo ticket `[High] Zabbix agent not available — dc`
-3. ✅ Round-robin assign cho KTV tiếp theo trong danh sách
-4. ✅ Telegram gửi tin nhắn ⚠️ `🔥 PROBLEM | dc | Zabbix agent not available`
-
-<img src="../assets/img/2026-04-23-automated-itil-workflow/44.png"/>
-
-<img src="../assets/img/2026-04-23-automated-itil-workflow/45.png"/>
-
 ---
 
 ### 10. Kết quả
 
-<img src="../assets/img/2026-04-23-automated-itil-workflow/46.png"/>
 
 | Sự kiện | Zabbix | SDP | Telegram | Grafana |
 |---|---|---|---|---|
 | Disk > 90% | Alert PROBLEM | Ticket tạo tự động | 🔥 PROBLEM | Panel cập nhật |
-| Host Down | Alert PROBLEM | Ticket tạo tự động | 🔥 PROBLEM | Host đỏ |
-| Disk OK | Alert RESOLVED | Ticket resolved | ✅ RESOLVED | Panel xanh |
-| Host Up | Alert RESOLVED | Ticket resolved | ✅ RESOLVED | Host xanh |
 
 **Escalation logic:**
 
@@ -1448,7 +1500,7 @@ Zabbix phát hiện host unreachable sau ~5 phút:
 |---|---|---|
 | Zabbix | `http://10.10.200.11:8080` | `Admin / <password>` |
 | Grafana | `http://10.10.200.11:3000` | `admin / <password>` hoặc AD user |
-| ServiceDesk Plus | `http://10.10.200.11:8400` | `administrator / <password>` hoặc AD user |
+| ServiceDesk Plus | `https://10.10.200.11:8400` | `administrator / <password>` hoặc AD user |
 
 **Thứ tự khởi động toàn bộ stack:**
 
