@@ -1,0 +1,138 @@
+<svg width="1000" height="580" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
+  <!-- Background -->
+  <rect width="1000" height="580" fill="#F0F4F8"/>
+
+  <!-- ========== ON-PREMISE BOX ========== -->
+  <rect x="20" y="44" width="400" height="460" rx="14" fill="#EBF5FB" stroke="#2980B9" stroke-width="2" stroke-dasharray="8,4"/>
+  <rect x="20" y="44" width="400" height="38" rx="14" fill="#2471A3"/>
+  <rect x="20" y="68" width="400" height="14" fill="#2471A3"/>
+  <text x="220" y="69" text-anchor="middle" font-size="14" font-weight="bold" fill="white">On-Premise  —  ESXi / anhlx.lab</text>
+
+  <!-- DC1 card -->
+  <rect x="42" y="100" width="356" height="148" rx="10" fill="white" stroke="#2471A3" stroke-width="1.5"/>
+  <rect x="42" y="100" width="356" height="30" rx="10" fill="#2471A3"/>
+  <rect x="42" y="116" width="356" height="14" fill="#2471A3"/>
+  <text x="220" y="121" text-anchor="middle" font-size="13" font-weight="bold" fill="white">VM1 — DC1 (PDC — Primary Domain Controller)</text>
+
+  <!-- DC1 icon area -->
+  <rect x="56" y="140" width="50" height="50" rx="6" fill="#D6EAF8" stroke="#2980B9" stroke-width="1"/>
+  <text x="81" y="158" text-anchor="middle" font-size="20">🖥️</text>
+  <text x="81" y="180" text-anchor="middle" font-size="9" fill="#1A5276">WS 2022</text>
+
+  <text x="124" y="152" font-size="11" fill="#1A5276">● Active Directory DS (FSMO Roles)</text>
+  <text x="124" y="166" font-size="11" fill="#1A5276">● DNS Server (Primary)</text>
+  <text x="124" y="180" font-size="11" fill="#0E6655">● Exchange Management Tools</text>
+  <text x="124" y="196" font-size="11" fill="#0E6655">  (Quản lý mail attribute của User)</text>
+  <text x="124" y="214" font-size="12" font-weight="bold" fill="#2980B9">IP: 10.10.200.11</text>
+  <text x="270" y="214" font-size="11" fill="#7D6608">UPN: anhle.com.vn</text>
+
+  <!-- DC2 card -->
+  <rect x="42" y="264" width="356" height="148" rx="10" fill="white" stroke="#7D3C98" stroke-width="1.5"/>
+  <rect x="42" y="264" width="356" height="30" rx="10" fill="#7D3C98"/>
+  <rect x="42" y="280" width="356" height="14" fill="#7D3C98"/>
+  <text x="220" y="285" text-anchor="middle" font-size="13" font-weight="bold" fill="white">VM2 — DC2 (ADC — Additional DC + Entra Connect)</text>
+
+  <!-- DC2 icon area -->
+  <rect x="56" y="304" width="50" height="50" rx="6" fill="#E8DAEF" stroke="#7D3C98" stroke-width="1"/>
+  <text x="81" y="322" text-anchor="middle" font-size="20">🖥️</text>
+  <text x="81" y="344" text-anchor="middle" font-size="9" fill="#6C3483">WS 2022</text>
+
+  <text x="124" y="316" font-size="11" fill="#6C3483">● Additional Domain Controller (Replication)</text>
+  <text x="124" y="330" font-size="11" fill="#6C3483">● DNS Server (Secondary)</text>
+  <text x="124" y="344" font-size="11" fill="#8E44AD">● Microsoft Entra Connect</text>
+  <text x="124" y="358" font-size="11" fill="#8E44AD">  (Password Hash Sync + SSPR Writeback)</text>
+  <text x="124" y="378" font-size="12" font-weight="bold" fill="#7D3C98">IP: 10.10.200.12</text>
+
+  <!-- Domain info bar -->
+  <rect x="42" y="428" width="356" height="36" rx="8" fill="#D6EAF8" stroke="#2980B9" stroke-width="1"/>
+  <text x="220" y="442" text-anchor="middle" font-size="11" font-weight="bold" fill="#1A5276">Forest: anhlx.lab  |  NetBIOS: ANHLX</text>
+  <text x="220" y="458" text-anchor="middle" font-size="11" fill="#1A5276">UPN Suffix thêm: anhle.com.vn  |  GW: 10.10.200.1</text>
+
+  <!-- AD Replication arrow between DC1 and DC2 -->
+  <line x1="220" y1="248" x2="220" y2="264" stroke="#2471A3" stroke-width="1.8" stroke-dasharray="4,3"/>
+  <text x="250" y="258" font-size="10" fill="#2471A3">AD Replication</text>
+
+  <!-- ========== INTERNET CLOUD ========== -->
+  <ellipse cx="605" cy="290" rx="72" ry="48" fill="#E8F8F5" stroke="#76D7C4" stroke-width="2"/>
+  <text x="605" y="284" text-anchor="middle" font-size="13" font-weight="bold" fill="#148F77">Internet</text>
+  <text x="605" y="300" text-anchor="middle" font-size="11" fill="#148F77">HTTPS/443</text>
+  <text x="605" y="315" text-anchor="middle" font-size="10" fill="#148F77">53, 123, 80</text>
+
+  <!-- Arrow: Entra Connect → Internet (sync) -->
+  <line x1="398" y1="338" x2="534" y2="305" stroke="#8E44AD" stroke-width="2"/>
+  <polygon points="534,305 520,297 522,310" fill="#8E44AD"/>
+  <text x="448" y="316" font-size="10" fill="#8E44AD" font-weight="bold">PHS Sync</text>
+
+  <!-- Arrow: Internet → Entra ID -->
+  <line x1="677" y1="275" x2="720" y2="200" stroke="#8E44AD" stroke-width="2"/>
+  <polygon points="720,200 712,213 723,212" fill="#8E44AD"/>
+
+  <!-- ========== MICROSOFT 365 BOX ========== -->
+  <rect x="710" y="44" width="270" height="460" rx="14" fill="#FEF9E7" stroke="#E74C3C" stroke-width="2" stroke-dasharray="8,4"/>
+  <rect x="710" y="44" width="270" height="38" rx="14" fill="#C0392B"/>
+  <rect x="710" y="68" width="270" height="14" fill="#C0392B"/>
+  <text x="845" y="69" text-anchor="middle" font-size="13" font-weight="bold" fill="white">Microsoft 365 / Entra ID (Cloud)</text>
+
+  <!-- Entra ID card -->
+  <rect x="726" y="100" width="238" height="112" rx="8" fill="white" stroke="#1A73E8" stroke-width="1.5"/>
+  <rect x="726" y="100" width="238" height="28" rx="8" fill="#1A73E8"/>
+  <rect x="726" y="116" width="238" height="12" fill="#1A73E8"/>
+  <text x="845" y="118" text-anchor="middle" font-size="12" font-weight="bold" fill="white">Microsoft Entra ID</text>
+  <text x="845" y="142" text-anchor="middle" font-size="11" fill="#154360">AnhLe267.onmicrosoft.com</text>
+  <text x="845" y="157" text-anchor="middle" font-size="11" fill="#154360">Synced from: anhlx.lab</text>
+  <text x="845" y="172" text-anchor="middle" font-size="11" fill="#1A73E8">user1@anhle.com.vn</text>
+  <text x="845" y="187" text-anchor="middle" font-size="10" fill="#5D6D7E">(Source of Authority: On-Prem AD)</text>
+  <text x="845" y="202" text-anchor="middle" font-size="10" fill="#5D6D7E">AnhLe@AnhLe267.onmicrosoft.com</text>
+
+  <!-- Exchange Online card -->
+  <rect x="726" y="228" width="238" height="104" rx="8" fill="white" stroke="#0078D4" stroke-width="1.5"/>
+  <rect x="726" y="228" width="238" height="28" rx="8" fill="#0078D4"/>
+  <rect x="726" y="244" width="238" height="12" fill="#0078D4"/>
+  <text x="845" y="246" text-anchor="middle" font-size="12" font-weight="bold" fill="white">Exchange Online</text>
+  <text x="845" y="270" text-anchor="middle" font-size="11" fill="#154360">M365 Business Basic</text>
+  <text x="845" y="285" text-anchor="middle" font-size="11" fill="#154360">Mailbox: user1@anhle.com.vn</text>
+  <text x="845" y="300" text-anchor="middle" font-size="10" fill="#5D6D7E">Outlook Web / Teams / OWA</text>
+  <text x="845" y="315" text-anchor="middle" font-size="10" fill="#0078D4">Login: user1@anhle.com.vn ✓</text>
+
+  <!-- Teams / SharePoint Online card -->
+  <rect x="726" y="348" width="238" height="80" rx="8" fill="white" stroke="#6264A7" stroke-width="1.5"/>
+  <rect x="726" y="348" width="238" height="28" rx="8" fill="#6264A7"/>
+  <rect x="726" y="364" width="238" height="12" fill="#6264A7"/>
+  <text x="845" y="366" text-anchor="middle" font-size="12" font-weight="bold" fill="white">M365 Apps &amp; Services</text>
+  <text x="845" y="390" text-anchor="middle" font-size="11" fill="#4A235A">Teams  |  SharePoint  |  OneDrive</text>
+  <text x="845" y="406" text-anchor="middle" font-size="10" fill="#6264A7">SSO via Entra ID (PHS)</text>
+  <text x="845" y="420" text-anchor="middle" font-size="10" fill="#4A235A">Password Writeback (SSPR) ←</text>
+
+  <!-- Tenant info bar -->
+  <rect x="726" y="444" width="238" height="40" rx="8" fill="#FDEDEC" stroke="#E74C3C" stroke-width="1"/>
+  <text x="845" y="459" text-anchor="middle" font-size="11" font-weight="bold" fill="#922B21">Tenant: AnhLe267.onmicrosoft.com</text>
+  <text x="845" y="476" text-anchor="middle" font-size="10" fill="#922B21">Admin: AnhLe@AnhLe267.onmicrosoft.com</text>
+
+  <!-- GW → Internet arrow -->
+  <line x1="420" y1="447" x2="534" y2="330" stroke="#E67E22" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <polygon points="534,330 522,322 526,334" fill="#E67E22"/>
+
+  <!-- Internet → Exchange Online arrow -->
+  <line x1="677" y1="305" x2="726" y2="280" stroke="#0078D4" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <polygon points="726,280 714,272 716,284" fill="#0078D4"/>
+
+  <!-- Password Writeback arrow (cloud → on-prem) -->
+  <line x1="726" y1="418" x2="605" y2="335" stroke="#E74C3C" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <line x1="605" y1="335" x2="398" y2="355" stroke="#E74C3C" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <polygon points="398,355 411,346 410,358" fill="#E74C3C"/>
+  <text x="555" y="392" font-size="10" fill="#E74C3C" font-weight="bold">Writeback</text>
+
+  <!-- ========== USER EXPERIENCE LEGEND ========== -->
+  <rect x="20" y="518" width="960" height="52" rx="8" fill="#FDFEFE" stroke="#BDC3C7" stroke-width="1"/>
+  <text x="36" y="534" font-size="11" font-weight="bold" fill="#2C3E50">USER EXPERIENCE:</text>
+  <text x="36" y="552" font-size="11" fill="#1A5276">🖥️ Login máy tính (domain joined):</text>
+  <text x="220" y="552" font-size="11" fill="#1A5276" font-weight="bold">user1@anhle.com.vn</text>
+  <text x="360" y="552" font-size="11" fill="#616A6B">(UPN trong AD = @anhle.com.vn)</text>
+  <text x="530" y="552" font-size="11" fill="#0078D4">📧 Login Outlook / Teams:</text>
+  <text x="668" y="552" font-size="11" fill="#0078D4" font-weight="bold">user1@anhle.com.vn</text>
+  <text x="820" y="552" font-size="11" fill="#27AE60">✅ 1 credential</text>
+
+  <text x="36" y="534" font-size="11" font-weight="bold" fill="#2C3E50">USER EXPERIENCE:</text>
+  <text x="870" y="534" font-size="11" fill="#27AE60">✅ 1 Password</text>
+  <text x="870" y="552" font-size="11" fill="#27AE60">✅ Seamless SSO</text>
+</svg>
