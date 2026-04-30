@@ -82,7 +82,7 @@
   <text x="845" y="157" text-anchor="middle" font-size="11" fill="#154360">Synced from: anhlx.lab</text>
   <text x="845" y="172" text-anchor="middle" font-size="11" fill="#1A73E8">user1@anhle.com.vn</text>
   <text x="845" y="187" text-anchor="middle" font-size="10" fill="#5D6D7E">(Source of Authority: On-Prem AD)</text>
-  <text x="845" y="202" text-anchor="middle" font-size="10" fill="#5D6D7E">AnhLe@AnhLe267.onmicrosoft.com</text>
+  <text x="845" y="202" text-anchor="middle" font-size="10" fill="#1A73E8">Admin: AnhLe@anhle.com.vn</text>
 
   <!-- Exchange Online card -->
   <rect x="726" y="228" width="238" height="104" rx="8" fill="white" stroke="#0078D4" stroke-width="1.5"/>
@@ -106,7 +106,7 @@
   <!-- Tenant info bar -->
   <rect x="726" y="444" width="238" height="40" rx="8" fill="#FDEDEC" stroke="#E74C3C" stroke-width="1"/>
   <text x="845" y="459" text-anchor="middle" font-size="11" font-weight="bold" fill="#922B21">Tenant: AnhLe267.onmicrosoft.com</text>
-  <text x="845" y="476" text-anchor="middle" font-size="10" fill="#922B21">Admin: AnhLe@AnhLe267.onmicrosoft.com</text>
+  <text x="845" y="476" text-anchor="middle" font-size="10" fill="#922B21">Admin: AnhLe@anhle.com.vn</text>
 
   <!-- GW → Internet arrow -->
   <line x1="420" y1="447" x2="534" y2="330" stroke="#E67E22" stroke-width="1.5" stroke-dasharray="5,3"/>
