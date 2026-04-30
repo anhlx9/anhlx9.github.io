@@ -14,11 +14,13 @@ Bài lab hướng dẫn triển khai mô hình **Hybrid Identity** chuẩn produ
 
 > **Mục tiêu lab**: Tạo user trong AD on-premise → sync lên Entra ID → login `user1@anhle.com.vn` vào Outlook Web thành công. Lab này **không cấu hình mail flow** (không thêm MX record), chỉ tập trung vào phần **Identity Sync** và **xác thực cloud**.
 
-![](../assets/img/2026-04-30-m365-hybrid-identity-2dc-lab/46.png)
+![](/assets/img/2026-04-30-m365-hybrid-identity-2dc-lab/46.png)
 
-![](../assets/img/2026-04-30-m365-hybrid-identity-2dc-lab/47.png)
+![](/assets/img/2026-04-30-m365-hybrid-identity-2dc-lab/47.png)
 
-![](../assets/img/2026-04-30-m365-hybrid-identity-2dc-lab/48.png)
+![](/assets/img/2026-04-30-m365-hybrid-identity-2dc-lab/48.png)
+
+![](/assets/img/2026-04-30-m365-hybrid-identity-2dc-lab/49.png)
 
 
 - [1. Giới thiệu và mô hình triển khai](#1-giới-thiệu-và-mô-hình-triển-khai)
