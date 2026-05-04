@@ -1,0 +1,190 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 780" font-family="'Segoe UI', Arial, sans-serif">
+  <!-- Background -->
+  <rect width="1100" height="780" fill="#1a1a2e"/>
+
+  <!-- Title -->
+  <text x="550" y="38" text-anchor="middle" font-size="20" font-weight="bold" fill="#e0e0e0">Microsoft 365 Cloud &amp; Zero Trust Zscaler cho SME</text>
+  <text x="550" y="58" text-anchor="middle" font-size="13" fill="#888">ZTNA Architecture — Thay thế VPN truyền thống | Lab: 10.10.200.0/24</text>
+
+  <!-- ===== CLOUD ZONE ===== -->
+  <rect x="30" y="75" width="1040" height="200" rx="16" fill="none" stroke="#3a7bd5" stroke-width="2" stroke-dasharray="8,4"/>
+  <text x="55" y="98" font-size="13" font-weight="bold" fill="#3a7bd5">☁  INTERNET / CLOUD</text>
+
+  <!-- Microsoft 365 box -->
+  <rect x="60" y="108" width="240" height="140" rx="10" fill="#0078d4" fill-opacity="0.18" stroke="#0078d4" stroke-width="1.5"/>
+  <text x="180" y="130" text-anchor="middle" font-size="14" font-weight="bold" fill="#4fc3f7">Microsoft 365</text>
+  <text x="180" y="150" text-anchor="middle" font-size="11" fill="#b0bec5">Entra ID (Cloud-Native)</text>
+  <text x="180" y="168" text-anchor="middle" font-size="11" fill="#b0bec5">Exchange Online</text>
+  <text x="180" y="185" text-anchor="middle" font-size="11" fill="#81d4fa">IT@anhle.com.vn</text>
+  <text x="180" y="202" text-anchor="middle" font-size="11" fill="#81d4fa">user1@anhle.com.vn</text>
+  <text x="180" y="219" text-anchor="middle" font-size="10" fill="#90caf9">Domain: anhle.com.vn</text>
+
+  <!-- Zscaler Cloud box -->
+  <rect x="380" y="108" width="280" height="140" rx="10" fill="#00bcd4" fill-opacity="0.12" stroke="#00bcd4" stroke-width="1.5"/>
+  <text x="520" y="130" text-anchor="middle" font-size="14" font-weight="bold" fill="#00e5ff">Zscaler Cloud</text>
+  <text x="520" y="150" text-anchor="middle" font-size="11" fill="#b0bec5">ZPA Control Plane</text>
+  <text x="520" y="168" text-anchor="middle" font-size="11" fill="#b0bec5">Policy Enforcement Point</text>
+  <text x="520" y="186" text-anchor="middle" font-size="11" fill="#80deea">SAML Auth ← Entra ID</text>
+  <text x="520" y="204" text-anchor="middle" font-size="11" fill="#80deea">Outbound mTLS Tunnel</text>
+  <text x="520" y="222" text-anchor="middle" font-size="10" fill="#4dd0e1">admin.zscalerone.net</text>
+
+  <!-- DNS Records box -->
+  <rect x="740" y="108" width="300" height="140" rx="10" fill="#8e24aa" fill-opacity="0.15" stroke="#ce93d8" stroke-width="1.5"/>
+  <text x="890" y="130" text-anchor="middle" font-size="14" font-weight="bold" fill="#e040fb">DNS Records — anhle.com.vn</text>
+  <text x="890" y="150" text-anchor="middle" font-size="11" fill="#ce93d8">MX  →  mail.protection.outlook.com</text>
+  <text x="890" y="167" text-anchor="middle" font-size="11" fill="#ce93d8">TXT  →  v=spf1 include:spf.protection...</text>
+  <text x="890" y="184" text-anchor="middle" font-size="11" fill="#ce93d8">CNAME autodiscover → outlook.com</text>
+  <text x="890" y="201" text-anchor="middle" font-size="11" fill="#b39ddb">A  @  →  185.199.x.x  (GitHub Pages)</text>
+  <text x="890" y="218" text-anchor="middle" font-size="10" fill="#9575cd">Blog + Mail cùng chạy — không xung đột</text>
+
+  <!-- Arrows M365 <-> Zscaler -->
+  <line x1="300" y1="178" x2="378" y2="178" stroke="#00e5ff" stroke-width="2" marker-end="url(#arrow-cyan)"/>
+  <line x1="378" y1="190" x2="300" y2="190" stroke="#4fc3f7" stroke-width="2" marker-end="url(#arrow-blue)"/>
+  <text x="340" y="172" text-anchor="middle" font-size="9" fill="#80deea">SAML</text>
+  <text x="340" y="200" text-anchor="middle" font-size="9" fill="#80deea">SCIM</text>
+
+  <!-- ===== USER ZONE ===== -->
+  <rect x="30" y="295" width="300" height="180" rx="12" fill="none" stroke="#43a047" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <text x="55" y="315" font-size="12" font-weight="bold" fill="#69f0ae">👤 USER (Work From Home)</text>
+
+  <!-- User laptop -->
+  <rect x="55" y="325" width="250" height="130" rx="8" fill="#1b5e20" fill-opacity="0.4" stroke="#43a047" stroke-width="1"/>
+  <text x="180" y="348" text-anchor="middle" font-size="13" font-weight="bold" fill="#a5d6a7">Laptop / PC</text>
+  <text x="180" y="368" text-anchor="middle" font-size="11" fill="#81c784">Zscaler Client Connector</text>
+  <rect x="100" y="378" width="160" height="24" rx="5" fill="#2e7d32" stroke="#66bb6a" stroke-width="1"/>
+  <text x="180" y="394" text-anchor="middle" font-size="11" fill="#c8e6c9">● Connected — ZPA Active</text>
+  <text x="180" y="420" text-anchor="middle" font-size="10" fill="#a5d6a7">Login: user1@anhle.com.vn</text>
+  <text x="180" y="437" text-anchor="middle" font-size="10" fill="#a5d6a7">Auth: Entra ID SAML SSO</text>
+
+  <!-- ===== LAN ZONE ===== -->
+  <rect x="400" y="285" width="670" height="460" rx="14" fill="none" stroke="#ff6f00" stroke-width="2" stroke-dasharray="8,4"/>
+  <text x="425" y="308" font-size="13" font-weight="bold" fill="#ffb300">🖥  LAN Private — 10.10.200.0/24  (ESXi VMware vSphere)</text>
+
+  <!-- Z-CONNECTOR VM -->
+  <rect x="420" y="320" width="190" height="130" rx="10" fill="#e65100" fill-opacity="0.2" stroke="#ff9800" stroke-width="1.5"/>
+  <text x="515" y="343" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffcc80">Z-CONNECTOR</text>
+  <text x="515" y="362" text-anchor="middle" font-size="11" fill="#ffe0b2">Ubuntu 22.04 LTS</text>
+  <text x="515" y="379" text-anchor="middle" font-size="11" fill="#ffe0b2">Zscaler App Connector</text>
+  <rect x="445" y="387" width="140" height="20" rx="4" fill="#bf360c" stroke="#ff5722" stroke-width="1"/>
+  <text x="515" y="401" text-anchor="middle" font-size="10" fill="#ffccbc">IP: 10.10.200.12</text>
+  <text x="515" y="425" text-anchor="middle" font-size="10" fill="#ffab91">RAM: 8 GB | 8 vCPU</text>
+  <text x="515" y="442" text-anchor="middle" font-size="10" fill="#ff8a65">Outbound port 443 only</text>
+
+  <!-- JUMP-SERVER VM -->
+  <rect x="640" y="320" width="200" height="160" rx="10" fill="#1a237e" fill-opacity="0.4" stroke="#5c6bc0" stroke-width="1.5"/>
+  <text x="740" y="343" text-anchor="middle" font-size="13" font-weight="bold" fill="#9fa8da">JUMP-SERVER</text>
+  <text x="740" y="362" text-anchor="middle" font-size="11" fill="#c5cae9">Ubuntu 22.04 + Docker</text>
+  <text x="740" y="379" text-anchor="middle" font-size="11" fill="#c5cae9">JumpServer (Open Source)</text>
+  <rect x="665" y="387" width="150" height="20" rx="4" fill="#283593" stroke="#3f51b5" stroke-width="1"/>
+  <text x="740" y="401" text-anchor="middle" font-size="10" fill="#e8eaf6">IP: 10.10.200.11</text>
+  <text x="740" y="420" text-anchor="middle" font-size="10" fill="#9fa8da">RAM: 8 GB | 8 vCPU</text>
+  <text x="740" y="437" text-anchor="middle" font-size="10" fill="#90caf9">Web SSH/RDP (HTML5)</text>
+  <text x="740" y="454" text-anchor="middle" font-size="10" fill="#90caf9">Native Client Support</text>
+  <text x="740" y="471" text-anchor="middle" font-size="10" fill="#bbdefb">SAML SSO ← Entra ID</text>
+
+  <!-- SRV-APP-01 -->
+  <rect x="420" y="490" width="190" height="115" rx="10" fill="#004d40" fill-opacity="0.4" stroke="#00897b" stroke-width="1.5"/>
+  <text x="515" y="513" text-anchor="middle" font-size="13" font-weight="bold" fill="#80cbc4">SRV-APP-01</text>
+  <text x="515" y="532" text-anchor="middle" font-size="11" fill="#b2dfdb">Ubuntu 22.04 LTS</text>
+  <text x="515" y="549" text-anchor="middle" font-size="11" fill="#b2dfdb">Zabbix + Grafana</text>
+  <rect x="445" y="557" width="140" height="20" rx="4" fill="#00695c" stroke="#26a69a" stroke-width="1"/>
+  <text x="515" y="571" text-anchor="middle" font-size="10" fill="#e0f2f1">IP: 10.10.200.31</text>
+  <text x="515" y="590" text-anchor="middle" font-size="10" fill="#a7ffeb">RAM: 8 GB | SSH target</text>
+
+  <!-- SRV-WIN-01 -->
+  <rect x="640" y="510" width="200" height="115" rx="10" fill="#880e4f" fill-opacity="0.25" stroke="#e91e63" stroke-width="1.5"/>
+  <text x="740" y="533" text-anchor="middle" font-size="13" font-weight="bold" fill="#f48fb1">SRV-WIN-01</text>
+  <text x="740" y="552" text-anchor="middle" font-size="11" fill="#f8bbd0">Windows Server 2022</text>
+  <text x="740" y="569" text-anchor="middle" font-size="11" fill="#f8bbd0">RDP Target</text>
+  <rect x="665" y="577" width="150" height="20" rx="4" fill="#6a1b4d" stroke="#f06292" stroke-width="1"/>
+  <text x="740" y="591" text-anchor="middle" font-size="10" fill="#fce4ec">IP: 10.10.200.32</text>
+  <text x="740" y="610" text-anchor="middle" font-size="10" fill="#f48fb1">RAM: 8 GB | RDP target</text>
+
+  <!-- ===== FLOW ARROWS ===== -->
+  <defs>
+    <marker id="arrow-cyan" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#00e5ff"/>
+    </marker>
+    <marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#4fc3f7"/>
+    </marker>
+    <marker id="arrow-green" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#69f0ae"/>
+    </marker>
+    <marker id="arrow-orange" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#ff9800"/>
+    </marker>
+    <marker id="arrow-white" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#5c6bc0"/>
+    </marker>
+    <marker id="arrow-red" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#ef5350"/>
+    </marker>
+  </defs>
+
+  <!-- User → Zscaler Cloud (ZPA Tunnel) -->
+  <path d="M 305 385 Q 360 320 378 220" stroke="#69f0ae" stroke-width="2.5" fill="none" stroke-dasharray="6,3" marker-end="url(#arrow-green)"/>
+  <text x="318" y="310" font-size="10" fill="#69f0ae" transform="rotate(-55, 318, 310)">ZPA Tunnel (mTLS)</text>
+
+  <!-- Zscaler Cloud → Z-CONNECTOR (Outbound tunnel) -->
+  <path d="M 520 275 L 515 318" stroke="#ff9800" stroke-width="2" fill="none" marker-end="url(#arrow-orange)"/>
+  <text x="530" y="300" font-size="10" fill="#ffb300">Outbound mTLS</text>
+
+  <!-- Z-CONNECTOR → JUMP-SERVER -->
+  <line x1="612" y1="385" x2="638" y2="385" stroke="#5c6bc0" stroke-width="2.5" marker-end="url(#arrow-white)"/>
+  <text x="625" y="377" text-anchor="middle" font-size="9" fill="#9fa8da">port 80/443</text>
+
+  <!-- JUMP-SERVER → SRV-APP-01 -->
+  <path d="M 740 482 L 740 500 L 620 500 L 515 488" stroke="#00897b" stroke-width="2" fill="none" marker-end="url(#arrow-cyan)"/>
+  <text x="640" y="497" text-anchor="middle" font-size="9" fill="#80cbc4">SSH :22</text>
+
+  <!-- JUMP-SERVER → SRV-WIN-01 -->
+  <line x1="740" y1="482" x2="740" y2="508" stroke="#e91e63" stroke-width="2" marker-end="url(#arrow-red)"/>
+  <text x="760" y="498" font-size="9" fill="#f48fb1">RDP :3389</text>
+
+  <!-- BLOCK symbol: User cannot directly access SRV-APP/WIN -->
+  <line x1="200" y1="480" x2="420" y2="510" stroke="#ef5350" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="270" y="518" font-size="10" fill="#ef5350">⛔ Không thấy trực tiếp</text>
+  <text x="260" y="533" font-size="9" fill="#ef5350">(Zero Trust policy)</text>
+
+  <!-- ===== LEGEND / FLOW STEPS ===== -->
+  <rect x="30" y="650" width="1040" height="118" rx="10" fill="#111827" stroke="#374151" stroke-width="1"/>
+  <text x="55" y="672" font-size="13" font-weight="bold" fill="#f3f4f6">Luồng Zero Trust (5 bước):</text>
+
+  <!-- Step boxes -->
+  <rect x="50" y="682" width="170" height="72" rx="7" fill="#0d47a1" fill-opacity="0.5" stroke="#1976d2" stroke-width="1"/>
+  <text x="135" y="700" text-anchor="middle" font-size="11" font-weight="bold" fill="#90caf9">① Identity</text>
+  <text x="135" y="716" text-anchor="middle" font-size="10" fill="#bbdefb">User bật Zscaler Client</text>
+  <text x="135" y="731" text-anchor="middle" font-size="10" fill="#bbdefb">→ login Entra ID (SAML)</text>
+  <text x="135" y="746" text-anchor="middle" font-size="10" fill="#bbdefb">→ xác thực MFA</text>
+
+  <rect x="235" y="682" width="180" height="72" rx="7" fill="#1b5e20" fill-opacity="0.5" stroke="#43a047" stroke-width="1"/>
+  <text x="325" y="700" text-anchor="middle" font-size="11" font-weight="bold" fill="#a5d6a7">② Policy Check</text>
+  <text x="325" y="716" text-anchor="middle" font-size="10" fill="#c8e6c9">Zscaler kiểm tra Group</text>
+  <text x="325" y="731" text-anchor="middle" font-size="10" fill="#c8e6c9">GRP-IT-Admins?</text>
+  <text x="325" y="746" text-anchor="middle" font-size="10" fill="#c8e6c9">→ Allow/Deny</text>
+
+  <rect x="430" y="682" width="190" height="72" rx="7" fill="#e65100" fill-opacity="0.4" stroke="#ff9800" stroke-width="1"/>
+  <text x="525" y="700" text-anchor="middle" font-size="11" font-weight="bold" fill="#ffcc80">③ ZPA Tunnel</text>
+  <text x="525" y="716" text-anchor="middle" font-size="10" fill="#ffe0b2">User → Zscaler Cloud</text>
+  <text x="525" y="731" text-anchor="middle" font-size="10" fill="#ffe0b2">→ App Connector</text>
+  <text x="525" y="746" text-anchor="middle" font-size="10" fill="#ffe0b2">→ JumpServer :443</text>
+
+  <rect x="635" y="682" width="190" height="72" rx="7" fill="#1a237e" fill-opacity="0.5" stroke="#5c6bc0" stroke-width="1"/>
+  <text x="730" y="700" text-anchor="middle" font-size="11" font-weight="bold" fill="#9fa8da">④ Bastion Login</text>
+  <text x="730" y="716" text-anchor="middle" font-size="10" fill="#c5cae9">JumpServer Web UI</text>
+  <text x="730" y="731" text-anchor="middle" font-size="10" fill="#c5cae9">Login SSO (Entra ID)</text>
+  <text x="730" y="746" text-anchor="middle" font-size="10" fill="#c5cae9">→ chọn target VM</text>
+
+  <rect x="840" y="682" width="210" height="72" rx="7" fill="#004d40" fill-opacity="0.5" stroke="#00897b" stroke-width="1"/>
+  <text x="945" y="700" text-anchor="middle" font-size="11" font-weight="bold" fill="#80cbc4">⑤ SSH / RDP</text>
+  <text x="945" y="716" text-anchor="middle" font-size="10" fill="#b2dfdb">Web terminal (HTML5)</text>
+  <text x="945" y="731" text-anchor="middle" font-size="10" fill="#b2dfdb">hoặc Native Client</text>
+  <text x="945" y="746" text-anchor="middle" font-size="10" fill="#b2dfdb">(MobaXterm/MSTSC)</text>
+
+  <!-- Connecting arrows between legend steps -->
+  <line x1="222" y1="718" x2="233" y2="718" stroke="#4dd0e1" stroke-width="2" marker-end="url(#arrow-cyan)"/>
+  <line x1="417" y1="718" x2="428" y2="718" stroke="#4dd0e1" stroke-width="2" marker-end="url(#arrow-cyan)"/>
+  <line x1="622" y1="718" x2="633" y2="718" stroke="#4dd0e1" stroke-width="2" marker-end="url(#arrow-cyan)"/>
+  <line x1="827" y1="718" x2="838" y2="718" stroke="#4dd0e1" stroke-width="2" marker-end="url(#arrow-cyan)"/>
+</svg>
