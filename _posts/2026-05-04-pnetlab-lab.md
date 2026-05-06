@@ -10,9 +10,9 @@ feature_text: |
 
 Bài viết hướng dẫn cài đặt và sử dụng **PNetLab** — nền tảng giả lập mạng mã nguồn mở cho phép chạy các thiết bị mạng ảo (Cisco IOS, Cisco XE, Cisco XR, Juniper, Palo Alto, MikroTik, v.v.) trực tiếp trên trình duyệt web mà không cần cài đặt thêm phần mềm.
 
-<img src="../assets/img/2026-05-04-pnetlab-lab/00.png"/>
+<img src="/assets/img/2026-05-04-pnetlab-lab/00.png"/>
 
-<img src="../assets/img/2026-05-04-pnetlab-lab/28.png"/>
+<img src="/assets/img/2026-05-04-pnetlab-lab/28.png"/>
 
 ### Mục lục
 
@@ -90,9 +90,9 @@ Download OVA từ trang chính thức: [https://pnetlab.com/pages/download](http
 5. Chỉnh RAM và disk theo nhu cầu
 6. Power on VM
 
-<img src="../assets/img/2026-05-04-pnetlab-lab/01.png"/>
+<img src="/assets/img/2026-05-04-pnetlab-lab/01.png"/>
 
-<img src="../assets/img/2026-05-04-pnetlab-lab/02.png"/>
+<img src="/assets/img/2026-05-04-pnetlab-lab/02.png"/>
 
 
 
@@ -105,27 +105,27 @@ Username: root
 Password: pnet
 ```
 
-<img src="../assets/img/2026-05-04-pnetlab-lab/03.png"/>
+<img src="/assets/img/2026-05-04-pnetlab-lab/03.png"/>
 
-<img src="../assets/img/2026-05-04-pnetlab-lab/04.png"/>
+<img src="/assets/img/2026-05-04-pnetlab-lab/04.png"/>
 
-<img src="../assets/img/2026-05-04-pnetlab-lab/05.png"/>
+<img src="/assets/img/2026-05-04-pnetlab-lab/05.png"/>
 
-<img src="../assets/img/2026-05-04-pnetlab-lab/06.png"/>
+<img src="/assets/img/2026-05-04-pnetlab-lab/06.png"/>
 
-<img src="../assets/img/2026-05-04-pnetlab-lab/07.png"/>
+<img src="/assets/img/2026-05-04-pnetlab-lab/07.png"/>
 
-<img src="../assets/img/2026-05-04-pnetlab-lab/08.png"/>
+<img src="/assets/img/2026-05-04-pnetlab-lab/08.png"/>
 
-<img src="../assets/img/2026-05-04-pnetlab-lab/09.png"/>
+<img src="/assets/img/2026-05-04-pnetlab-lab/09.png"/>
 
-<img src="../assets/img/2026-05-04-pnetlab-lab/10.png"/>
+<img src="/assets/img/2026-05-04-pnetlab-lab/10.png"/>
 
-<img src="../assets/img/2026-05-04-pnetlab-lab/11.png"/>
+<img src="/assets/img/2026-05-04-pnetlab-lab/11.png"/>
 
-<img src="../assets/img/2026-05-04-pnetlab-lab/12.png"/>
+<img src="/assets/img/2026-05-04-pnetlab-lab/12.png"/>
 
-<img src="../assets/img/2026-05-04-pnetlab-lab/13.png"/>
+<img src="/assets/img/2026-05-04-pnetlab-lab/13.png"/>
 
 ---
 
@@ -141,13 +141,13 @@ http://10.10.200.31
 - **Username:** `admin`
 - **Password:** `pnet`
 
-<img src="../assets/img/2026-05-04-pnetlab-lab/14.png"/>
+<img src="/assets/img/2026-05-04-pnetlab-lab/14.png"/>
 
-<img src="../assets/img/2026-05-04-pnetlab-lab/15.png"/>
+<img src="/assets/img/2026-05-04-pnetlab-lab/15.png"/>
 
 > **Lưu ý bảo mật:** Đổi mật khẩu `admin` ngay sau lần đăng nhập đầu tiên. Vào **Users** → chọn `admin` → **Change Password**.
 
-<img src="../assets/img/2026-05-04-pnetlab-lab/16.png"/>
+<img src="/assets/img/2026-05-04-pnetlab-lab/16.png"/>
 
 Sau khi đăng nhập, giao diện **Workspace** hiển thị với thanh menu trên cùng:
 
@@ -162,7 +162,7 @@ Giao diện chính chia 2 cột:
 - **Trái:** danh sách lab file (Search Labs, các nút tạo/xoá/import/export lab)
 - **Phải:** Lab Preview — xem trước topology của lab được chọn
 
-<img src="../assets/img/2026-05-04-pnetlab-lab/17.png"/>
+<img src="/assets/img/2026-05-04-pnetlab-lab/17.png"/>
 
 
 ---
@@ -173,7 +173,7 @@ PNetLab cần image của thiết bị mạng để chạy. Có 2 cách:
 
 Cách 1 - **PNetLab Store** — Download trực tiếp từ Web UI (một số free, một số cần tài khoản)
    
-<img src="../assets/img/2026-05-04-pnetlab-lab/18a.png"/>
+<img src="/assets/img/2026-05-04-pnetlab-lab/18a.png"/>
    
 Cách 2 - **Upload thủ công** — Upload qua SCP/SFTP 
 
@@ -241,7 +241,7 @@ chown -R www-data:www-data /opt/unetlab/addons/qemu/
 > PNetLab yêu cầu file disk đầu tiên của **mọi** node QEMU phải tên **`virtioa.qcow2`**. Nếu upload file tên khác (ví dụ `fortios.qcow2`) thì PNetLab copy sai tên vào thư mục tmp → QEMU crash ngay.
 
 
-<img src="../assets/img/2026-05-04-pnetlab-lab/18.png"/>
+<img src="/assets/img/2026-05-04-pnetlab-lab/18.png"/>
 
 ---
 
@@ -257,7 +257,7 @@ Bài lab mẫu xây dựng topo đơn giản gồm 1 Linux VM — 1 Switch — 1
    - **Description:** VM - Switch - Router - Firewall - Internet
 3. Click **Save** — canvas trống hiện ra
 
-<img src="../assets/img/2026-05-04-pnetlab-lab/19.png"/>
+<img src="/assets/img/2026-05-04-pnetlab-lab/19.png"/>
 
 #### 6.2. Thêm Node vào Lab
 
@@ -273,7 +273,7 @@ Bài lab mẫu xây dựng topo đơn giản gồm 1 Linux VM — 1 Switch — 1
 
 Sau khi thêm xong 4 node, canvas hiển thị đầy đủ topology. Click đúp vào node để mở **HTML5 Console** — terminal hiện ra trực tiếp trong trình duyệt.
 
-<img src="../assets/img/2026-05-04-pnetlab-lab/20.png"/>
+<img src="/assets/img/2026-05-04-pnetlab-lab/20.png"/>
 
 
 #### 6.3. Thêm Cloud0 (Internet)
@@ -292,7 +292,7 @@ Sau khi thêm xong 4 node, canvas hiển thị đầy đủ topology. Click đú
 Cloud0 (đặt tên `Internet`) đại diện cho bridge `pnet0` của PNetLab — ánh xạ NIC vật lý `eth0` (ESXi: **Lab-vlan200**). Lưu lượng từ lab node qua Cloud0 đi ra mạng `10.10.200.0/24`, sau đó NAT ra Internet .
 
 
-<img src="../assets/img/2026-05-04-pnetlab-lab/21.png"/>
+<img src="/assets/img/2026-05-04-pnetlab-lab/21.png"/>
 
 #### 6.4. Kết nối các Node
 
@@ -305,7 +305,7 @@ Kéo link giữa các interface theo sơ đồ:
 | Router | Gi0/0 | FortiGate | port2 |
 | FortiGate | port1 | Internet (Cloud0) | — |
 
-<img src="../assets/img/2026-05-04-pnetlab-lab/22.png"/>
+<img src="/assets/img/2026-05-04-pnetlab-lab/22.png"/>
 
 #### 6.5. Khởi động và cấu hình
 
@@ -395,11 +395,11 @@ show system interface port1
 
 ```
 
-<img src="../assets/img/2026-05-04-pnetlab-lab/23.png"/>
+<img src="/assets/img/2026-05-04-pnetlab-lab/23.png"/>
 
-<img src="../assets/img/2026-05-04-pnetlab-lab/24.png"/>
+<img src="/assets/img/2026-05-04-pnetlab-lab/24.png"/>
 
-<img src="../assets/img/2026-05-04-pnetlab-lab/25.png"/>
+<img src="/assets/img/2026-05-04-pnetlab-lab/25.png"/>
 
 
 **Router — vIOS L3** (IP + default route qua FortiGate):
@@ -415,7 +415,7 @@ Router(config-if)#  no shutdown
 Router(config)# ip route 0.0.0.0 0.0.0.0 192.168.30.2
 ```
 
-<img src="../assets/img/2026-05-04-pnetlab-lab/26.png"/>
+<img src="/assets/img/2026-05-04-pnetlab-lab/26.png"/>
 
 **Switch — vIOS L2** (VLAN + access port):
 
@@ -435,7 +435,7 @@ Switch(config)# end
 Switch# wr
 ```
 
-<img src="../assets/img/2026-05-04-pnetlab-lab/27.png"/>
+<img src="/assets/img/2026-05-04-pnetlab-lab/27.png"/>
 
 **ubuntu 20.04** (IP tĩnh + default gateway + DNS):
 
@@ -456,7 +456,7 @@ apt update                              # test DNS (53) + HTTP/HTTPS thực tế
 ntpdate vn.pool.ntp.org                 # test NTP port 123 (UDP)
 ```
 
-<img src="../assets/img/2026-05-04-pnetlab-lab/28.png"/>
+<img src="/assets/img/2026-05-04-pnetlab-lab/28.png"/>
 
 
 
