@@ -475,9 +475,4 @@ PNetLab là công cụ mạnh mẽ và linh hoạt cho việc học và lab mạ
 
 Sau khi nắm được cơ bản, bạn có thể mở rộng lab với các chủ đề nâng cao như **BGP full-mesh**, **MPLS/VPN**, **SD-WAN**, hoặc tích hợp với **Ansible/Python** để thực hành network automation.
 
----
 
-*Tham khảo:*
-- [PNetLab Official](https://pnetlab.com)
-- [PNetLab Documentation](https://pnetlab.com/pages/documentation)
-- [Cisco Image Compatibility](https://pnetlab.com/pages/store)
