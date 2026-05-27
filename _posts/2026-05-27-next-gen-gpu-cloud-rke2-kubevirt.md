@@ -22,7 +22,7 @@ Mình xây lab Next-Gen GPU Cloud để PoC stack này từ đầu trên 3 VM Ub
 
 Lab sử dụng Time-slicing để chia nhỏ GPU. Trên hạ tầng A100/H100 thật, kiến trúc chuẩn sẽ sử dụng MIG (Multi-Instance GPU) để chia nhỏ GPU cả về Compute lẫn VRAM ở mức hardware, đảm bảo strict isolation cho tenant. Trên Production, GPU Cloud sẽ không dùng L2 Announcements mà cấu hình Cilium BGP Control Plane.
 
-Bài này mình **phân vai 3 node khác nhau theo loại khách hàng** — đây là pattern thực tế mà GPU cloud thương mại dùng để tận dụng phần cứng:
+Bài này mình **phân bổ 3 node khác nhau theo loại khách hàng** — đây là pattern thực tế mà GPU cloud thương mại dùng để tận dụng phần cứng:
 
 - **ctrl01** — node CPU-only, phục vụ khách không cần GPU
 - **ctrl02** — node có GPU nguyên, phục vụ khách mua whole-GPU (VM AI training, render)
@@ -49,21 +49,11 @@ Stack Kubernetes-native mà các GPU cloud production đang dùng:
 - [Mục lục](#mục-lục)
 - [1. Tại sao Kubernetes cho Next-Gen GPU Cloud](#1-tại-sao-kubernetes-cho-next-gen-gpu-cloud)
   - [1.1 OpenStack vs Kubernetes-native](#11-openstack-vs-kubernetes-native)
-  - [1.2 Topology 3 nodes — phân vai theo loại khách hàng](#12-topology-3-nodes--phân-vai-theo-loại-khách-hàng)
-  - [1.3 Phân bổ RAM 16 GB per node](#13-phân-bổ-ram-16-gb-per-node)
-  - [1.4 GPU provisioning hoạt động thế nào — và giới hạn của fake-gpu-operator](#14-gpu-provisioning-hoạt-động-thế-nào--và-giới-hạn-của-fake-gpu-operator)
-  - [1.5 Trade-off POC cần biết](#15-trade-off-poc-cần-biết)
-- [2. Node Layout, Tài nguyên \& IP Planning](#2-node-layout-tài-nguyên--ip-planning)
-  - [2.1 Tài nguyên](#21-tài-nguyên)
+  - [1.2 Topology 3 nodes trong Lab — phân bổ theo loại khách hàng](#12-topology-3-nodes-trong-lab--phân-bổ-theo-loại-khách-hàng)
+- [2. Tài nguyên \& IP Planning](#2-tài-nguyên--ip-planning)
+  - [2.1 Tài nguyên lab](#21-tài-nguyên-lab)
   - [2.2 IP planning](#22-ip-planning)
 - [3. Base OS (Tất cả nodes)](#3-base-os-tất-cả-nodes)
-  - [3.1 Set hostname + IP Config](#31-set-hostname--ip-config)
-  - [3.2 Swap OFF + Disable Firewalls](#32-swap-off--disable-firewalls)
-  - [3.3 NTP](#33-ntp)
-  - [3.4 Kernel modules + sysctl](#34-kernel-modules--sysctl)
-  - [3.5 Base packages](#35-base-packages)
-  - [3.6 /etc/hosts](#36-etchosts)
-  - [3.7 Disk thứ 2 cho Ceph](#37-disk-thứ-2-cho-ceph)
 - [4. Cài RKE2 HA Cluster](#4-cài-rke2-ha-cluster)
   - [4.1 Bootstrap node đầu tiên (ctrl01)](#41-bootstrap-node-đầu-tiên-ctrl01)
   - [4.2 Join ctrl02, ctrl03](#42-join-ctrl02-ctrl03)
@@ -127,13 +117,11 @@ Bước sang giai đoạn 2025–2026, Kubernetes đã trở thành chuẩn chun
 | **AI ecosystem** | Không có native integration | Kubeflow, KServe, Ray, vLLM, NIM — all native K8s |
 | **GPU scheduling/queueing** | Không có | Kueue, Volcano, KAI Scheduler |
 
+### 1.2 Topology 3 nodes trong Lab — phân bổ theo loại khách hàng
 
+Thay vì 3 node giống nhau, lab phân bổ mỗi node cho một loại khách hàng để mô phỏng đúng cách GPU cloud thương mại tận dụng phần cứng.
 
-### 1.2 Topology 3 nodes — phân vai theo loại khách hàng
-
-Thay vì 3 node giống nhau, lab phân vai mỗi node cho một loại khách hàng để mô phỏng đúng cách GPU cloud thương mại tận dụng phần cứng.
-
-**Nguyên tắc tài chính:** node có GPU rất đắt (A100/H100). Không bao giờ đặt workload không cần GPU lên node có GPU — đó là lãng phí tài sản. Cloud provider phải có pool node CPU-only cho workload không GPU, và pool node GPU dành riêng cho khách trả tiền GPU.
+**Nguyên tắc tài chính:** node có GPU rất đắt (A100/H100). Không bao giờ đặt workload không cần GPU lên node có GPU — đó là lãng phí tài nguyên. Cloud provider phải có pool node CPU-only cho workload không GPU, và pool node GPU dành riêng cho khách trả tiền GPU.
 
 | Node | IP | Roles K8s | Roles Ceph | GPU pool | Khách hàng phục vụ |
 |---|---|---|---|---|---|
@@ -150,86 +138,13 @@ Thay vì 3 node giống nhau, lab phân vai mỗi node cho một loại khách h
 
 Workload hệ thống (Rook, monitoring, ingress, KubeVirt operator) chạy trên cả 3 node bình thường — chúng không cần GPU, nodeSelector tenant không áp dụng.
 
-**fake-gpu-operator chỉ deploy device plugin trên ctrl02 và ctrl03**, không trên ctrl01. Nếu ai đó cố schedule pod `nvidia.com/gpu: 1` vào ctrl01 → schedule fail vì ctrl01 không advertise resource đó.
-
-### 1.3 Phân bổ RAM 16 GB per node
-
-Lab dùng 16 GB/node, không tăng — chấp nhận risk OOM trong tình huống load cao (Ceph rebalance + Prometheus + tenant workload cùng lúc). Production thật sự nên dùng 32-64 GB/node, nhưng đây là lab nên tối ưu cost trước.
-
-Phân bổ ước tính (sau khi cluster idle, không có tenant workload):
-
-| Layer | Trên mỗi node | Cluster total |
-|---|---|---|
-| OS + kernel + buffers | ~1.5 GB | ~4.5 GB |
-| RKE2 (etcd + kubelet + containerd) | ~1.2 GB | ~3.6 GB |
-| Cilium agent + envoy | ~600 MB | ~1.8 GB |
-| Rook-Ceph (mon + osd + mgr) | ~2.5 GB | ~7.5 GB |
-| KubeVirt (virt-handler + virt-controller) | ~400 MB | ~1.2 GB |
-| CDI controller + uploadproxy | ~200 MB | ~600 MB |
-| fake-gpu-operator + KWOK (ctrl02/ctrl03 only) | ~300 MB | ~600 MB |
-| Capsule + Kueue + cert-manager | ~400 MB | ~1.2 GB |
-| Prometheus + Grafana + Alertmanager | ~1.8 GB (trên 1 node) | ~1.8 GB |
-| Headlamp + KubeVirt Manager | ~300 MB | ~300 MB |
-| **System total** | ~7-9 GB | ~23 GB |
-| **Còn cho tenant workload** | ~7-9 GB | ~21-25 GB |
-
-Đủ để chạy 3 VM tenant (mỗi VM 2-4 GB) + 1 container. Nếu Prometheus retention dài hơn, hoặc Ceph rebalance khi mất disk → có thể OOM. **Đây là risk chấp nhận của lab; production phải có monitoring alert + reserve room.**
-
-### 1.4 GPU provisioning hoạt động thế nào — và giới hạn của fake-gpu-operator
-
-**Whole GPU (KH2 — cust-gpu-whole, trên ctrl02):**
-- fake-gpu-operator advertise 2× `nvidia.com/gpu` integer resource
-- VM/container xin `nvidia.com/gpu: 1` → scheduler bind vào ctrl02
-- Container chạy được binary `nvidia-smi` giả lập trong pod (operator inject)
-- VM xin GPU → KubeVirt thấy resource → ghi vào VMI spec, scheduler place đúng node
-
-**Fractional GPU (KH3 — cust-gpu-shared, trên ctrl03):**
-- Time-slicing config: mỗi physical GPU chia 4 slice → 2 GPU × 4 = 8 replica
-- fake-gpu-operator advertise 8× `nvidia.com/gpu`
-- Container/VM xin `nvidia.com/gpu: 1` → nhận 1 slice → scheduler bind vào ctrl03
-- 8 workload có thể chạy song song trên ctrl03
-
-**🚨 Giới hạn của fake-gpu-operator với VM Windows (quan trọng):**
-
-fake-gpu-operator chỉ implement DevicePlugin interface ở K8s level. Nó **không** thực hiện PCI passthrough qua VFIO vào QEMU. KubeVirt cần `/dev/vfio/N` device từ host để attach GPU vào VM guest — fake operator không cung cấp cái đó.
-
-Hệ quả thực tế:
-
-| Demo | Có chạy được không? |
-|---|---|
-| K8s scheduler place VM Windows lên ctrl02 | ✅ Work |
-| `kubectl describe vmi` show `nvidia.com/gpu: 1` allocated | ✅ Work |
-| Capsule quota deduct đúng | ✅ Work |
-| Headlamp / KubeVirt Manager show VM với GPU resource | ✅ Work |
-| RDP vào Windows được, desktop bình thường | ✅ Work |
-| **Windows Device Manager show NVIDIA GPU** | ❌ Chỉ show "QEMU Standard VGA" |
-| **`nvidia-smi.exe` trong Windows** | ❌ Không có device thật |
-
-Đây là **giới hạn cứng** của simulation. Lab demo được toàn bộ workflow GPU cloud — từ phân vai node, scheduling, quota, billing tracking — chỉ thiếu phần GPU vật lý hiển thị trong guest OS. Production khi swap fake-gpu-operator → NVIDIA GPU Operator + GPU thật + VFIO/SR-IOV, mọi demo trên đều work full, Device Manager Windows sẽ thấy A100/H100.
-
-Pattern lab này áp dụng được nguyên xi cho GPU thật chỉ bằng cách thay 1 component (operator), tất cả manifests Tenant/Capsule/Kueue giữ nguyên.
-
-### 1.5 Trade-off POC cần biết
-
-| Vấn đề | POC chấp nhận | Production phải làm |
-|---|---|---|
-| GPU thật | Không, fake operator | NVIDIA GPU Operator + A100/H100 + driver host |
-| HA mất 1 node | Cluster degrade 33% (3 node converged) | Tách tier ≥6 control-plane + 5 GPU compute + 7 Ceph OSD |
-| RAM 16GB/node | Risk OOM khi load cao | Tối thiểu 32GB, lý tưởng 64GB+ |
-| Replication Ceph | =3 (an toàn rồi) | =3 + failure domain rack/zone nếu multi-rack |
-| Network | 2 NIC VXLAN | 4 NIC: mgmt + pod + storage + GPU fabric (RoCE/IB) |
-| Backup | Etcd snapshot only | + Velero + Ceph RBD mirror + offsite |
-| Customer portal | Headlamp generic | Portal custom có billing, ticket, API key, SSH key |
-| Metering/Billing | Không có | Tracking GPU-hour, CPU-hour, RAM-GB-hour qua DCGM + custom pipeline |
-| GPU show trong Windows | Không (limitation fake operator) | Có (real PCI passthrough qua KubeVirt) |
-
 ---
 
-## 2. Node Layout, Tài nguyên & IP Planning
+## 2. Tài nguyên & IP Planning
 
-### 2.1 Tài nguyên
+### 2.1 Tài nguyên lab
 
-Mỗi node 3 VM trên ESXi (hoặc bare metal nhỏ):
+3 VM trên ESXi:
 
 | Node | CPU | RAM | Disk 1 (OS) | Disk 2 (Ceph OSD) | NIC 1 (mgmt) | NIC 2 (cluster/storage) |
 |---|---|---|---|---|---|---|
@@ -278,88 +193,21 @@ LB pool 10.10.200.60-99 phải nằm trong cùng L2 với node để ARP announc
 
 ## 3. Base OS (Tất cả nodes)
 
-Các bước trong section này chạy **trên cả 3 node**. Mỗi node identical về OS prep, chỉ khác hostname và IP.
-
-### 3.1 Set hostname + IP Config
+**Chuẩn bị OS** — chạy toàn bộ block này trên cả 3 node:
 
 ```bash
-# Trên ctrl01
-hostnamectl set-hostname ctrl01
-
-# Trên ctrl02
-hostnamectl set-hostname ctrl02
-
-# Trên ctrl03
-hostnamectl set-hostname ctrl03
-```
-
-Set IP tĩnh qua netplan. File `/etc/netplan/50-cloud-init.yaml`:
-
-```yaml
-# ctrl01 — thay IP cho ctrl02/ctrl03 tương ứng
-network:
-  version: 2
-  ethernets:
-    ens160:
-      dhcp4: false
-      addresses: [10.10.200.11/24]
-      routes:
-        - to: default
-          via: 10.10.200.1
-      nameservers:
-        addresses: [1.1.1.1, 8.8.8.8]
-    ens192:
-      dhcp4: false
-      addresses: [10.10.201.11/24]   # cluster/storage network, lab dùng cùng L2 cho đơn giản
-```
-
-```bash
-chmod 600 /etc/netplan/50-cloud-init.yaml
-netplan apply
-```
-
-Verify:
-
-```bash
-ip -4 addr show
-ping -c 2 10.10.200.1
-ping -c 2 1.1.1.1
-```
-
-### 3.2 Swap OFF + Disable Firewalls
-
-Kubernetes yêu cầu swap off. Firewall ufw không cần khi dùng Cilium policy.
-
-```bash
+# Swap off (bắt buộc cho Kubernetes)
 swapoff -a
 sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
 
-systemctl disable --now ufw
-systemctl disable --now apparmor
-```
+# Disable ufw và apparmor (conflict với KVM nested)
+systemctl disable --now ufw apparmor
 
-`apparmor` disable vì lab dùng KVM nested có thể conflict với một số profile. Production nên giữ apparmor và tune profile riêng.
+# Chrony — Ceph yêu cầu clock skew < 50ms giữa các mon
+apt update && apt install -y chrony
+chronyc tracking | grep "Leap status"
 
-### 3.3 NTP
-
-Ceph đòi clock skew < 0.05 s giữa các mon. NTP **bắt buộc** với chrony, không phải systemd-timesyncd.
-
-```bash
-apt update
-apt install -y chrony
-
-# Verify chronyc sync
-chronyc sources
-chronyc tracking | grep -E "Stratum|Leap status"
-```
-
-Skew > 50ms giữa các node = Ceph mon out of quorum, cluster degrade.
-
-### 3.4 Kernel modules + sysctl
-
-Cilium eBPF, KubeVirt, Ceph cần kernel features.
-
-```bash
+# Kernel modules
 tee /etc/modules-load.d/k8s.conf <<EOF
 br_netfilter
 overlay
@@ -369,23 +217,14 @@ ip_vs_wrr
 ip_vs_sh
 nf_conntrack
 EOF
-
 modprobe br_netfilter overlay ip_vs ip_vs_rr ip_vs_wrr ip_vs_sh nf_conntrack
 
-# KVM nested
-modprobe kvm_intel nested=1   # hoặc kvm_amd nested=1
-echo "options kvm_intel nested=1" | tee /etc/modprobe.d/kvm-intel.conf
+# KVM nested (bắt buộc cho KubeVirt)
+modprobe kvm_intel nested=1
+echo "options kvm_intel nested=1" > /etc/modprobe.d/kvm-intel.conf
+cat /sys/module/kvm_intel/parameters/nested   # phải ra: Y
 
-# Verify nested
-cat /sys/module/kvm_intel/parameters/nested
-# Phải hiển thị: Y
-```
-
-Nếu output không phải `Y`, kiểm tra ESXi setting "Expose hardware assisted virtualization to the guest OS" trên VM.
-
-sysctl tuning:
-
-```bash
+# sysctl
 tee /etc/sysctl.d/99-k8s-ceph-kubevirt.conf <<EOF
 net.bridge.bridge-nf-call-iptables  = 1
 net.bridge.bridge-nf-call-ip6tables = 1
@@ -402,31 +241,20 @@ kernel.pid_max                      = 4194304
 net.core.somaxconn                  = 32768
 net.netfilter.nf_conntrack_max      = 1000000
 EOF
-
 sysctl --system
-```
 
-`rp_filter=0` cho phép Cilium asymmetric routing — bắt buộc với eBPF datapath. `vm.overcommit_memory=1` cần cho KVM khi RAM khít. `max_map_count=524288` đủ cho Prometheus/Elasticsearch nếu sau này thêm.
-
-### 3.5 Base packages
-
-```bash
+# Packages
 apt install -y \
   curl wget vim git jq htop iotop \
   nfs-common open-iscsi cryptsetup ceph-common \
   qemu-guest-agent gnupg lsb-release apt-transport-https \
   ca-certificates software-properties-common
 
-# Ubuntu 24.04 mặc định nftables - RKE2/Calico/Cilium cần iptables-legacy
+# Ubuntu 24.04: phải dùng iptables-legacy — nftables mặc định làm KubeVirt rules fail im lặng
 update-alternatives --set iptables /usr/sbin/iptables-legacy
 update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
-```
 
-`iptables-legacy` là detail cực kỳ quan trọng với Ubuntu 24.04. Nếu để nftables mặc định, Cilium kube-proxy replacement vẫn work nhưng host firewall policy và một số iptables rules từ KubeVirt sẽ fail im lặng.
-
-### 3.6 /etc/hosts
-
-```bash
+# /etc/hosts
 tee -a /etc/hosts <<EOF
 10.10.200.11  ctrl01
 10.10.200.12  ctrl02
@@ -434,30 +262,6 @@ tee -a /etc/hosts <<EOF
 10.10.200.51  k8s-api.anhlx.lab
 EOF
 ```
-
-### 3.7 Disk thứ 2 cho Ceph
-
-Ceph OSD cần raw block device — không format, không mount, không partition. Lab gắn thêm disk 100 GB trên mỗi VM ESXi (Disk 2). Tên thường là `/dev/sdb`.
-
-```bash
-lsblk
-
-# NAME                      MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
-# sda                         8:0    0  100G  0 disk
-# ├─sda1                      8:1    0    1M  0 part
-# ├─sda2                      8:2    0    2G  0 part /boot
-# └─sda3                      8:3    0   98G  0 part
-#   └─ubuntu--vg-ubuntu--lv 252:0    0   98G  0 lvm  /
-# sdb                         8:16   0  200G  0 disk
-# sr0                        11:0    1  3.2G  0 rom
-
-
-# Verify sạch (không có FS)
-wipefs -a /dev/sdb || true
-sgdisk --zap-all /dev/sdb || true
-```
-
-Sau bước này, Rook operator sẽ tự discover `/dev/sdb` và provision OSD lên đó.
 
 ---
 
@@ -1741,7 +1545,7 @@ VM smoke test thành công xác nhận: CDI import work, KubeVirt scheduling wor
 
 ## 10. fake-gpu-operator — Topology theo node
 
-Mình phân vai 3 node theo loại GPU pool:
+Mình phân bổ 3 node theo loại GPU pool:
 
 - **ctrl01** — KHÔNG có GPU pool, không label, không deploy fake-gpu-operator
 - **ctrl02** — pool `whole`, 2 GPU integer (không time-slicing)
@@ -1759,7 +1563,7 @@ kubectl -n kube-system get pods -l app=kwok-controller
 
 Note: KWOK install có thể báo warning "FlowSchema creation is not allowed" — bỏ qua, không critical.
 
-Bước 2: Label nodes — đây là cách phân vai chính:
+Bước 2: Label nodes — đây là cách phân bổ chính:
 
 ```bash
 # ctrl01 — CPU only, KHÔNG label gpu-pool simulated
@@ -3771,7 +3575,7 @@ Lab này đã chỉ ra full pattern của một Next-Gen GPU Cloud thương mạ
 1. **HA Kubernetes 3-node** với etcd quorum + kube-vip VIP API + Cilium L2 Announcements (không cần MetalLB)
 2. **Distributed storage** Rook-Ceph với replication=3 an toàn, 3 StorageClass cho 3 use case (RBD RWO, RBD block-mode RWX, CephFS), VolumeSnapshot bật, dashboard
 3. **VM lẫn container** trên cùng cluster qua KubeVirt \+ CDI — cùng scheduler, cùng network, cùng storage
-4. **GPU multi-pool topology**: phân vai 3 node theo loại khách hàng (CPU-only, whole, shared) — đúng cách GPU cloud thực tế tận dụng phần cứng
+4. **GPU multi-pool topology**: phân bổ 3 node theo loại khách hàng (CPU-only, whole, shared) — đúng cách GPU cloud thực tế tận dụng phần cứng
 5. **Multi-tenancy hard isolation** qua Capsule với **custom ClusterRole `tenant-owner`** không cluster-admin, NetworkPolicy auto, nodeSelector inject, ResourceQuota hard limit
 6. **Job queueing** với Kueue cho fair-share GPU scheduling
 7. **Observability stack** kube-prometheus-stack + Grafana + Hubble + Ceph dashboard

@@ -1,0 +1,250 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 960" width="1200" height="960">
+<style>
+  text{font-family:'SF Pro Display','Segoe UI',system-ui,sans-serif}
+  .tt{font-size:21px;font-weight:700;fill:#F1F5F9;letter-spacing:-.5px}
+  .ts{font-size:11px;fill:#5E7490;letter-spacing:1.2px}
+  .te{font-size:12px;font-weight:600;fill:#7090AA;letter-spacing:.8px}
+  .tsc{font-size:10px;font-weight:700;fill:#6A8098;letter-spacing:2px}
+  .tn{font-size:21px;font-weight:700;fill:#F8FAFC}
+  .tsp{font-size:11px;fill:#8AAABE}
+  .tbh{font-size:12.5px;font-weight:700;fill:#FFF;text-anchor:middle}
+  .tbs{font-size:11.5px;fill:#CBD8E6;text-anchor:middle}
+  .tbg{font-size:9.5px;font-weight:700;fill:#FFF;text-anchor:middle}
+  .tbr{font-size:12.5px;font-weight:800;fill:#FFF;text-anchor:middle;letter-spacing:1.5px}
+  .tnn{font-size:14px;font-weight:700}
+  .tns{font-size:11.5px;fill:#8AAABE}
+  .tni{font-size:10.5px;font-weight:700;fill:#FFF;text-anchor:middle}
+  .tan{font-size:11.5px;font-weight:700}
+  .trn{font-size:15px;font-weight:700;fill:#F8FAFC}
+  .trs{font-size:11.5px;fill:#8AAABE}
+  .tri{font-size:11.5px;fill:#60A5FA;font-weight:600}
+</style>
+<defs>
+  <pattern id="pts" x="0" y="0" width="28" height="28" patternUnits="userSpaceOnUse">
+    <circle cx="1" cy="1" r=".9" fill="#172033" opacity=".7"/>
+  </pattern>
+  <linearGradient id="gbr" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="#6366F1"/>
+    <stop offset="100%" stop-color="#A855F7"/>
+  </linearGradient>
+  <linearGradient id="gav" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#7C3AED"/>
+    <stop offset="60%" stop-color="#4338CA"/>
+    <stop offset="100%" stop-color="#1E3A8A" stop-opacity=".4"/>
+  </linearGradient>
+  <linearGradient id="gtl" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%" stop-color="#6366F1"/>
+    <stop offset="60%" stop-color="#4F46E5" stop-opacity=".3"/>
+    <stop offset="100%" stop-color="#4F46E5" stop-opacity="0"/>
+  </linearGradient>
+  <linearGradient id="gc" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#1D4ED8"/>
+    <stop offset="100%" stop-color="#1E3A8A"/>
+  </linearGradient>
+  <linearGradient id="gcp" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#065F46"/>
+    <stop offset="100%" stop-color="#064E3B"/>
+  </linearGradient>
+  <linearGradient id="gs" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#9D174D"/>
+    <stop offset="100%" stop-color="#831843"/>
+  </linearGradient>
+  <filter id="fsh" x="-5%" y="-5%" width="110%" height="115%">
+    <feDropShadow dx="0" dy="3" stdDeviation="7" flood-color="#000" flood-opacity=".5"/>
+  </filter>
+</defs>
+
+<!-- Background -->
+<rect width="1200" height="960" fill="#07101C"/>
+<rect width="1200" height="960" fill="url(#pts)"/>
+
+<!-- Left accent bar -->
+<rect x="0" y="0" width="4" height="960" fill="url(#gav)"/>
+
+<!-- Header -->
+<rect x="0" y="0" width="1200" height="76" fill="#0B1626"/>
+<rect x="4" y="75" width="1196" height="1" fill="#1A2840"/>
+<rect x="20" y="48" width="380" height="2" rx="1" fill="url(#gtl)"/>
+<text x="20" y="40" class="tt">Private Cloud: OpenStack 2025.1 + OVN + Ceph Squid</text>
+<text x="20" y="64" class="ts">KOLLA-ANSIBLE  ·  UBUNTU 24.04 LTS  ·  3-NODE ALL-IN-ONE  ·  HYPERCONVERGED</text>
+
+<!-- anhlx lab badge -->
+<rect x="1060" y="17" width="122" height="42" rx="21" fill="url(#gbr)" filter="url(#fsh)"/>
+<text x="1121" y="43" class="tbr">anhlx lab</text>
+
+<!-- ESXi container -->
+<rect x="18" y="84" width="1164" height="864" rx="12" fill="#0B1626" stroke="#192437" stroke-width="1.5"/>
+<text x="36" y="107" class="te">HYPERVISOR (ESXi)  ·  4 VMs  ·  26 vCPU  ·  52 GB RAM  ·  ~1.1 TB Disk</text>
+
+<!-- Registry node -->
+<rect x="36" y="116" width="318" height="82" rx="8" fill="#09101E" stroke="#1E3A8A" stroke-width="1.5"/>
+<rect x="52" y="129" width="68" height="17" rx="8.5" fill="#1D4ED8"/>
+<text x="86" y="141" class="tbg">REGISTRY</text>
+<text x="130" y="141" class="trn">registry01</text>
+<text x="130" y="158" class="trs">Docker Registry v2 · mirror quay.io</text>
+<text x="52" y="176" class="tri">10.10.200.5</text>
+<text x="128" y="176" class="trs">  ·  2 vCPU · 4 GB · 54 images</text>
+
+<!-- All-in-one label -->
+<text x="36" y="218" class="tsc">3-NODE ALL-IN-ONE  —  CONTROLLER + COMPUTE + STORAGE</text>
+
+<!-- ═══════════ CTRL01 ═══════════ -->
+<rect x="36" y="228" width="315" height="402" rx="10" fill="#080F1C" stroke="#1E2D45" stroke-width="1.5" filter="url(#fsh)"/>
+<rect x="36" y="228" width="315" height="56" rx="10" fill="#0F1C34"/>
+<rect x="36" y="266" width="315" height="18" fill="#0F1C34"/>
+<circle cx="57" cy="256" r="8" fill="#10B981" fill-opacity=".12"/>
+<circle cx="57" cy="256" r="5" fill="#10B981"/>
+<text x="71" y="261" class="tn">ctrl01</text>
+<rect x="160" y="246" width="54" height="18" rx="9" fill="#059669"/>
+<text x="187" y="259" class="tbg">Deploy</text>
+<text x="222" y="259" class="tsp">8 vCPU · 16 GB · 100 GB</text>
+
+<rect x="50" y="295" width="287" height="103" rx="7" fill="#07101E" stroke="#1D4ED8" stroke-width="1"/>
+<rect x="50" y="295" width="287" height="26" rx="7" fill="url(#gc)"/>
+<rect x="50" y="308" width="287" height="13" fill="url(#gc)"/>
+<text x="193" y="312" class="tbh">Control Plane</text>
+<text x="193" y="336" class="tbs">Keystone · Nova API/Sched/Cond · Glance</text>
+<text x="193" y="352" class="tbs">Cinder · OVN NB/SB · Neutron Server</text>
+<text x="193" y="368" class="tbs">MariaDB · RabbitMQ · HAProxy · Keepalived</text>
+
+<rect x="50" y="406" width="287" height="76" rx="7" fill="#040C0A" stroke="#059669" stroke-width="1"/>
+<rect x="50" y="406" width="287" height="26" rx="7" fill="url(#gcp)"/>
+<rect x="50" y="419" width="287" height="13" fill="url(#gcp)"/>
+<text x="193" y="423" class="tbh">Compute</text>
+<text x="193" y="448" class="tbs">Nova KVM  ·  libvirt</text>
+<text x="193" y="464" class="tbs">OVN Controller  ·  Open vSwitch</text>
+
+<rect x="50" y="490" width="287" height="76" rx="7" fill="#0D0410" stroke="#BE185D" stroke-width="1"/>
+<rect x="50" y="490" width="287" height="26" rx="7" fill="url(#gs)"/>
+<rect x="50" y="503" width="287" height="13" fill="url(#gs)"/>
+<text x="193" y="507" class="tbh">Storage</text>
+<text x="193" y="532" class="tbs">Ceph OSD  ·  /dev/sdb  ·  200 GB</text>
+<text x="193" y="548" class="tbs">Ceph mon/mgr (active)</text>
+
+<rect x="50" y="578" width="82" height="22" rx="5" fill="#1E3A8A"/>
+<text x="91" y="593" class="tbg">ens160  MGMT</text>
+<rect x="141" y="578" width="75" height="22" rx="5" fill="#065F46"/>
+<text x="178" y="593" class="tbg">ens192  TUN</text>
+<rect x="225" y="578" width="97" height="22" rx="5" fill="#7C2D12"/>
+<text x="273" y="593" class="tbg">ens224  PROVIDER</text>
+<text x="50" y="614" font-size="9.5" fill="#2563EB">10.10.200.11</text>
+<text x="141" y="614" font-size="9.5" fill="#059669">10.10.201.11</text>
+
+<!-- ═══════════ CTRL02 ═══════════ -->
+<rect x="365" y="228" width="315" height="402" rx="10" fill="#080F1C" stroke="#1E2D45" stroke-width="1.5" filter="url(#fsh)"/>
+<rect x="365" y="228" width="315" height="56" rx="10" fill="#0F1C34"/>
+<rect x="365" y="266" width="315" height="18" fill="#0F1C34"/>
+<circle cx="386" cy="256" r="8" fill="#10B981" fill-opacity=".12"/>
+<circle cx="386" cy="256" r="5" fill="#10B981"/>
+<text x="400" y="261" class="tn">ctrl02</text>
+<text x="458" y="259" class="tsp">8 vCPU · 16 GB · 100 GB</text>
+
+<rect x="379" y="295" width="287" height="103" rx="7" fill="#07101E" stroke="#1D4ED8" stroke-width="1"/>
+<rect x="379" y="295" width="287" height="26" rx="7" fill="url(#gc)"/>
+<rect x="379" y="308" width="287" height="13" fill="url(#gc)"/>
+<text x="522" y="312" class="tbh">Control Plane</text>
+<text x="522" y="336" class="tbs">Keystone · Nova API/Sched/Cond · Glance</text>
+<text x="522" y="352" class="tbs">Cinder · OVN NB/SB · Neutron Server</text>
+<text x="522" y="368" class="tbs">MariaDB · RabbitMQ · HAProxy · Keepalived</text>
+
+<rect x="379" y="406" width="287" height="76" rx="7" fill="#040C0A" stroke="#059669" stroke-width="1"/>
+<rect x="379" y="406" width="287" height="26" rx="7" fill="url(#gcp)"/>
+<rect x="379" y="419" width="287" height="13" fill="url(#gcp)"/>
+<text x="522" y="423" class="tbh">Compute</text>
+<text x="522" y="448" class="tbs">Nova KVM  ·  libvirt</text>
+<text x="522" y="464" class="tbs">OVN Controller  ·  Open vSwitch</text>
+
+<rect x="379" y="490" width="287" height="76" rx="7" fill="#0D0410" stroke="#BE185D" stroke-width="1"/>
+<rect x="379" y="490" width="287" height="26" rx="7" fill="url(#gs)"/>
+<rect x="379" y="503" width="287" height="13" fill="url(#gs)"/>
+<text x="522" y="507" class="tbh">Storage</text>
+<text x="522" y="532" class="tbs">Ceph OSD  ·  /dev/sdb  ·  200 GB</text>
+<text x="522" y="548" class="tbs">Ceph mon/mgr (standby)</text>
+
+<rect x="379" y="578" width="82" height="22" rx="5" fill="#1E3A8A"/>
+<text x="420" y="593" class="tbg">ens160  MGMT</text>
+<rect x="470" y="578" width="75" height="22" rx="5" fill="#065F46"/>
+<text x="507" y="593" class="tbg">ens192  TUN</text>
+<rect x="554" y="578" width="97" height="22" rx="5" fill="#7C2D12"/>
+<text x="602" y="593" class="tbg">ens224  PROVIDER</text>
+<text x="379" y="614" font-size="9.5" fill="#2563EB">10.10.200.12</text>
+<text x="470" y="614" font-size="9.5" fill="#059669">10.10.201.12</text>
+
+<!-- ═══════════ CTRL03 ═══════════ -->
+<rect x="694" y="228" width="315" height="402" rx="10" fill="#080F1C" stroke="#1E2D45" stroke-width="1.5" filter="url(#fsh)"/>
+<rect x="694" y="228" width="315" height="56" rx="10" fill="#0F1C34"/>
+<rect x="694" y="266" width="315" height="18" fill="#0F1C34"/>
+<circle cx="715" cy="256" r="8" fill="#10B981" fill-opacity=".12"/>
+<circle cx="715" cy="256" r="5" fill="#10B981"/>
+<text x="729" y="261" class="tn">ctrl03</text>
+<text x="787" y="259" class="tsp">8 vCPU · 16 GB · 100 GB</text>
+
+<rect x="708" y="295" width="287" height="103" rx="7" fill="#07101E" stroke="#1D4ED8" stroke-width="1"/>
+<rect x="708" y="295" width="287" height="26" rx="7" fill="url(#gc)"/>
+<rect x="708" y="308" width="287" height="13" fill="url(#gc)"/>
+<text x="851" y="312" class="tbh">Control Plane</text>
+<text x="851" y="336" class="tbs">Keystone · Nova API/Sched/Cond · Glance</text>
+<text x="851" y="352" class="tbs">Cinder · OVN NB/SB · Neutron Server</text>
+<text x="851" y="368" class="tbs">MariaDB · RabbitMQ · HAProxy · Keepalived</text>
+
+<rect x="708" y="406" width="287" height="76" rx="7" fill="#040C0A" stroke="#059669" stroke-width="1"/>
+<rect x="708" y="406" width="287" height="26" rx="7" fill="url(#gcp)"/>
+<rect x="708" y="419" width="287" height="13" fill="url(#gcp)"/>
+<text x="851" y="423" class="tbh">Compute</text>
+<text x="851" y="448" class="tbs">Nova KVM  ·  libvirt</text>
+<text x="851" y="464" class="tbs">OVN Controller  ·  Open vSwitch</text>
+
+<rect x="708" y="490" width="287" height="76" rx="7" fill="#0D0410" stroke="#BE185D" stroke-width="1"/>
+<rect x="708" y="490" width="287" height="26" rx="7" fill="url(#gs)"/>
+<rect x="708" y="503" width="287" height="13" fill="url(#gs)"/>
+<text x="851" y="507" class="tbh">Storage</text>
+<text x="851" y="532" class="tbs">Ceph OSD  ·  /dev/sdb  ·  200 GB</text>
+<text x="851" y="548" class="tbs">Ceph mon (replica)</text>
+
+<rect x="708" y="578" width="82" height="22" rx="5" fill="#1E3A8A"/>
+<text x="749" y="593" class="tbg">ens160  MGMT</text>
+<rect x="799" y="578" width="75" height="22" rx="5" fill="#065F46"/>
+<text x="836" y="593" class="tbg">ens192  TUN</text>
+<rect x="883" y="578" width="97" height="22" rx="5" fill="#7C2D12"/>
+<text x="931" y="593" class="tbg">ens224  PROVIDER</text>
+<text x="708" y="614" font-size="9.5" fill="#2563EB">10.10.200.13</text>
+<text x="799" y="614" font-size="9.5" fill="#059669">10.10.201.13</text>
+
+<!-- Right annotations -->
+<line x1="1009" y1="346" x2="1024" y2="346" stroke="#3B82F6" stroke-width="1" stroke-dasharray="3,2"/>
+<text x="1028" y="342" class="tan" fill="#3B82F6">← OpenStack HA</text>
+<text x="1028" y="356" class="tan" fill="#3B82F6">   + OVN SDN</text>
+<line x1="1009" y1="444" x2="1024" y2="444" stroke="#34D399" stroke-width="1" stroke-dasharray="3,2"/>
+<text x="1028" y="449" class="tan" fill="#34D399">← Compute</text>
+<line x1="1009" y1="528" x2="1024" y2="528" stroke="#FB7185" stroke-width="1" stroke-dasharray="3,2"/>
+<text x="1028" y="533" class="tan" fill="#FB7185">← Storage</text>
+
+<!-- VIP bar -->
+<rect x="36" y="638" width="973" height="24" rx="12" fill="#100B28" stroke="#4F46E5" stroke-width="1"/>
+<text x="522" y="654" font-size="11" font-weight="700" fill="#818CF8" text-anchor="middle">VIP  10.10.200.50  ·  HAProxy + Keepalived  ·  Galera  ·  RabbitMQ HA  ·  OVN RAFT 3-node</text>
+
+<!-- Network: Management -->
+<rect x="36" y="670" width="1128" height="54" rx="9" fill="#080D1E" stroke="#1D4ED8" stroke-width="1.5"/>
+<rect x="56" y="683" width="110" height="28" rx="5" fill="#1D4ED8"/>
+<text x="111" y="701" class="tni">10.10.200.0/24</text>
+<text x="182" y="691" class="tnn" fill="#60A5FA">Management / API</text>
+<text x="182" y="711" class="tns">ens160  ·  SSH  ·  Kolla deploy  ·  OpenStack API  ·  Horizon  ·  VIP 10.10.200.50  ·  Floating IP .61–.69</text>
+
+<!-- Network: Tunnel/Ceph -->
+<rect x="36" y="734" width="1128" height="54" rx="9" fill="#040C09" stroke="#059669" stroke-width="1.5"/>
+<rect x="56" y="747" width="110" height="28" rx="5" fill="#059669"/>
+<text x="111" y="765" class="tni">10.10.201.0/24</text>
+<text x="182" y="755" class="tnn" fill="#34D399">Geneve Tunnel / Ceph</text>
+<text x="182" y="775" class="tns">ens192  ·  OVN Geneve encap  ·  Ceph OSD replication  ·  isolated (no gateway)</text>
+
+<!-- Network: Provider -->
+<rect x="36" y="798" width="1128" height="54" rx="9" fill="#140E03" stroke="#D97706" stroke-width="1.5"/>
+<rect x="56" y="811" width="110" height="28" rx="5" fill="#D97706"/>
+<text x="111" y="829" class="tni">VLAN 200</text>
+<text x="182" y="819" class="tnn" fill="#FBBF24">Provider / External</text>
+<text x="182" y="839" class="tns">ens224 (no IP)  ·  OVN br-ex bridge  ·  Floating IP 10.10.200.61–.69  ·  DNAT/SNAT</text>
+
+<!-- Version footnote -->
+<text x="1160" y="950" font-size="9.5" fill="#1E2D45" text-anchor="end">OpenStack 2025.1 (Epoxy)  ·  Ceph Squid 19.x  ·  OVN bundled</text>
+
+</svg>

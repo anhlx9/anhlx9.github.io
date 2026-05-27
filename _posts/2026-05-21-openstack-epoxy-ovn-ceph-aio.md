@@ -22,6 +22,8 @@ Stack gồm 4 VMs Ubuntu 24.04, deploy qua `kolla-ansible` 2025.1:
 1. `registry01` — local Docker Registry v2, mirror toàn bộ images trước khi deploy
 2. `ctrl01–03` — all-in-one: OpenStack HA + OVN + Ceph mon/mgr/OSD + Nova KVM, `ctrl01` kiêm deploy node
 
+<img src="/assets/img/2026-05-21-openstack-epoxy-ovn-ceph-aio/OpenStack_AIO_Architecture.svg"/>
+
 <img src="/assets/img/2026-05-21-openstack-epoxy-ovn-ceph-aio/001.png"/>
 
 <img src="/assets/img/2026-05-21-openstack-epoxy-ovn-ceph-aio/002.png"/>
