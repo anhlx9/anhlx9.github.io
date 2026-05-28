@@ -3,7 +3,7 @@ title: "Automated ITIL Workflow: Zabbix + ServiceDesk Plus + Grafana + AD DC"
 categories:
 - Monitoring
 - ITIL
-- Active Directory
+- Active-Directory
 
 feature_image: "/assets/postbanner.jpg"
 feature_text: |

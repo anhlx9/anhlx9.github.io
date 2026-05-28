@@ -2,8 +2,8 @@
 title: "Active Directory - Windows Server 2022"
 categories:
 - System
-- Windows Server
-- Active Directory
+- Windows-Server
+- Active-Directory
 feature_image: "/assets/postbanner.jpg"
 feature_text: |
   ### Dựng Active Directory Domain Services trên Windows Server 2022

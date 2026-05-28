@@ -984,6 +984,12 @@ kubectl apply -f https://raw.githubusercontent.com/rook/rook/${ROOK_VERSION}/dep
 
 kubectl -n rook-ceph rollout status deployment/rook-ceph-operator
 
+# Rook v1.19+ mặc định bật ROOK_USE_CSI_OPERATOR=true nhưng OperatorConfig CRD (csi.ceph.io/v1)
+# chưa được install → operator xóa toàn bộ CSI DaemonSet rồi không tạo lại được → PVC stuck Pending.
+# Fix: tắt CSI Operator mode để Rook deploy CSI theo cách truyền thống (DaemonSet + Deployment).
+kubectl -n rook-ceph patch configmap rook-ceph-operator-config --type=merge \
+  -p '{"data":{"ROOK_USE_CSI_OPERATOR":"false"}}'
+
 # CSI CRDs từ ceph-csi project — Rook v1.19+ cần nhưng không có trong crds.yaml
 # Phải apply trước khi tạo CephCluster
 kubectl apply -f - <<EOF
@@ -1148,7 +1154,6 @@ kubectl -n rook-ceph get pods
 # rook-ceph-crashcollector-...  Running
 ```
 
-Mất ~5-8 phút để 3 OSD lên đủ. Mỗi OSD chiếm ~1 GB RAM khi idle.
 
 ### 8.3 Tạo Pools + StorageClass (replication=3, RBD-RWX, CephFS)
 
@@ -1370,11 +1375,12 @@ kubectl get svc -n rook-ceph rook-ceph-mgr-dashboard-lb
 # rook-ceph-mgr-dashboard-lb   LoadBalancer   10.43.x.x   10.10.200.61   7000:NodePort/TCP
 
 # Lấy password admin
-kubectl -n rook-ceph get secret rook-ceph-dashboard-password -o jsonpath="{['data']['password']}" | base64 -d
+kubectl -n rook-ceph get secret rook-ceph-dashboard-password -o jsonpath="{['data']['password']}" | base64 -d && echo
 ```
 
 Truy cập http://10.10.200.61:7000 với user `admin` và password vừa lấy.
 
+>Lưu ý: Ceph tự redirect sang IP của active MGR node — đây là behavior bình thường, dashboard vẫn hoạt động đầy đủ.
 ---
 
 ## 9. KubeVirt — chạy VM trên Kubernetes
@@ -1467,7 +1473,13 @@ mv virtctl /usr/local/bin/
 virtctl version
 ```
 
-Smoke test VM (Cirros nhỏ, ~50MB):
+Smoke test VM (Cirros nhỏ, ~50MB). Mình download image về node trước rồi serve local — CDI import từ internet chậm và dễ timeout:
+
+```bash
+# Download một lần trên ctrl01
+wget -q https://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img -O /tmp/cirros.img
+python3 -m http.server 8888 --directory /tmp &
+```
 
 ```bash
 kubectl apply -f - <<EOF
@@ -1479,8 +1491,9 @@ metadata:
 spec:
   source:
     http:
-      url: "https://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img"
+      url: "http://10.10.200.11:8888/cirros.img"
   storage:
+    volumeMode: Filesystem   # CDI v1.65 default Block mode với RBD → Permission denied; cần explicit Filesystem
     accessModes: [ReadWriteOnce]
     resources:
       requests:
@@ -1519,7 +1532,7 @@ spec:
             name: cirros-dv
 EOF
 
-# Chờ import xong (~1 phút)
+# Chờ import xong
 kubectl get dv cirros-dv -w
 # NAME        PHASE       PROGRESS   ...
 # cirros-dv   Succeeded   100.0%
@@ -1536,6 +1549,8 @@ virtctl console cirros-smoke
 # Cleanup smoke test
 kubectl delete vm cirros-smoke
 kubectl delete dv cirros-dv
+pkill -f "http.server 8888"
+
 ```
 
 VM smoke test thành công xác nhận: CDI import work, KubeVirt scheduling work, virtio-net work, Cilium pod network với VM work.
@@ -1560,8 +1575,6 @@ kubectl apply -f https://github.com/kubernetes-sigs/kwok/releases/download/${KWO
 kubectl -n kube-system get pods -l app=kwok-controller
 # kwok-controller-xxxxx   1/1   Running
 ```
-
-Note: KWOK install có thể báo warning "FlowSchema creation is not allowed" — bỏ qua, không critical.
 
 Bước 2: Label nodes — đây là cách phân bổ chính:
 
@@ -1592,6 +1605,10 @@ kubectl get nodes -L gpu-pool,run.ai/simulated-gpu-node-pool
 Bước 3: cài fake-gpu-operator với 2 node pool (whole + shared):
 
 ```bash
+# RKE2 tạo sẵn RuntimeClass "nvidia" với handler=runc — field này immutable, fake-gpu-operator
+# cần handler khác nên không thể patch. Xóa trước để fake-gpu-operator tạo lại đúng.
+kubectl delete runtimeclass nvidia --ignore-not-found
+
 # Repo mới của run-ai chuyển sang ghcr.io
 helm upgrade -i gpu-operator \
   oci://ghcr.io/run-ai/fake-gpu-operator/fake-gpu-operator \
@@ -1602,11 +1619,17 @@ helm upgrade -i gpu-operator \
   --set 'topology.nodePools.shared.gpuProduct=NVIDIA-A100-SXM4-40GB'
 
 kubectl -n gpu-operator get pods
-# device-plugin-xxxx          1/1 Running (1 trên ctrl02)
-# device-plugin-xxxx          1/1 Running (1 trên ctrl03)
-# nvidia-smi-fake-xxxx        1/1 Running
-# status-updater-xxxx         1/1 Running
-# topology-server-xxxx        1/1 Running
+# root@ctrl01:/root/# kubectl -n gpu-operator get pods -o wide
+# NAME                                        READY   STATUS    RESTARTS   AGE    IP            NODE     NOMINATED NODE   READINESS GATES
+# device-plugin-dw22c                         1/1     Running   0          112s   10.42.2.243   ctrl03   <none>           <none>
+# device-plugin-zwc5c                         1/1     Running   0          112s   10.42.1.238   ctrl02   <none>           <none>
+# kwok-gpu-device-plugin-58d44f6bff-6xmrq     1/1     Running   0          2m2s   10.42.0.206   ctrl01   <none>           <none>
+# nvidia-dcgm-exporter-b88ht                  1/1     Running   0          112s   10.42.2.32    ctrl03   <none>           <none>
+# nvidia-dcgm-exporter-kwok-94c9b7f66-nv2h9   1/1     Running   0          2m2s   10.42.1.32    ctrl02   <none>           <none>
+# nvidia-dcgm-exporter-nn55z                  1/1     Running   0          112s   10.42.1.68    ctrl02   <none>           <none>
+# status-updater-5c4f44ffcd-czltw             1/1     Running   0          2m2s   10.42.1.67    ctrl02   <none>           <none>
+# topology-server-878d8fddc-6j28t             1/1     Running   0          2m2s   10.42.2.240   ctrl03   <none>           <none>
+# root@ctrl01:/root/#
 ```
 
 Quan trọng: fake-gpu-operator chỉ deploy device-plugin trên node có label `run.ai/simulated-gpu-node-pool=<pool>`. Vì ctrl01 không có label này, sẽ không có GPU pod nào chạy trên ctrl01.
@@ -1614,46 +1637,42 @@ Quan trọng: fake-gpu-operator chỉ deploy device-plugin trên node có label 
 Bước 4: configure time-slicing cho pool `shared`:
 
 ```bash
-# Helm reuse-values có thể không merge map nested đúng — dùng file values đầy đủ
-cat > /tmp/gpu-operator-values.yaml <<EOF
-topology:
-  nodePools:
-    whole:
-      gpuCount: 2
-      gpuProduct: NVIDIA-A100-SXM4-40GB
-      # KHÔNG có replicas → 1 GPU = 1 resource integer
-    shared:
-      gpuCount: 2
-      gpuProduct: NVIDIA-A100-SXM4-40GB
-      replicas: 4   # ← time-slicing: mỗi physical GPU chia 4 slice
-EOF
+# Re-label ctrl03 sang pool shared
+kubectl label node ctrl03 run.ai/simulated-gpu-node-pool=shared --overwrite
 
+# fake-gpu-operator không tự nhân replicas vào nvidia.com/gpu trên real node —
+# cần set gpuCount=8 thẳng (2 physical × 4 slices) và replicasPerGpu làm metadata
 helm upgrade gpu-operator \
   oci://ghcr.io/run-ai/fake-gpu-operator/fake-gpu-operator \
-  -n gpu-operator \
-  -f /tmp/gpu-operator-values.yaml
+  --namespace gpu-operator \
+  --set topology.nodePools.whole.gpuCount=2 \
+  --set topology.nodePools.whole.gpuProduct=NVIDIA-A100-SXM4-40GB \
+  --set topology.nodePools.shared.gpuCount=8 \
+  --set topology.nodePools.shared.gpuProduct=NVIDIA-A100-SXM4-40GB \
+  --set topology.nodePools.shared.replicasPerGpu=4 \
+  --wait
 
-# Trigger update topology
+# Xóa topology ConfigMap cũ của ctrl03 để status-updater recreate với 8 GPU entries
+kubectl -n gpu-operator delete configmap topology-ctrl03
 kubectl -n gpu-operator rollout restart deployment/status-updater
-kubectl -n gpu-operator rollout restart deployment/topology-server
+sleep 15
+
+# Restart device-plugin trên ctrl03 để kubelet cập nhật allocatable
+kubectl -n gpu-operator delete pod -l app=device-plugin --field-selector spec.nodeName=ctrl03
+sleep 15
 ```
 
 Bước 5: verify GPU advertised đúng:
 
 ```bash
-# ctrl02 — whole pool: 2 GPU integer
-kubectl describe node ctrl02 | grep -E "nvidia.com/gpu|Allocatable" | head -5
-# Allocatable:
-#   nvidia.com/gpu: 2
+kubectl get nodes -o custom-columns=NAME:.metadata.name,POOL:.metadata.labels.run\\.ai/simulated-gpu-node-pool,GPU:.status.allocatable.nvidia\\.com/gpu
 
-# ctrl03 — shared pool: 2 × 4 = 8 fractional
-kubectl describe node ctrl03 | grep -E "nvidia.com/gpu|Allocatable" | head -5
-# Allocatable:
-#   nvidia.com/gpu: 8
-
-# ctrl01 — KHÔNG có GPU
-kubectl describe node ctrl01 | grep -E "nvidia.com/gpu|Allocatable" | head -5
-# Allocatable: (không có nvidia.com/gpu)
+# root@ctrl01:/root/# kubectl get nodes -o custom-columns=NAME:.metadata.name,POOL:.metadata.labels.run\\.ai/simulated-gpu-node-pool,GPU:.status.allocatable.nvidia\\.com/gpu
+# NAME     POOL     GPU
+# ctrl01   <none>   <none>
+# ctrl02   whole    2
+# ctrl03   shared   8
+# root@ctrl01:/root/#
 ```
 
 Smoke test pod xin GPU trên từng pool:
@@ -1686,14 +1705,32 @@ spec:
 EOF
 
 kubectl logs gpu-smoke-shared
-# +-----------------------------------------------------------------------------+
-# | NVIDIA-SMI 535.xxx       Driver Version: 535.xxx       CUDA Version: 12.6   |
-# |-------------------------------+----------------------+----------------------+
-# | GPU  Name                | ... | NVIDIA A100-SXM4-40GB | ...                |
-# (fake-gpu-operator inject binary nvidia-smi giả lập)
+# root@ctrl01:/root/# kubectl logs gpu-smoke-shared
+# Wed May 27 09:24:19 2026
+# +------------------------------------------------------------------------------+
+# | NVIDIA-SMI 470.129.06   Driver Version: 470.129.06   CUDA Version: 11.4      |
+# +--------------------------------+----------------------+----------------------+
+# | GPU  Name        Persistence-M | Bus-Id        Disp.A | Volatile Uncorr. ECC |
+# | Fan  Temp  Perf  Pwr:Usage/Cap |         Memory-Usage | GPU-Util  Compute M. |
+# |                                |                      |               MIG M. |
+# +--------------------------------+----------------------+----------------------+
+# |   0  NVIDIA-A10..          Off | 00000001:00:00.0 Off |                  Off |
+# | N/A   33C    P8    11W /  70W  |          0MiB / 0MiB |       0%     Default |
+# |                                |                      |                  N/A |
+# +--------------------------------+----------------------+----------------------+
+
+# +------------------------------------------------------------------------------+
+# | Processes:                                                                   |
+# |  GPU   GI   CI        PID   Type   Process name                  GPU Memory  |
+# |        ID   ID                                                   Usage       |
+# +------------------------------------------------------------------------------+
+# |    0   N/A  N/A       7        G   sh-cnvidia-smi || true; s..        0MiB   |
+# +------------------------------------------------------------------------------+
+# root@ctrl01:/root/#
+
 
 # Verify schedule lên đúng ctrl03
-kubectl get pod gpu-smoke-shared -o jsonpath='{.spec.nodeName}'
+kubectl get pod gpu-smoke-shared -o jsonpath='{.spec.nodeName}' && echo 
 # ctrl03
 
 kubectl delete pod gpu-smoke-shared
@@ -2018,7 +2055,7 @@ kubectl -n kubevirt-manager rollout status deployment/kubevirt-manager
 
 Truy cập http://10.10.200.64 — admin có thể list VM, start/stop/restart, mở VNC console, trigger live migration.
 
-VirtualMachineClusterInstancetype + Preferences cho 3 chân dung khách hàng:
+VirtualMachineClusterInstancetype + Preferences cho 3 khách hàng:
 
 ```bash
 kubectl apply -f - <<EOF
@@ -2389,7 +2426,7 @@ chmod +x ~/create-tenant.sh
 
 ## 15. Headlamp — User Portal
 
-Headlamp UI cho tenant — họ tự login bằng token và chỉ thấy namespace của mình.
+Headlamp UI cho tenant — user tự login bằng token và chỉ thấy namespace của mình.
 
 ### 15.1 Cài Headlamp
 
@@ -2433,7 +2470,7 @@ virtctl vnc <vm-name>
 
 Đây là phần demo flow thật sự của GPU cloud. Mỗi khách hàng có nhu cầu khác nhau, lab này phục vụ cả 3 trên cùng một cluster — chính xác mô hình kinh doanh của cloud provider thương mại.
 
-### 16.1 Tổng quan 3 chân dung
+### 16.1 Tổng quan 3 khách hàng 
 
 | KH | Tenant name | Sản phẩm mua | Node phục vụ | GPU pool | Login method |
 |---|---|---|---|---|---|
