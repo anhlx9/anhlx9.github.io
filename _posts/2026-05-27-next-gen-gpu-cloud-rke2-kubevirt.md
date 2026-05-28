@@ -33,7 +33,7 @@ Stack:
 > - Do nội dung quá dài, mình lược bỏ một số thành phần — Kueue, Cilium Gateway API, Prometheus/Grafana, VolumeSnapshot,... — để tập trung vào **demo business flow**: cấp phát GPU linh hoạt bán cho 3 loại khách hàng, đúng mô hình GPU cloud thương mại trong thời đại AI
 > - Stack công nghệ là những thứ mình đang quan tâm; kiến trúc và phân bổ resource theo hạ tầng mình có. **Nếu áp dụng, bạn cần điều chỉnh spec VM, IP range, số node và các thành phần cho phù hợp với môi trường của mình**
 
-<img src="../assets/img/2026-05-27-next-gen-gpu-cloud-rke2-kubevirt/gpu-cloud-architecture.svg"/>
+<img src="/assets/img/2026-05-27-next-gen-gpu-cloud-rke2-kubevirt/gpu-cloud-architecture.svg"/>
 
 ---
 
@@ -55,6 +55,7 @@ Stack:
   - [6.2 Tạo CephCluster](#62-tạo-cephcluster)
   - [6.3 Tạo Pools + StorageClass (replication=3, RBD-RWX, CephFS)](#63-tạo-pools--storageclass-replication3-rbd-rwx-cephfs)
   - [6.4 Ceph Dashboard](#64-ceph-dashboard)
+  - [6.5 Ceph Toolbox](#65-ceph-toolbox)
 - [7. KubeVirt — chạy VM trên Kubernetes](#7-kubevirt--chạy-vm-trên-kubernetes)
 - [8. KubeVirt Manager — Admin Portal](#8-kubevirt-manager--admin-portal)
 - [9. fake-gpu-operator — Topology theo node](#9-fake-gpu-operator--topology-theo-node)
@@ -214,7 +215,6 @@ Tạo config trước khi install — quan trọng vì RKE2 sẽ apply manifests
 mkdir -p /etc/rancher/rke2 /var/lib/rancher/rke2/server/manifests
 
 tee /etc/rancher/rke2/config.yaml <<EOF
-# Tên cluster
 write-kubeconfig-mode: "0644"
 token: "Sup3rSecr3tT0ken-Lab-2026"
 
@@ -319,8 +319,6 @@ spec:
         memory: 1Gi
 EOF
 ```
-
-Lưu ý quan trọng về L2 Announcements: cần `kubeProxyReplacement: true` (đã có), `externalIPs.enabled: true` (đã có), và `l2announcements.enabled: true`. Devices interface sẽ auto-detect; nếu cần force, thêm `devices: "ens160"`.
 
 Tạo kube-vip manifest cho VIP API (timing default 15/10/2):
 
@@ -481,17 +479,11 @@ kubectl get nodes -o wide --server=https://10.10.200.51:6443
 
 ```
 
+<img src="/assets/img/2026-05-27-next-gen-gpu-cloud-rke2-kubevirt/01.png"/>
+
 ### 3.2 Join ctrl02, ctrl03
 
-Lấy token từ ctrl01:
-
-```bash
-# Token đã set trong config: Sup3rSecr3tT0ken-Lab-2026
-# Hoặc đọc từ file:
-cat /var/lib/rancher/rke2/server/node-token
-```
-
-Trên **ctrl02**:
+Mình chạy lệnh sau trên **ctrl02** (ctrl03 tương tự, chỉ đổi IP thành `10.10.200.13`):
 
 ```bash
 mkdir -p /etc/rancher/rke2
@@ -500,14 +492,14 @@ tee /etc/rancher/rke2/config.yaml <<EOF
 server: https://10.10.200.51:9345
 token: "Sup3rSecr3tT0ken-Lab-2026"
 
-node-name: "ctrl02"
-node-ip: "10.10.200.12"
-advertise-address: "10.10.200.12"
+node-name: "ctrl02"        # ctrl03 → "ctrl03"
+node-ip: "10.10.200.12"    # ctrl03 → "10.10.200.13"
+advertise-address: "10.10.200.12"  # ctrl03 → "10.10.200.13"
 
 tls-san:
   - "10.10.200.51"
   - "k8s-api.anhlx.lab"
-  - "ctrl02"
+  - "ctrl02"               # ctrl03 → "ctrl03"
 
 cni: cilium
 disable-kube-proxy: true
@@ -524,58 +516,20 @@ systemctl enable --now rke2-server.service
 journalctl -u rke2-server -f
 ```
 
-Tương tự cho **ctrl03**, đổi `node-name`, `node-ip`, `advertise-address`:
-
-```bash
-mkdir -p /etc/rancher/rke2
-
-tee /etc/rancher/rke2/config.yaml <<EOF
-server: https://10.10.200.51:9345
-token: "Sup3rSecr3tT0ken-Lab-2026"
-
-node-name: "ctrl03"
-node-ip: "10.10.200.13"
-advertise-address: "10.10.200.13"
-
-tls-san:
-  - "10.10.200.51"
-  - "k8s-api.anhlx.lab"
-  - "ctrl03"
-
-cni: cilium
-disable-kube-proxy: true
-
-disable:
-  - rke2-ingress-nginx
-  - rke2-canal
-  - rke2-snapshot-validation-webhook
-EOF
-
-curl -sfL https://get.rke2.io | INSTALL_RKE2_VERSION=v1.35.4+rke2r1 sh -
-systemctl enable --now rke2-server.service
-```
-
 ### 3.3 Verify cluster HA
 
 Từ ctrl01:
 
 ```bash
 kubectl get nodes -o wide
-# NAME     STATUS   ROLES                AGE   VERSION          INTERNAL-IP    EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME
-# ctrl01   Ready    control-plane,etcd   27m   v1.35.4+rke2r1   10.10.200.11   <none>        Ubuntu 24.04.4 LTS   6.8.0-106-generic   containerd://2.2.3-k3s1
-# ctrl02   Ready    control-plane,etcd   73s   v1.35.4+rke2r1   10.10.200.12   <none>        Ubuntu 24.04.4 LTS   6.8.0-106-generic   containerd://2.2.3-k3s1
-# ctrl03   Ready    control-plane,etcd   42s   v1.35.4+rke2r1   10.10.200.13   <none>        Ubuntu 24.04.4 LTS   6.8.0-117-generic   containerd://2.2.3-k3s1
 
 kubectl get pods -n kube-system
-# Tất cả pod Cilium, kube-vip, coredns, etcd, kube-apiserver, kube-controller-manager, kube-scheduler đều Running
 
 # Verify etcd quorum
 kubectl get pods -n kube-system -l component=etcd -o wide
-# NAME          READY   STATUS    RESTARTS   AGE     IP             NODE     NOMINATED NODE   READINESS GATES
-# etcd-ctrl01   1/1     Running   0          28m     10.10.200.11   ctrl01   <none>           <none>
-# etcd-ctrl02   1/1     Running   0          2m34s   10.10.200.12   ctrl02   <none>           <none>
-# etcd-ctrl03   1/1     Running   0          116s    10.10.200.13   ctrl03   <none>           <none>
 ```
+
+<img src="/assets/img/2026-05-27-next-gen-gpu-cloud-rke2-kubevirt/02.png"/>
 
 **Update Cilium k8sServiceHost từ ctrl01 IP sang VIP** — đây là pattern bootstrap mà cần làm cẩn thận:
 
@@ -592,15 +546,11 @@ kubectl -n kube-system rollout status ds/cilium
 
 # Sau khi xong, mỗi Cilium pod đều talk tới VIP
 kubectl -n kube-system exec ds/cilium -- env | grep -E "KUBERNETES_SERVICE|CILIUM_K8S"
-# KUBERNETES_SERVICE_HOST=10.10.200.51
-# KUBERNETES_SERVICE_PORT=6443
-# CILIUM_K8S_NAMESPACE=kube-system
-# KUBERNETES_SERVICE_PORT_HTTPS=443
 
 kubectl -n kube-system logs ds/cilium | grep -i "Establishing connection to"
-# Found 3 pods, using pod/cilium-q4qnn
-# time=2026-05-27T02:55:46.494097255Z level=info msg="Establishing connection to apiserver" module=agent.infra.k8s-client ipAddr=https://10.10.200.51:6443
 ```
+
+<img src="/assets/img/2026-05-27-next-gen-gpu-cloud-rke2-kubevirt/03.png"/>
 
 ---
 
@@ -623,6 +573,8 @@ rm cilium-linux-amd64.tar.gz
 cilium status --wait
 # Cilium: OK | Operator: OK | Hubble Relay: OK | DaemonSet 3/3 Ready
 ```
+
+<img src="/assets/img/2026-05-27-next-gen-gpu-cloud-rke2-kubevirt/04.png"/>
 
 ---
 
@@ -829,7 +781,7 @@ spec:
   storage:
     useAllNodes: true
     useAllDevices: false
-    deviceFilter: "^sdb"   # Disk thứ 2 đã prep ở section 3.7
+    deviceFilter: "^sdb"   # Disk thứ 2 
     config:
       osdsPerDevice: "1"
       storeType: bluestore
@@ -844,20 +796,11 @@ Theo dõi cluster lên:
 
 ```bash
 kubectl -n rook-ceph get cephcluster
-# NAME        DATADIRHOSTPATH   MONCOUNT   AGE   PHASE   MESSAGE                         HEALTH
-# rook-ceph   /var/lib/rook     3          5m    Ready   Cluster created successfully    HEALTH_OK
 
 kubectl -n rook-ceph get pods
-# rook-ceph-mon-a-xxx           Running
-# rook-ceph-mon-b-xxx           Running
-# rook-ceph-mon-c-xxx           Running
-# rook-ceph-mgr-a-xxx           Running
-# rook-ceph-mgr-b-xxx           Running
-# rook-ceph-osd-0-xxx           Running
-# rook-ceph-osd-1-xxx           Running
-# rook-ceph-osd-2-xxx           Running
-# rook-ceph-crashcollector-...  Running
 ```
+
+<img src="/assets/img/2026-05-27-next-gen-gpu-cloud-rke2-kubevirt/05.png"/>
 
 
 ### 6.3 Tạo Pools + StorageClass (replication=3, RBD-RWX, CephFS)
@@ -988,11 +931,9 @@ Verify:
 
 ```bash
 kubectl get sc
-# NAME                  PROVISIONER                     RECLAIMPOLICY   ...
-# rook-ceph-block (def) rook-ceph.rbd.csi.ceph.com      Delete
-# rook-ceph-block-rwx   rook-ceph.rbd.csi.ceph.com      Delete
-# rook-cephfs           rook-ceph.cephfs.csi.ceph.com   Delete
 ```
+
+<img src="/assets/img/2026-05-27-next-gen-gpu-cloud-rke2-kubevirt/06.png"/>
 
 ### 6.4 Ceph Dashboard
 
@@ -1003,6 +944,8 @@ kind: Service
 metadata:
   name: rook-ceph-mgr-dashboard-lb
   namespace: rook-ceph
+  annotations:
+    io.cilium/lb-ipam-ips: "10.10.200.61"
 spec:
   type: LoadBalancer
   selector:
@@ -1015,7 +958,6 @@ spec:
 EOF
 
 kubectl get svc -n rook-ceph rook-ceph-mgr-dashboard-lb
-# rook-ceph-mgr-dashboard-lb   LoadBalancer   10.43.x.x   10.10.200.61   7000:NodePort/TCP
 
 # Lấy password admin
 kubectl -n rook-ceph get secret rook-ceph-dashboard-password -o jsonpath="{['data']['password']}" | base64 -d && echo
@@ -1024,6 +966,82 @@ kubectl -n rook-ceph get secret rook-ceph-dashboard-password -o jsonpath="{['dat
 Truy cập http://10.10.200.61:7000 với user `admin` và password vừa lấy.
 
 >Lưu ý: Ceph tự redirect sang IP của active MGR node — đây là behavior bình thường, dashboard vẫn hoạt động đầy đủ.
+
+<img src="/assets/img/2026-05-27-next-gen-gpu-cloud-rke2-kubevirt/07.png"/>
+
+<img src="/assets/img/2026-05-27-next-gen-gpu-cloud-rke2-kubevirt/08.png"/>
+
+<img src="/assets/img/2026-05-27-next-gen-gpu-cloud-rke2-kubevirt/09.png"/>
+
+<img src="/assets/img/2026-05-27-next-gen-gpu-cloud-rke2-kubevirt/10.png"/>
+
+### 6.5 Ceph Toolbox
+
+Mình deploy toolbox pod để có thể chạy `ceph -s` và các lệnh admin trực tiếp từ cluster:
+
+```bash
+kubectl apply -f - <<EOF
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rook-ceph-tools
+  namespace: rook-ceph
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rook-ceph-tools
+  template:
+    metadata:
+      labels:
+        app: rook-ceph-tools
+    spec:
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: rook-ceph-tools
+          image: docker.io/rook/ceph:v1.19.5
+          command: ["/bin/bash"]
+          args: ["-m", "-c", "/usr/local/bin/toolbox.sh"]
+          env:
+            - name: ROOK_CEPH_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: rook-ceph-mon
+                  key: ceph-username
+            - name: ROOK_CEPH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: rook-ceph-mon
+                  key: ceph-secret
+          volumeMounts:
+            - mountPath: /etc/ceph
+              name: ceph-config
+            - name: mon-endpoint-volume
+              mountPath: /etc/rook
+      volumes:
+        - name: mon-endpoint-volume
+          configMap:
+            name: rook-ceph-mon-endpoints
+            items:
+              - key: data
+                path: mon-endpoints
+        - name: ceph-config
+          emptyDir: {}
+EOF
+
+kubectl -n rook-ceph rollout status deploy/rook-ceph-tools
+```
+
+Sau khi pod Running, kiểm tra cluster status:
+
+```bash
+kubectl -n rook-ceph exec deploy/rook-ceph-tools -- ceph -s
+kubectl -n rook-ceph exec deploy/rook-ceph-tools -- ceph osd status
+kubectl -n rook-ceph exec deploy/rook-ceph-tools -- ceph df
+```
+
+<img src="/assets/img/2026-05-27-next-gen-gpu-cloud-rke2-kubevirt/11.png"/>
+
 ---
 
 ## 7. KubeVirt — chạy VM trên Kubernetes
