@@ -1,5 +1,5 @@
-﻿---
-title: "Next-Gen GPU Cloud với RKE2 + KubeVirt + Rook-Ceph — 3 Node HA Lab"
+---
+title: "Next-Gen GPU Cloud với Kubernetes Lab"
 categories:
 - Kubernetes
 - Ceph
@@ -16,29 +16,24 @@ feature_text: |
   ### Kubernetes-native Next-Gen GPU Cloud: RKE2 HA, KubeVirt, Rook-Ceph, multi-tenant GPU provisioning với 3 khách hàng — CPU-only, whole-GPU VM Windows, shared-GPU container
 ---
 
-GPU Cloud đang là mô hình mà các cloud provider thế hệ mới xây dựng để bán GPU compute cho AI teams theo dạng VM hoặc container — không cần sở hữu phần cứng, chỉ trả tiền cho tài nguyên GPU dùng thực tế. Điểm khác biệt so với cloud VM thông thường nằm ở khả năng cấp phát GPU linh hoạt: nguyên GPU cho workload training nặng, hoặc chia nhỏ 1 GPU thành nhiều slot cho inference nhẹ — và cùng một control plane có thể bán cả VM lẫn container, có hoặc không có GPU.
+GPU Cloud thế hệ mới bán **compute linh hoạt theo nhu cầu**: nguyên GPU cho AI training nặng, chia nhỏ GPU cho inference, không GPU cho workload thường — tất cả trên một control plane, đồng thời bán cả VM lẫn container với quota riêng từng tenant.
 
-Mình xây lab Next-Gen GPU Cloud để PoC stack này từ đầu trên 3 VM Ubuntu 24.04. **Đây là bản converged all-in-one — gom toàn bộ roles (control-plane, compute, storage, GPU provisioning) lên 3 node để lab nhanh; môi trường thực tế sẽ tách thành các tier riêng: dedicated control-plane nodes, GPU compute nodes (server vật lý có GPU), storage nodes.**
+Mình build lab này để PoC toàn bộ pattern đó trên 3 VM Ubuntu 24.04, kiến trúc converged all-in-one: control-plane, compute, storage và GPU provisioning gom lên cùng 3 node. Mỗi node phục vụ một loại khách hàng — **ctrl01** (CPU-only), **ctrl02** (whole-GPU), **ctrl03** (fractional GPU time-slicing) — đúng cách GPU cloud thương mại tận dụng phần cứng đắt tiền. Production sẽ tách tier riêng, dùng MIG thay time-slicing và Cilium BGP thay L2 Announcements.
 
-Lab sử dụng Time-slicing để chia nhỏ GPU. Trên hạ tầng A100/H100 thật, kiến trúc chuẩn sẽ sử dụng MIG (Multi-Instance GPU) để chia nhỏ GPU cả về Compute lẫn VRAM ở mức hardware, đảm bảo strict isolation cho tenant. Trên Production, GPU Cloud sẽ không dùng L2 Announcements mà cấu hình Cilium BGP Control Plane.
+Stack:
 
-Bài này mình **phân bổ 3 node khác nhau theo loại khách hàng** — đây là pattern thực tế mà GPU cloud thương mại dùng để tận dụng phần cứng:
+1. **RKE2** — Kubernetes HA, CIS-hardened, etcd quorum 3 node
+2. **Cilium** — CNI eBPF, L2 Announcements thay MetalLB
+3. **Rook-Ceph** — distributed storage, RBD block-mode RWX cho VM live migration
+4. **KubeVirt + CDI** — chạy VM (KVM) như K8s workload, import Ubuntu/Windows image vào PVC
+5. **fake-gpu-operator** — giả lập GPU whole + time-sliced (lab; production: NVIDIA GPU Operator)
+6. **Capsule** — multi-tenancy hard isolation, custom Role per tenant, không cluster-admin
+7. **kube-vip** — VIP Kubernetes API HA
 
-- **ctrl01** — node CPU-only, phục vụ khách không cần GPU
-- **ctrl02** — node có GPU nguyên, phục vụ khách mua whole-GPU (VM AI training, render)
-- **ctrl03** — node có GPU chia nhỏ qua time-slicing, phục vụ khách mua fractional GPU (inference, dev/test)
-
-Stack Kubernetes-native mà các GPU cloud production đang dùng:
-
-1. **RKE2** — Kubernetes HA distribution của Rancher, CIS-hardened, etcd quorum 3 node
-2. **Cilium** — CNI eBPF thay kube-proxy, NetworkPolicy enforcement, Gateway API, **L2 Announcements thay MetalLB**
-3. **Rook-Ceph** — distributed storage chạy trên K8s, replication=3 an toàn, **RBD block-mode RWX** cho live migration
-4. **KubeVirt** — chạy VM (KVM) như Kubernetes workload, thay OpenStack Nova; có Hypervisor Abstraction Layer mới
-5. **CDI** — Containerized Data Importer, import Ubuntu/Windows ISO + qcow2 vào PVC
-6. **fake-gpu-operator (run-ai)** — cấp phát GPU giả lập cho VM và container, whole hoặc time-sliced (lab; production thay bằng NVIDIA GPU Operator thật)
-7. **Capsule** — multi-tenancy hard isolation với **custom Role per tenant (không dùng cluster-admin)**
-8. **Kueue** — GPU job queuing, fair-share scheduling, tự động admit workload khi quota available
-9. **kube-vip** — VIP cho Kubernetes API HA, timing default 15/10/2
+> **Phạm vi bài**
+> - Lược bỏ một số thành phần — Kueue, Cilium Gateway API, Prometheus/Grafana, VolumeSnapshot, ... — để tập trung vào **demo business flow**: cấp phát GPU linh hoạt bán cho 3 loại khách hàng, đúng mô hình GPU cloud thương mại trong thời đại AI
+> - Stack công nghệ là thứ mình đang quan tâm; kiến trúc và phân bổ resource theo hạ tầng mình có
+> - **Nếu áp dụng, bạn cần điều chỉnh spec VM, IP range và số node cho phù hợp với môi trường của mình**
 
 <img src="../assets/img/2026-05-27-next-gen-gpu-cloud-rke2-kubevirt/gpu-cloud-architecture.svg"/>
 
@@ -50,50 +45,38 @@ Stack Kubernetes-native mà các GPU cloud production đang dùng:
 - [1. Tại sao Kubernetes cho Next-Gen GPU Cloud](#1-tại-sao-kubernetes-cho-next-gen-gpu-cloud)
   - [1.1 OpenStack vs Kubernetes-native](#11-openstack-vs-kubernetes-native)
   - [1.2 Topology 3 nodes trong Lab — phân bổ theo loại khách hàng](#12-topology-3-nodes-trong-lab--phân-bổ-theo-loại-khách-hàng)
-- [2. Tài nguyên \& IP Planning](#2-tài-nguyên--ip-planning)
-  - [2.1 Tài nguyên lab](#21-tài-nguyên-lab)
-  - [2.2 IP planning](#22-ip-planning)
-- [3. Base OS (Tất cả nodes)](#3-base-os-tất-cả-nodes)
-- [4. Cài RKE2 HA Cluster](#4-cài-rke2-ha-cluster)
-  - [4.1 Bootstrap node đầu tiên (ctrl01)](#41-bootstrap-node-đầu-tiên-ctrl01)
-  - [4.2 Join ctrl02, ctrl03](#42-join-ctrl02-ctrl03)
-  - [4.3 Verify cluster HA](#43-verify-cluster-ha)
-- [5. kubectl, Helm, Cilium CLI](#5-kubectl-helm-cilium-cli)
-- [6. Cilium L2 Announcements — LoadBalancer cho bare metal (thay MetalLB)](#6-cilium-l2-announcements--loadbalancer-cho-bare-metal-thay-metallb)
-- [7. Cert-manager + Cilium Gateway API](#7-cert-manager--cilium-gateway-api)
-  - [7.1 Cert-manager](#71-cert-manager)
-  - [7.2 Cilium Gateway API](#72-cilium-gateway-api)
-- [8. Rook-Ceph Distributed Storage](#8-rook-ceph-distributed-storage)
-  - [8.1 Cài Rook Operator](#81-cài-rook-operator)
-  - [8.2 Tạo CephCluster](#82-tạo-cephcluster)
-  - [8.3 Tạo Pools + StorageClass (replication=3, RBD-RWX, CephFS)](#83-tạo-pools--storageclass-replication3-rbd-rwx-cephfs)
-  - [8.4 Ceph Dashboard](#84-ceph-dashboard)
-- [9. KubeVirt — chạy VM trên Kubernetes](#9-kubevirt--chạy-vm-trên-kubernetes)
-- [10. fake-gpu-operator — Topology theo node](#10-fake-gpu-operator--topology-theo-node)
-- [11. Kueue — GPU Job Queueing](#11-kueue--gpu-job-queueing)
-  - [11.1 Cài Kueue](#111-cài-kueue)
-  - [11.2 ResourceFlavor — định nghĩa GPU pool](#112-resourceflavor--định-nghĩa-gpu-pool)
-  - [11.3 ClusterQueue — quota toàn cluster](#113-clusterqueue--quota-toàn-cluster)
-  - [11.4 LocalQueue — queue per tenant namespace](#114-localqueue--queue-per-tenant-namespace)
-- [12. Monitoring](#12-monitoring)
-- [13. KubeVirt Manager — Admin Portal](#13-kubevirt-manager--admin-portal)
-- [14. Capsule — Multi-tenancy với custom Role](#14-capsule--multi-tenancy-với-custom-role)
-  - [14.1 Cài Capsule](#141-cài-capsule)
-  - [14.2 Tạo custom ClusterRole `tenant-owner`](#142-tạo-custom-clusterrole-tenant-owner)
-  - [14.3 Helper script — sinh kubeconfig tenant](#143-helper-script--sinh-kubeconfig-tenant)
-- [15. Headlamp — User Portal](#15-headlamp--user-portal)
-  - [15.1 Cài Headlamp](#151-cài-headlamp)
-  - [15.2 Console VM cho tenant](#152-console-vm-cho-tenant)
-- [16. Demo: Bán cho 3 khách hàng khác nhau](#16-demo-bán-cho-3-khách-hàng-khác-nhau)
-  - [16.1 Tổng quan 3 chân dung](#161-tổng-quan-3-chân-dung)
-  - [16.2 Admin chuẩn bị Tenants](#162-admin-chuẩn-bị-tenants)
-  - [16.3 KH1 — cust-cpu mua VM Ubuntu 22.04 (không GPU)](#163-kh1--cust-cpu-mua-vm-ubuntu-2204-không-gpu)
-  - [16.4 KH2 — cust-gpu-whole mua VM Windows Server 2022 + 1 GPU nguyên](#164-kh2--cust-gpu-whole-mua-vm-windows-server-2022--1-gpu-nguyên)
-  - [16.5 KH3 — cust-gpu-shared mua 1 container + GPU chia nhỏ](#165-kh3--cust-gpu-shared-mua-1-container--gpu-chia-nhỏ)
-  - [16.6 Verify cross-tenant isolation](#166-verify-cross-tenant-isolation)
-- [17. Test HA — Tắt 1 node](#17-test-ha--tắt-1-node)
-- [18. Service URLs \& Credentials](#18-service-urls--credentials)
-- [19. Lời kết](#19-lời-kết)
+- [2. Chuẩn bị Lab](#2-chuẩn-bị-lab)
+- [3. Cài RKE2 HA Cluster](#3-cài-rke2-ha-cluster)
+  - [3.1 Bootstrap node đầu tiên (ctrl01)](#31-bootstrap-node-đầu-tiên-ctrl01)
+  - [3.2 Join ctrl02, ctrl03](#32-join-ctrl02-ctrl03)
+  - [3.3 Verify cluster HA](#33-verify-cluster-ha)
+- [4. kubectl, Helm, Cilium CLI](#4-kubectl-helm-cilium-cli)
+- [5. Cilium L2 Announcements — LoadBalancer cho bare metal (thay MetalLB)](#5-cilium-l2-announcements--loadbalancer-cho-bare-metal-thay-metallb)
+- [6. Rook-Ceph Distributed Storage](#6-rook-ceph-distributed-storage)
+  - [6.1 Cài Rook Operator](#61-cài-rook-operator)
+  - [6.2 Tạo CephCluster](#62-tạo-cephcluster)
+  - [6.3 Tạo Pools + StorageClass (replication=3, RBD-RWX, CephFS)](#63-tạo-pools--storageclass-replication3-rbd-rwx-cephfs)
+  - [6.4 Ceph Dashboard](#64-ceph-dashboard)
+- [7. KubeVirt — chạy VM trên Kubernetes](#7-kubevirt--chạy-vm-trên-kubernetes)
+- [8. KubeVirt Manager — Admin Portal](#8-kubevirt-manager--admin-portal)
+- [9. fake-gpu-operator — Topology theo node](#9-fake-gpu-operator--topology-theo-node)
+- [10. Capsule — Multi-tenancy với custom Role](#10-capsule--multi-tenancy-với-custom-role)
+  - [10.1 Cài Capsule](#101-cài-capsule)
+  - [10.2 Tạo custom ClusterRole `tenant-owner`](#102-tạo-custom-clusterrole-tenant-owner)
+  - [10.3 Helper script — sinh kubeconfig tenant](#103-helper-script--sinh-kubeconfig-tenant)
+- [11. Golden Image Templates](#11-golden-image-templates)
+  - [11.1 Ubuntu 22.04 — VM golden image](#111-ubuntu-2204--vm-golden-image)
+  - [11.2 Windows Server 2022 — VM golden image](#112-windows-server-2022--vm-golden-image)
+  - [11.3 Container template — CUDA workload (KH3)](#113-container-template--cuda-workload-kh3)
+- [12. Demo: Bán cho 3 khách hàng khác nhau](#12-demo-bán-cho-3-khách-hàng-khác-nhau)
+  - [12.1 Tổng quan 3 khách hàng](#121-tổng-quan-3-khách-hàng)
+  - [12.2 Admin chuẩn bị Tenants](#122-admin-chuẩn-bị-tenants)
+  - [12.3 KH1 — cust-cpu mua VM Ubuntu 22.04 (không GPU)](#123-kh1--cust-cpu-mua-vm-ubuntu-2204-không-gpu)
+  - [12.4 KH2 — cust-gpu-whole mua VM Windows Server 2022 + 1 GPU nguyên](#124-kh2--cust-gpu-whole-mua-vm-windows-server-2022--1-gpu-nguyên)
+  - [12.5 KH3 — cust-gpu-shared mua 1 container + GPU chia nhỏ](#125-kh3--cust-gpu-shared-mua-1-container--gpu-chia-nhỏ)
+  - [12.6 Verify cross-tenant isolation](#126-verify-cross-tenant-isolation)
+- [13. Service URLs \& Credentials](#13-service-urls--credentials)
+- [14. Lời kết](#14-lời-kết)
 
 ---
 
@@ -101,11 +84,9 @@ Stack Kubernetes-native mà các GPU cloud production đang dùng:
 
 ### 1.1 OpenStack vs Kubernetes-native
 
-Kiến trúc của OpenStack thuộc về kỷ nguyên VM-centric (2010–2018) — nơi việc provisioning còn chậm, multi-tenancy phức tạp, và cơ chế GPU passthrough qua Nova bộc lộ nhiều hạn chế khi scale-out các training cluster. Thách thức lớn nhất cho operator là phải vận hành hai control plane độc lập nếu muốn cung cấp song song cả VM và container.
+OpenStack sinh ra trong kỷ nguyên VM-centric (2010–2018): GPU passthrough qua Nova hạn chế khi scale, còn muốn cung cấp song song VM lẫn container thì operator phải duy trì hai control plane riêng biệt — Nova cho VM, Zun (deprecated 2024) cho container.
 
-Các GPU cloud hiện đại đã giải quyết triệt để bài toán này bằng cách unified (đồng nhất) hạ tầng: cấp phát cả VM (cho nhu cầu cô lập OS) lẫn container (cho ML pipeline) trên một nền tảng duy nhất. KubeVirt chính là chìa khóa giúp VM và container chia sẻ toàn bộ tài nguyên từ scheduler, storage, network đến hệ thống monitoring.
-
-Bước sang giai đoạn 2025–2026, Kubernetes đã trở thành chuẩn chung cho control plane của các GPU cloud lớn. Trong khi **OpenStack lùi về phân khúc private cloud thuần VM truyền thống**, thì đối với **bài toán phân phối GPU** dạng container hoặc chia nhỏ tài nguyên (fractional GPU), **Kubernetes là lựa chọn duy nhất hợp lý**.
+Kubernetes giải quyết bằng một nền tảng duy nhất: KubeVirt chạy VM như K8s workload, chia sẻ cùng scheduler, storage và network với container. Khi AI workload cần fractional GPU, per-tenant GPU quota, live-migration — **OpenStack lùi về phân khúc private cloud thuần VM**, còn với **bài toán phân phối GPU**, **Kubernetes là lựa chọn duy nhất hợp lý**.
 
 | Yêu cầu AI workload | OpenStack | Kubernetes-native |
 |---|---|---|
@@ -119,9 +100,7 @@ Bước sang giai đoạn 2025–2026, Kubernetes đã trở thành chuẩn chun
 
 ### 1.2 Topology 3 nodes trong Lab — phân bổ theo loại khách hàng
 
-Thay vì 3 node giống nhau, lab phân bổ mỗi node cho một loại khách hàng để mô phỏng đúng cách GPU cloud thương mại tận dụng phần cứng.
-
-**Nguyên tắc tài chính:** node có GPU rất đắt (A100/H100). Không bao giờ đặt workload không cần GPU lên node có GPU — đó là lãng phí tài nguyên. Cloud provider phải có pool node CPU-only cho workload không GPU, và pool node GPU dành riêng cho khách trả tiền GPU.
+GPU node (A100/H100) đắt hơn CPU node 10–20×. Cloud provider không đặt CPU-only workload lên GPU node — lãng phí tài nguyên. Lab phân bổ đúng pattern đó: mỗi node phục vụ một loại khách hàng.
 
 | Node | IP | Roles K8s | Roles Ceph | GPU pool | Khách hàng phục vụ |
 |---|---|---|---|---|---|
@@ -130,70 +109,30 @@ Thay vì 3 node giống nhau, lab phân bổ mỗi node cho một loại khách 
 | **ctrl03** | 10.10.200.13 | etcd, control-plane, worker | mon, osd | **shared GPU** — `gpu-pool=shared`, 2× A100 chia 4 slice = 8 fractional | Khách mua GPU chia nhỏ (inference, dev/test, learning) |
 | **VIP** | 10.10.200.51 | API endpoint (kube-vip ARP) | — | — | — |
 
-**Cách `nodeSelector` chỉ workload đến đúng node:**
+Capsule inject `nodeSelector` per tenant để workload land đúng pool:
 
-- Tenant `cust-cpu` (KH không GPU) → Capsule inject `nodeSelector: gpu-pool=cpu-only` → land trên ctrl01
-- Tenant `cust-gpu-whole` (KH whole GPU) → Capsule inject `nodeSelector: gpu-pool=whole` → land trên ctrl02
-- Tenant `cust-gpu-shared` (KH fractional) → Capsule inject `nodeSelector: gpu-pool=shared` → land trên ctrl03
-
-Workload hệ thống (Rook, monitoring, ingress, KubeVirt operator) chạy trên cả 3 node bình thường — chúng không cần GPU, nodeSelector tenant không áp dụng.
+- `cust-cpu` → `gpu-pool=cpu-only` → ctrl01
+- `cust-gpu-whole` → `gpu-pool=whole` → ctrl02
+- `cust-gpu-shared` → `gpu-pool=shared` → ctrl03
 
 ---
 
-## 2. Tài nguyên & IP Planning
+## 2. Chuẩn bị Lab
 
-### 2.1 Tài nguyên lab
+3 VM Ubuntu 24.04.4 trên ESXi, cấu hình đồng nhất: **8 vCPU / 16 GB RAM / 200 GB OS / 100 GB Ceph OSD / ens160 (mgmt) + ens192 (cluster/storage)**.
 
-3 VM trên ESXi:
-
-| Node | CPU | RAM | Disk 1 (OS) | Disk 2 (Ceph OSD) | NIC 1 (mgmt) | NIC 2 (cluster/storage) |
-|---|---|---|---|---|---|---|
-| ctrl01 | 8 vCPU | 16 GB | 200 GB | 100 GB | ens160 | ens192 |
-| ctrl02 | 8 vCPU | 16 GB | 200 GB | 100 GB | ens160 | ens192 |
-| ctrl03 | 8 vCPU | 16 GB | 200 GB | 100 GB | ens160 | ens192 |
-
-Yêu cầu ESXi: **Expose hardware assisted virtualization to the guest OS = true** (VM Options → CPU). Không có cờ này, KVM nested không chạy, KubeVirt sẽ fall-back qua emulation rất chậm hoặc fail.
-
-### 2.2 IP planning
+> **ESXi:** Expose hardware assisted virtualization to the guest OS = true (VM Options → CPU) — bắt buộc để KVM nested chạy được.
 
 ```
-Subnet: 10.10.200.0/24 (mgmt + cluster, đơn giản hóa cho lab)
-Gateway: 10.10.200.1
-DNS: 1.1.1.1, 8.8.8.8
-
-# Node IPs (ens160 mgmt)
-ctrl01:   10.10.200.11
-ctrl02:   10.10.200.12
-ctrl03:   10.10.200.13
-
-# Kubernetes API HA (kube-vip ARP)
-VIP:      10.10.200.51
-
-# Cilium L2 Announcement pool (services LoadBalancer + Gateway)
-LB pool:  10.10.200.60-10.10.200.99
-  - Gateway API:           10.10.200.60
-  - Ceph dashboard:        10.10.200.61
-  - Grafana:               10.10.200.62
-  - Prometheus:            10.10.200.63
-  - KubeVirt Manager:      10.10.200.64
-  - Headlamp:              10.10.200.65
-  - Floating IP cust-cpu:        10.10.200.66
-  - Floating IP cust-gpu-whole:  10.10.200.67
-  - Floating IP cust-gpu-shared: 10.10.200.68 (nếu cần expose container)
-
-# Pod & Service CIDR (RKE2 default)
-Cluster CIDR:  10.42.0.0/16
-Service CIDR:  10.43.0.0/16
-Cluster DNS:   10.43.0.10
+ctrl01: 10.10.200.11  |  ctrl02: 10.10.200.12  |  ctrl03: 10.10.200.13
+VIP K8s API:  10.10.200.51
+LB pool 10.10.200.60-99:
+  .61 Ceph dashboard  |  .62 KubeVirt Manager
+  .66 cust-cpu  |  .67 cust-gpu-whole  |  .68 cust-gpu-shared
+Cluster CIDR: 10.42.0.0/16  |  Service CIDR: 10.43.0.0/16  |  DNS: 10.43.0.10
 ```
 
-LB pool 10.10.200.60-99 phải nằm trong cùng L2 với node để ARP announcement work. Đây là yêu cầu của Cilium L2 Announcements — feature này không route qua L3, chỉ ARP reply trong cùng broadcast domain.
-
----
-
-## 3. Base OS (Tất cả nodes)
-
-**Chuẩn bị OS** — chạy toàn bộ block này trên cả 3 node:
+Mình chạy block chuẩn bị OS sau trên cả 3 node:
 
 ```bash
 # Swap off (bắt buộc cho Kubernetes)
@@ -265,11 +204,11 @@ EOF
 
 ---
 
-## 4. Cài RKE2 HA Cluster
+## 3. Cài RKE2 HA Cluster
 
 Mình bootstrap ctrl01 trước, sau đó join ctrl02 và ctrl03.
 
-### 4.1 Bootstrap node đầu tiên (ctrl01)
+### 3.1 Bootstrap node đầu tiên (ctrl01)
 
 Tạo config trước khi install — quan trọng vì RKE2 sẽ apply manifests trong `/var/lib/rancher/rke2/server/manifests/` ngay khi start:
 
@@ -302,7 +241,7 @@ cni: cilium
 
 # Disable components mặc định không dùng
 disable:
-  - rke2-ingress-nginx          # Bỏ ingress nginx, dùng Cilium Gateway API thay thế
+  - rke2-ingress-nginx          # Không dùng ingress nginx
   - rke2-canal                  # Bỏ canal, dùng Cilium
   - rke2-snapshot-validation-webhook   # Bỏ webhook validation cho VolumeSnapshot (lab); production nên giữ
 
@@ -354,12 +293,6 @@ spec:
 
     externalIPs:
       enabled: true
-
-    # Gateway API
-    gatewayAPI:
-      enabled: true
-      enableAlpn: true
-      enableAppProtocol: true
 
     # ===== Hubble (observability) =====
     hubble:
@@ -552,7 +485,7 @@ kubectl get nodes -o wide --server=https://10.10.200.51:6443
 
 ```
 
-### 4.2 Join ctrl02, ctrl03
+### 3.2 Join ctrl02, ctrl03
 
 Lấy token từ ctrl01:
 
@@ -626,7 +559,7 @@ curl -sfL https://get.rke2.io | INSTALL_RKE2_VERSION=v1.35.4+rke2r1 sh -
 systemctl enable --now rke2-server.service
 ```
 
-### 4.3 Verify cluster HA
+### 3.3 Verify cluster HA
 
 Từ ctrl01:
 
@@ -654,7 +587,7 @@ kubectl get pods -n kube-system -l component=etcd -o wide
 kubectl -n kube-system patch helmchartconfig rke2-cilium --type=merge -p='
 {
   "spec": {
-    "valuesContent": "kubeProxyReplacement: true\nk8sServiceHost: 10.10.200.51\nk8sServicePort: 6443\nbpf:\n  masquerade: true\nroutingMode: tunnel\ntunnelProtocol: vxlan\nl2announcements:\n  enabled: true\n  leaseDuration: \"15s\"\n  leaseRenewDeadline: \"10s\"\n  leaseRetryPeriod: \"2s\"\nexternalIPs:\n  enabled: true\ngatewayAPI:\n  enabled: true\n  enableAlpn: true\n  enableAppProtocol: true\nhubble:\n  enabled: true\n  relay:\n    enabled: true\n  ui:\n    enabled: true\nipam:\n  mode: \"cluster-pool\"\n  operator:\n    clusterPoolIPv4PodCIDRList:\n      - \"10.42.0.0/16\"\n    clusterPoolIPv4MaskSize: 24\noperator:\n  replicas: 2\nresources:\n  requests:\n    cpu: 100m\n    memory: 256Mi\n  limits:\n    memory: 1Gi"
+    "valuesContent": "kubeProxyReplacement: true\nk8sServiceHost: 10.10.200.51\nk8sServicePort: 6443\nbpf:\n  masquerade: true\nroutingMode: tunnel\ntunnelProtocol: vxlan\nl2announcements:\n  enabled: true\n  leaseDuration: \"15s\"\n  leaseRenewDeadline: \"10s\"\n  leaseRetryPeriod: \"2s\"\nexternalIPs:\n  enabled: true\nhubble:\n  enabled: true\n  relay:\n    enabled: true\n  ui:\n    enabled: true\nipam:\n  mode: \"cluster-pool\"\n  operator:\n    clusterPoolIPv4PodCIDRList:\n      - \"10.42.0.0/16\"\n    clusterPoolIPv4MaskSize: 24\noperator:\n  replicas: 2\nresources:\n  requests:\n    cpu: 100m\n    memory: 256Mi\n  limits:\n    memory: 1Gi"
   }
 }'
 
@@ -673,29 +606,9 @@ kubectl -n kube-system logs ds/cilium | grep -i "Establishing connection to"
 # time=2026-05-27T02:55:46.494097255Z level=info msg="Establishing connection to apiserver" module=agent.infra.k8s-client ipAddr=https://10.10.200.51:6443
 ```
 
-RKE2 dùng **containerd** làm container runtime — không có `docker` hay `podman` trên node. Để inspect container/image trực tiếp, dùng `crictl` (CRI client). RKE2 dùng socket riêng tại `/run/k3s/containerd/containerd.sock`, cần config một lần:
-
-```bash
-cat > /etc/crictl.yaml <<'EOF'
-runtime-endpoint: unix:///run/k3s/containerd/containerd.sock
-image-endpoint: unix:///run/k3s/containerd/containerd.sock
-EOF
-
-ln -sf /var/lib/rancher/rke2/bin/crictl /usr/local/bin/crictl
-```
-
-Sau đó dùng như docker:
-
-```bash
-crictl ps              # docker ps
-crictl images          # docker images
-crictl pull <image>    # docker pull
-crictl inspect <id>    # docker inspect
-```
-
 ---
 
-## 5. kubectl, Helm, Cilium CLI
+## 4. kubectl, Helm, Cilium CLI
 
 ```bash
 # Helm 3 (3.21+)
@@ -712,36 +625,12 @@ tar xzvf cilium-linux-amd64.tar.gz -C /usr/local/bin
 rm cilium-linux-amd64.tar.gz
 
 cilium status --wait
-# root@ctrl01:/root/# cilium status --wait
-#     /¯¯\
-#  /¯¯\__/¯¯\    Cilium:             OK
-#  \__/¯¯\__/    Operator:           OK
-#  /¯¯\__/¯¯\    Envoy DaemonSet:    disabled (using embedded mode)
-#  \__/¯¯\__/    Hubble Relay:       OK
-#     \__/       ClusterMesh:        disabled
-
-# DaemonSet              cilium                   Desired: 3, Ready: 3/3, Available: 3/3
-# Deployment             cilium-operator          Desired: 2, Ready: 2/2, Available: 2/2
-# Deployment             hubble-relay             Desired: 1, Ready: 1/1, Available: 1/1
-# Deployment             hubble-ui                Desired: 1, Ready: 1/1, Available: 1/1
-# Containers:            cilium                   Running: 3
-#                        cilium-operator          Running: 2
-#                        clustermesh-apiserver
-#                        hubble-relay             Running: 1
-#                        hubble-ui                Running: 1
-# Cluster Pods:          7/7 managed by Cilium
-# Helm chart version:
-# Image versions         cilium             rancher/mirrored-cilium-cilium:v1.19.3: 3
-#                        cilium-operator    rancher/mirrored-cilium-operator-generic:v1.19.3: 2
-#                        hubble-relay       rancher/mirrored-cilium-hubble-relay:v1.19.3: 1
-#                        hubble-ui          rancher/mirrored-cilium-hubble-ui-backend:v0.13.3: 1
-#                        hubble-ui          rancher/mirrored-cilium-hubble-ui:v0.13.3: 1
-# root@ctrl01:/root/#
+# Cilium: OK | Operator: OK | Hubble Relay: OK | DaemonSet 3/3 Ready
 ```
 
 ---
 
-## 6. Cilium L2 Announcements — LoadBalancer cho bare metal (thay MetalLB)
+## 5. Cilium L2 Announcements — LoadBalancer cho bare metal (thay MetalLB)
 
 Cilium đã có L2 Announcements production-ready — mình không cần cài thêm MetalLB nữa. Một CNI stack gọn hơn, Hubble thấy được cả LB traffic, và không phải duy trì upgrade matrix cho 2 component khác vendor.
 
@@ -780,195 +669,15 @@ spec:
 EOF
 ```
 
-Test bằng một Service LoadBalancer tạm:
-
-```bash
-kubectl create deployment nginx-test --image=nginx
-kubectl expose deployment nginx-test --type=LoadBalancer --port=80
-
-kubectl get svc nginx-test
-# NAME         TYPE           CLUSTER-IP    EXTERNAL-IP    PORT(S)
-# nginx-test   LoadBalancer   10.43.47.255   10.10.200.60   80:31095/TCP 
-
-# Test từ máy ngoài cluster
-curl http://10.10.200.60
-# <html><body>Welcome to nginx!</body></html>
-
-# Cleanup
-kubectl delete deployment nginx-test
-kubectl delete svc nginx-test
-```
-
 L2 Announcements hoạt động active-passive: chỉ 1 node tại 1 thời điểm ARP reply cho 1 service IP. Khi node đó down, Cilium leader election chọn node khác (10-15 giây). Đây là behavior giống MetalLB L2 mode.
 
 ---
 
-## 7. Cert-manager + Cilium Gateway API
-
-Cert-manager cấp TLS cho Gateway, Capsule webhook, và optional cho service exposed:
-
-### 7.1 Cert-manager
-
-```bash
-helm repo add jetstack https://charts.jetstack.io
-helm repo update
-
-helm install cert-manager jetstack/cert-manager \
-  --namespace cert-manager --create-namespace \
-  --version v1.19.4 \
-  --set crds.enabled=true \
-  --set replicaCount=2 \
-  --set webhook.replicaCount=2 \
-  --set cainjector.replicaCount=2 \
-  --set resources.requests.cpu=20m \
-  --set resources.requests.memory=64Mi
-
-kubectl -n cert-manager rollout status deployment/cert-manager
-kubectl -n cert-manager rollout status deployment/cert-manager-webhook
-kubectl -n cert-manager rollout status deployment/cert-manager-cainjector
-```
-
-Tạo Self-signed ClusterIssuer (lab; production nên Let's Encrypt DNS-01 hoặc internal CA):
-
-```bash
-kubectl apply -f - <<EOF
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: selfsigned-cluster-issuer
-spec:
-  selfSigned: {}
----
-# CA root tự ký (lab)
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: lab-ca
-  namespace: cert-manager
-spec:
-  isCA: true
-  commonName: lab-ca
-  secretName: lab-ca-secret
-  privateKey:
-    algorithm: ECDSA
-    size: 256
-  issuerRef:
-    name: selfsigned-cluster-issuer
-    kind: ClusterIssuer
----
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: lab-ca-issuer
-spec:
-  ca:
-    secretName: lab-ca-secret
-EOF
-```
-
-Verify:
-
-```bash
-kubectl get clusterissuer
-# root@ctrl01:/root/# kubectl get clusterissuer
-# NAME                        READY   AGE
-# lab-ca-issuer               True    11s
-# selfsigned-cluster-issuer   True    11s
-# root@ctrl01:/root/#
-```
-
-### 7.2 Cilium Gateway API
-
-Cilium đã enable Gateway API trong HelmChartConfig. Cài thêm Gateway API CRDs (RKE2 chưa bao gồm theo default):
-
-```bash
-#Cài Gateway API CRDs
-GATEWAY_API_VERSION=v1.3.0
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/${GATEWAY_API_VERSION}/standard-install.yaml
-
-# Restart Cilium operator để detect GatewayClass CRD mới
-kubectl -n kube-system rollout restart deployment/cilium-operator
-kubectl -n kube-system rollout status deployment/cilium-operator --timeout=60s
-
-# Tạo GatewayClass — operator không tự tạo, phải apply thủ công
-cat <<'EOF' | kubectl apply -f -
-apiVersion: gateway.networking.k8s.io/v1
-kind: GatewayClass
-metadata:
-  name: cilium
-spec:
-  controllerName: io.cilium/gateway-controller
-EOF
-
-# Verify GatewayClass
-kubectl get gatewayclass
-# NAME     CONTROLLER                     ACCEPTED   AGE
-# cilium   io.cilium/gateway-controller   True       6s
-```
-
-Tạo Gateway dùng IP cố định từ pool:
-
-```bash
-kubectl apply -f - <<EOF
-apiVersion: gateway.networking.k8s.io/v1
-kind: Gateway
-metadata:
-  name: lab-gateway
-  namespace: default
-  annotations:
-    io.cilium/lb-ipam-ips: "10.10.200.60"
-spec:
-  gatewayClassName: cilium
-  listeners:
-    - name: http
-      protocol: HTTP
-      port: 80
-      allowedRoutes:
-        namespaces:
-          from: All
-    - name: https
-      protocol: HTTPS
-      port: 443
-      tls:
-        mode: Terminate
-        certificateRefs:
-          - kind: Secret
-            name: lab-gateway-tls
-      allowedRoutes:
-        namespaces:
-          from: All
-EOF
-
-# Generate cert cho gateway
-kubectl apply -f - <<EOF
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: lab-gateway-tls
-  namespace: default
-spec:
-  secretName: lab-gateway-tls
-  dnsNames:
-    - "*.anhlx.lab"
-    - "lab.local"
-  issuerRef:
-    name: lab-ca-issuer
-    kind: ClusterIssuer
-EOF
-
-# Verify gateway nhận IP
-kubectl get gateway lab-gateway
-# NAME          CLASS    ADDRESS         PROGRAMMED   AGE
-# lab-gateway   cilium   10.10.200.60   True         29s
-```
-
----
-
-## 8. Rook-Ceph Distributed Storage
+## 6. Rook-Ceph Distributed Storage
 
 Mình cài Rook-Ceph theo thứ tự: operator → CephCluster CR → pool và StorageClass. 
 
-### 8.1 Cài Rook Operator
+### 6.1 Cài Rook Operator
 
 ```bash
 ROOK_VERSION=v1.19.5
@@ -1065,7 +774,7 @@ spec:
 EOF
 ```
 
-### 8.2 Tạo CephCluster
+### 6.2 Tạo CephCluster
 
 ```bash
 kubectl apply -f - <<EOF
@@ -1155,7 +864,7 @@ kubectl -n rook-ceph get pods
 ```
 
 
-### 8.3 Tạo Pools + StorageClass (replication=3, RBD-RWX, CephFS)
+### 6.3 Tạo Pools + StorageClass (replication=3, RBD-RWX, CephFS)
 
 Replication=3 đảm bảo an toàn dữ liệu khi mất 1 OSD. RBD block-mode RWX cho phép VM live migration.
 
@@ -1279,35 +988,6 @@ reclaimPolicy: Delete
 EOF
 ```
 
-VolumeSnapshotClass:
-
-```bash
-kubectl apply -f - <<EOF
----
-apiVersion: snapshot.storage.k8s.io/v1
-kind: VolumeSnapshotClass
-metadata:
-  name: rook-ceph-block-snapshot
-driver: rook-ceph.rbd.csi.ceph.com
-parameters:
-  clusterID: rook-ceph
-  csi.storage.k8s.io/snapshotter-secret-name: rook-csi-rbd-provisioner
-  csi.storage.k8s.io/snapshotter-secret-namespace: rook-ceph
-deletionPolicy: Delete
----
-apiVersion: snapshot.storage.k8s.io/v1
-kind: VolumeSnapshotClass
-metadata:
-  name: rook-cephfs-snapshot
-driver: rook-ceph.cephfs.csi.ceph.com
-parameters:
-  clusterID: rook-ceph
-  csi.storage.k8s.io/snapshotter-secret-name: rook-csi-cephfs-provisioner
-  csi.storage.k8s.io/snapshotter-secret-namespace: rook-ceph
-deletionPolicy: Delete
-EOF
-```
-
 Verify:
 
 ```bash
@@ -1316,42 +996,9 @@ kubectl get sc
 # rook-ceph-block (def) rook-ceph.rbd.csi.ceph.com      Delete
 # rook-ceph-block-rwx   rook-ceph.rbd.csi.ceph.com      Delete
 # rook-cephfs           rook-ceph.cephfs.csi.ceph.com   Delete
-
-kubectl get volumesnapshotclass
-# NAME                          DRIVER                          DELETIONPOLICY
-# rook-ceph-block-snapshot      rook-ceph.rbd.csi.ceph.com      Delete
-# rook-cephfs-snapshot          rook-ceph.cephfs.csi.ceph.com   Delete
 ```
 
-Smoke test RWX:
-
-```bash
-kubectl apply -f - <<EOF
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: test-rwx
-spec:
-  accessModes: [ReadWriteMany]
-  storageClassName: rook-ceph-block-rwx
-  resources:
-    requests:
-      storage: 1Gi
-  volumeMode: Block   # block-mode raw cho RWX multi-attach
-EOF
-
-kubectl get pvc test-rwx
-# NAME       STATUS   VOLUME                   CAPACITY   ACCESS MODES   STORAGECLASS
-# test-rwx   Bound    pvc-xxxx...              1Gi        RWX            rook-ceph-block-rwx
-```
-
-PVC bound với ACCESS MODES = RWX. Khi gắn vào VM, KubeVirt sẽ multi-attach device và live migration hoạt động.
-
-```bash
-kubectl delete pvc test-rwx
-```
-
-### 8.4 Ceph Dashboard
+### 6.4 Ceph Dashboard
 
 ```bash
 kubectl apply -f - <<EOF
@@ -1383,7 +1030,7 @@ Truy cập http://10.10.200.61:7000 với user `admin` và password vừa lấy.
 >Lưu ý: Ceph tự redirect sang IP của active MGR node — đây là behavior bình thường, dashboard vẫn hoạt động đầy đủ.
 ---
 
-## 9. KubeVirt — chạy VM trên Kubernetes
+## 7. KubeVirt — chạy VM trên Kubernetes
 
 KubeVirt + CDI. KubeVirt thế hệ này mang lại **PCIe NUMA topology awareness** cho AI VM (khi có GPU thật) và **Hypervisor Abstraction Layer** (chuẩn bị cho future multi-hypervisor).
 
@@ -1558,7 +1205,172 @@ VM smoke test thành công xác nhận: CDI import work, KubeVirt scheduling wor
 
 ---
 
-## 10. fake-gpu-operator — Topology theo node
+## 8. KubeVirt Manager — Admin Portal
+
+Admin UI cho VM lifecycle (start/stop/console/migrate).
+
+```bash
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kubevirt-manager
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kubevirt-manager
+  namespace: kubevirt-manager
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kubevirt-manager
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: kubevirt-manager
+    namespace: kubevirt-manager
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubevirt-manager
+  namespace: kubevirt-manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kubevirt-manager
+  template:
+    metadata:
+      labels:
+        app: kubevirt-manager
+    spec:
+      serviceAccountName: kubevirt-manager
+      containers:
+        - name: app
+          image: kubevirtmanager/kubevirt-manager:latest
+          ports: [{containerPort: 8080}]
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubevirt-manager
+  namespace: kubevirt-manager
+  annotations:
+    io.cilium/lb-ipam-ips: "10.10.200.62"
+spec:
+  type: LoadBalancer
+  selector:
+    app: kubevirt-manager
+  ports:
+    - port: 80
+      targetPort: 8080
+EOF
+
+kubectl -n kubevirt-manager rollout status deployment/kubevirt-manager
+```
+
+Truy cập http://10.10.200.62 — admin có thể list VM, start/stop/restart, mở VNC console, trigger live migration.
+
+VirtualMachineClusterInstancetype + Preferences cho 3 khách hàng:
+
+```bash
+kubectl apply -f - <<EOF
+---
+# Instance type — small CPU-only (KH1)
+apiVersion: instancetype.kubevirt.io/v1beta1
+kind: VirtualMachineClusterInstancetype
+metadata:
+  name: u1.small
+spec:
+  cpu:
+    guest: 1
+  memory:
+    guest: 2Gi
+---
+# Instance type — medium GPU whole (KH2 Windows)
+apiVersion: instancetype.kubevirt.io/v1beta1
+kind: VirtualMachineClusterInstancetype
+metadata:
+  name: gpu1.whole
+spec:
+  cpu:
+    guest: 4
+  memory:
+    guest: 6Gi
+  gpus:
+    - name: gpu1
+      deviceName: nvidia.com/gpu
+---
+# Preference — Ubuntu Linux
+apiVersion: instancetype.kubevirt.io/v1beta1
+kind: VirtualMachineClusterPreference
+metadata:
+  name: ubuntu
+spec:
+  cpu:
+    preferredCPUTopology: preferSockets
+  devices:
+    preferredDiskBus: virtio
+    preferredInterfaceModel: virtio
+  features:
+    preferredAcpi: {}
+  firmware:
+    preferredUseEfi: true
+---
+# Preference — Windows 2022
+apiVersion: instancetype.kubevirt.io/v1beta1
+kind: VirtualMachineClusterPreference
+metadata:
+  name: windows.2k22
+spec:
+  clock:
+    preferredClockOffset:
+      timezone: "Asia/Ho_Chi_Minh"
+    preferredTimer:
+      hpet:
+        present: false
+      hyperv: {}
+      pit:
+        tickPolicy: delay
+      rtc:
+        tickPolicy: catchup
+  cpu:
+    preferredCPUTopology: preferSockets
+  devices:
+    preferredDiskBus: sata
+    preferredInterfaceModel: e1000
+    preferredTPM: {}
+  features:
+    preferredAcpi: {}
+    preferredApic: {}
+    preferredHyperv:
+      relaxed: {}
+      vapic: {}
+      spinlocks:
+        spinlocks: 8191
+    preferredSmm: {}
+  firmware:
+    preferredUseEfi: true
+    preferredEfi:
+      secureBoot: false
+EOF
+```
+
+---
+
+## 9. fake-gpu-operator — Topology theo node
 
 Mình phân bổ 3 node theo loại GPU pool:
 
@@ -1738,417 +1550,13 @@ kubectl delete pod gpu-smoke-shared
 
 ---
 
-## 11. Kueue — GPU Job Queueing
-
-Kueue — job admission control + fair-share queueing. Tạo 2 `ResourceFlavor` (whole, shared) và 2 `ClusterQueue` cho từng pool.
-
-### 11.1 Cài Kueue
-
-```bash
-KUEUE_VERSION=v0.17.2
-kubectl apply --server-side -f https://github.com/kubernetes-sigs/kueue/releases/download/${KUEUE_VERSION}/manifests.yaml
-
-kubectl -n kueue-system rollout status deployment/kueue-controller-manager
-
-kubectl get pods -n kueue-system
-# kueue-controller-manager-xxxxx   2/2 Running
-```
-
-### 11.2 ResourceFlavor — định nghĩa GPU pool
-
-```bash
-kubectl apply -f - <<EOF
----
-apiVersion: kueue.x-k8s.io/v1beta1
-kind: ResourceFlavor
-metadata:
-  name: gpu-whole
-spec:
-  nodeLabels:
-    gpu-pool: whole
----
-apiVersion: kueue.x-k8s.io/v1beta1
-kind: ResourceFlavor
-metadata:
-  name: gpu-shared
-spec:
-  nodeLabels:
-    gpu-pool: shared
----
-apiVersion: kueue.x-k8s.io/v1beta1
-kind: ResourceFlavor
-metadata:
-  name: cpu-only
-spec:
-  nodeLabels:
-    gpu-pool: cpu-only
-EOF
-```
-
-### 11.3 ClusterQueue — quota toàn cluster
-
-```bash
-kubectl apply -f - <<EOF
----
-apiVersion: kueue.x-k8s.io/v1beta1
-kind: ClusterQueue
-metadata:
-  name: cq-whole
-spec:
-  namespaceSelector: {}
-  resourceGroups:
-    - coveredResources: ["cpu", "memory", "nvidia.com/gpu"]
-      flavors:
-        - name: "gpu-whole"
-          resources:
-            - name: "cpu"
-              nominalQuota: "8"
-            - name: "memory"
-              nominalQuota: "24Gi"
-            - name: "nvidia.com/gpu"
-              nominalQuota: "2"
----
-apiVersion: kueue.x-k8s.io/v1beta1
-kind: ClusterQueue
-metadata:
-  name: cq-shared
-spec:
-  namespaceSelector: {}
-  resourceGroups:
-    - coveredResources: ["cpu", "memory", "nvidia.com/gpu"]
-      flavors:
-        - name: "gpu-shared"
-          resources:
-            - name: "cpu"
-              nominalQuota: "8"
-            - name: "memory"
-              nominalQuota: "24Gi"
-            - name: "nvidia.com/gpu"
-              nominalQuota: "8"
----
-apiVersion: kueue.x-k8s.io/v1beta1
-kind: ClusterQueue
-metadata:
-  name: cq-cpu
-spec:
-  namespaceSelector: {}
-  resourceGroups:
-    - coveredResources: ["cpu", "memory"]
-      flavors:
-        - name: "cpu-only"
-          resources:
-            - name: "cpu"
-              nominalQuota: "4"
-            - name: "memory"
-              nominalQuota: "12Gi"
-EOF
-```
-
-### 11.4 LocalQueue — queue per tenant namespace
-
-LocalQueue tạo sau khi tenant namespace tồn tại (phần Capsule sẽ tạo). Tạm note pattern:
-
-```yaml
-apiVersion: kueue.x-k8s.io/v1beta1
-kind: LocalQueue
-metadata:
-  name: lq-tenant
-  namespace: <tenant-namespace>
-spec:
-  clusterQueue: <cq-whole|cq-shared|cq-cpu>
-```
-
----
-
-## 12. Monitoring
-
-kube-prometheus-stack + dashboard Ceph + DCGM (giả lập).
-
-```bash
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-
-cat > /tmp/monitoring-values.yaml <<EOF
-prometheus:
-  prometheusSpec:
-    retention: 7d
-    resources:
-      requests:
-        cpu: 100m
-        memory: 800Mi
-      limits:
-        memory: 1.5Gi
-    storageSpec:
-      volumeClaimTemplate:
-        spec:
-          storageClassName: rook-ceph-block
-          accessModes: [ReadWriteOnce]
-          resources:
-            requests:
-              storage: 20Gi
-    serviceMonitorSelectorNilUsesHelmValues: false
-    podMonitorSelectorNilUsesHelmValues: false
-    ruleSelectorNilUsesHelmValues: false
-
-grafana:
-  adminPassword: "Lab-2026-Admin"
-  resources:
-    requests:
-      cpu: 50m
-      memory: 128Mi
-  persistence:
-    enabled: true
-    storageClassName: rook-ceph-block
-    size: 5Gi
-  service:
-    type: LoadBalancer
-    annotations:
-      io.cilium/lb-ipam-ips: "10.10.200.62"
-  defaultDashboardsTimezone: "Asia/Ho_Chi_Minh"
-
-alertmanager:
-  alertmanagerSpec:
-    resources:
-      requests:
-        cpu: 20m
-        memory: 64Mi
-    storage:
-      volumeClaimTemplate:
-        spec:
-          storageClassName: rook-ceph-block
-          accessModes: [ReadWriteOnce]
-          resources:
-            requests:
-              storage: 2Gi
-
-nodeExporter:
-  enabled: true
-
-kubeStateMetrics:
-  enabled: true
-EOF
-
-helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
-  -n monitoring --create-namespace \
-  --version 85.3.3 \
-  -f /tmp/monitoring-values.yaml
-
-kubectl -n monitoring rollout status statefulset/prometheus-kube-prometheus-stack-prometheus
-kubectl -n monitoring get svc kube-prometheus-stack-grafana
-# kube-prometheus-stack-grafana   LoadBalancer   10.43.x.x   10.10.200.62   80:NodePort/TCP
-
-# Prometheus expose
-kubectl -n monitoring patch svc kube-prometheus-stack-prometheus -p '{
-  "metadata":{"annotations":{"io.cilium/lb-ipam-ips":"10.10.200.63"}},
-  "spec":{"type":"LoadBalancer"}
-}'
-```
-
-Grafana: http://10.10.200.62 — user `admin`, password `Lab-2026-Admin`.
-
-Import dashboard:
-- ID **15760** — KubeVirt overview
-- ID **2842** — Ceph cluster
-- ID **12239** — NVIDIA DCGM (chỉ work với GPU thật; với fake operator dashboard sẽ trống)
-
-Verify Ceph metrics đã scrape:
-
-```bash
-kubectl apply -f - <<EOF
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: rook-ceph-mgr
-  namespace: monitoring
-  labels:
-    release: kube-prometheus-stack
-spec:
-  namespaceSelector:
-    matchNames: [rook-ceph]
-  selector:
-    matchLabels:
-      app: rook-ceph-mgr
-  endpoints:
-    - port: http-metrics
-      path: /metrics
-      interval: 30s
-EOF
-```
-
----
-
-## 13. KubeVirt Manager — Admin Portal
-
-Admin UI cho VM lifecycle (start/stop/console/migrate).
-
-```bash
-kubectl apply -f - <<EOF
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: kubevirt-manager
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: kubevirt-manager
-  namespace: kubevirt-manager
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: kubevirt-manager
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin
-subjects:
-  - kind: ServiceAccount
-    name: kubevirt-manager
-    namespace: kubevirt-manager
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: kubevirt-manager
-  namespace: kubevirt-manager
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: kubevirt-manager
-  template:
-    metadata:
-      labels:
-        app: kubevirt-manager
-    spec:
-      serviceAccountName: kubevirt-manager
-      containers:
-        - name: app
-          image: kubevirtmanager/kubevirt-manager:latest
-          ports: [{containerPort: 8080}]
-          resources:
-            requests:
-              cpu: 20m
-              memory: 64Mi
-            limits:
-              memory: 256Mi
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: kubevirt-manager
-  namespace: kubevirt-manager
-  annotations:
-    io.cilium/lb-ipam-ips: "10.10.200.64"
-spec:
-  type: LoadBalancer
-  selector:
-    app: kubevirt-manager
-  ports:
-    - port: 80
-      targetPort: 8080
-EOF
-
-kubectl -n kubevirt-manager rollout status deployment/kubevirt-manager
-```
-
-Truy cập http://10.10.200.64 — admin có thể list VM, start/stop/restart, mở VNC console, trigger live migration.
-
-VirtualMachineClusterInstancetype + Preferences cho 3 khách hàng:
-
-```bash
-kubectl apply -f - <<EOF
----
-# Instance type — small CPU-only (KH1)
-apiVersion: instancetype.kubevirt.io/v1beta1
-kind: VirtualMachineClusterInstancetype
-metadata:
-  name: u1.small
-spec:
-  cpu:
-    guest: 2
-  memory:
-    guest: 4Gi
----
-# Instance type — medium GPU whole (KH2 Windows)
-apiVersion: instancetype.kubevirt.io/v1beta1
-kind: VirtualMachineClusterInstancetype
-metadata:
-  name: gpu1.whole
-spec:
-  cpu:
-    guest: 4
-  memory:
-    guest: 8Gi
-  gpus:
-    - name: gpu1
-      deviceName: nvidia.com/gpu
----
-# Preference — Ubuntu Linux
-apiVersion: instancetype.kubevirt.io/v1beta1
-kind: VirtualMachineClusterPreference
-metadata:
-  name: ubuntu
-spec:
-  cpu:
-    preferredCPUTopology: preferSockets
-  devices:
-    preferredDiskBus: virtio
-    preferredInterfaceModel: virtio
-  features:
-    preferredAcpi: {}
-  firmware:
-    preferredUseEfi: true
----
-# Preference — Windows 2022
-apiVersion: instancetype.kubevirt.io/v1beta1
-kind: VirtualMachineClusterPreference
-metadata:
-  name: windows.2k22
-spec:
-  clock:
-    preferredClockOffset:
-      timezone: "Asia/Ho_Chi_Minh"
-    preferredTimer:
-      hpet:
-        present: false
-      hyperv: {}
-      pit:
-        tickPolicy: delay
-      rtc:
-        tickPolicy: catchup
-  cpu:
-    preferredCPUTopology: preferSockets
-  devices:
-    preferredDiskBus: sata
-    preferredInterfaceModel: e1000
-    preferredTPM: {}
-  features:
-    preferredAcpi: {}
-    preferredApic: {}
-    preferredHyperv:
-      relaxed: {}
-      vapic: {}
-      spinlocks:
-        spinlocks: 8191
-    preferredSmm: {}
-  firmware:
-    preferredUseEfi: true
-    preferredEfi:
-      secureBoot: false
-EOF
-```
-
----
-
-## 14. Capsule — Multi-tenancy với custom Role
+## 10. Capsule — Multi-tenancy với custom Role
 
 Capsule enforce multi-tenancy đúng nghĩa khi tenant SA **không** được cấp `cluster-admin`. Nếu tenant có `cluster-admin`, họ có thể `kubectl delete node`, đọc secret của tenant khác, vô hiệu hóa toàn bộ multi-tenancy — Capsule chỉ enforce qua admission webhook, không revoke quyền đã grant.
 
 Custom ClusterRole `tenant-owner` với verbs giới hạn là cách đúng. Capsule sẽ tự generate RoleBinding trong namespace của tenant.
 
-### 14.1 Cài Capsule
+### 10.1 Cài Capsule
 
 ```bash
 helm install capsule oci://ghcr.io/projectcapsule/charts/capsule \
@@ -2164,7 +1572,7 @@ kubectl get pods -n capsule-system
 # capsule-controller-manager-xxxxx   1/1 Running
 ```
 
-### 14.2 Tạo custom ClusterRole `tenant-owner`
+### 10.2 Tạo custom ClusterRole `tenant-owner`
 
 ```bash
 kubectl apply -f - <<EOF
@@ -2232,19 +1640,9 @@ rules:
     resources: ["volumesnapshots","volumesnapshotcontents"]
     verbs: ["get","list","watch","create","update","patch","delete"]
   
-  # === Kueue local queue ===
-  - apiGroups: ["kueue.x-k8s.io"]
-    resources: ["localqueues","workloads"]
-    verbs: ["get","list","watch","create","update","patch","delete"]
-  
   # === Networking trong namespace ===
   - apiGroups: ["networking.k8s.io"]
     resources: ["networkpolicies","ingresses"]
-    verbs: ["get","list","watch","create","update","patch","delete"]
-  
-  # === Gateway API HTTPRoute (cho tenant publish service ra ngoài qua gateway) ===
-  - apiGroups: ["gateway.networking.k8s.io"]
-    resources: ["httproutes","tlsroutes","grpcroutes"]
     verbs: ["get","list","watch","create","update","patch","delete"]
   
   # === Tenant chỉ được READ, không write ===
@@ -2265,7 +1663,7 @@ EOF
 
 Khi tenant tạo Tenant CR (do admin), Capsule sẽ tự sinh `RoleBinding` trong mỗi namespace của tenant với role `tenant-owner` cho ServiceAccount tenant — **không** cần ClusterRoleBinding manual.
 
-### 14.3 Helper script — sinh kubeconfig tenant
+### 10.3 Helper script — sinh kubeconfig tenant
 
 ```bash
 cat > ~/create-tenant.sh <<'SCRIPT'
@@ -2340,32 +1738,32 @@ spec:
         podSelector: {}
 EOF
 
-# Tạo namespace với label tenant (Capsule auto-create nhưng ta tạo trước cho rõ ràng)
+# Tạo namespace và label cho Capsule
 kubectl create namespace "${NS}" --dry-run=client -o yaml | kubectl apply -f -
 kubectl label namespace "${NS}" "capsule.clastix.io/tenant=${TENANT_NAME}" --overwrite
 
 # ServiceAccount tenant
 kubectl create serviceaccount "${SA}" -n "${NS}" --dry-run=client -o yaml | kubectl apply -f -
 
-# KHÔNG tạo ClusterRoleBinding cluster-admin
-# Capsule sẽ tự tạo RoleBinding tenant-owner trong namespace
-
-# Tạo LocalQueue cho tenant
-case "${GPU_POOL}" in
-  cpu-only)  CQ=cq-cpu ;;
-  whole)     CQ=cq-whole ;;
-  shared)    CQ=cq-shared ;;
-  *)         echo "Unknown pool"; exit 1 ;;
-esac
-
-cat <<EOF | kubectl apply -f -
-apiVersion: kueue.x-k8s.io/v1beta1
-kind: LocalQueue
+# Capsule v0.12.x chỉ auto-tạo RoleBinding khi namespace được tạo bởi chính tenant owner qua webhook.
+# Namespace tạo bởi admin bypass webhook → Capsule không track ownership (size=0) → không sinh RoleBinding.
+# Phải tạo thủ công với tên convention capsule-<tenant>-0 để nhất quán với Capsule.
+kubectl apply -f - <<EOF
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
 metadata:
-  name: lq-${TENANT_NAME}
+  name: capsule-${TENANT_NAME}-0
   namespace: ${NS}
-spec:
-  clusterQueue: ${CQ}
+  labels:
+    capsule.clastix.io/tenant: "${TENANT_NAME}"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: tenant-owner
+subjects:
+  - kind: ServiceAccount
+    name: ${SA}
+    namespace: ${NS}
 EOF
 
 # Tạo Secret token vĩnh viễn cho SA (K8s 1.24+ không tự tạo)
@@ -2424,397 +1822,125 @@ chmod +x ~/create-tenant.sh
 
 ---
 
-## 15. Headlamp — User Portal
+## 11. Golden Image Templates
 
-Headlamp UI cho tenant — user tự login bằng token và chỉ thấy namespace của mình.
-
-### 15.1 Cài Headlamp
+Mình chuẩn bị golden image một lần — khi có KH mới, admin clone PVC ra là xong, không cài lại OS hay pull image từ đầu.
 
 ```bash
-helm repo add headlamp https://kubernetes-sigs.github.io/headlamp/
-helm repo update
-
-helm install headlamp headlamp/headlamp \
-  -n headlamp --create-namespace \
-  --set "service.type=LoadBalancer" \
-  --set "service.annotations.io\.cilium/lb-ipam-ips=10.10.200.65" \
-  --set "config.pluginsDir=/headlamp/plugins" \
-  --set "resources.requests.cpu=20m" \
-  --set "resources.requests.memory=64Mi" \
-  --set "resources.limits.memory=256Mi"
-
-kubectl -n headlamp rollout status deployment/headlamp
-
-kubectl -n headlamp get svc headlamp
-# headlamp   LoadBalancer   10.43.x.x   10.10.200.65   80:NodePort/TCP
+kubectl create namespace vm-images
 ```
 
-Truy cập http://10.10.200.65 → Headlamp UI, login bằng K8s token. Token đã sinh trong section Capsule (script create-tenant).
+### 11.1 Ubuntu 22.04 — VM golden image
 
-### 15.2 Console VM cho tenant
-
-Headlamp tích hợp KubeVirt plugin (sẽ load qua /headlamp/plugins). Hoặc tenant có thể dùng `virtctl vnc <vm-name>` từ máy local của họ (kubeconfig đã sinh có quyền access subresource `vnc`).
-
-VNC viewer trong browser cũng work qua KubeVirt Manager (http://10.10.200.64) — admin xem. Tenant tự xem qua virtctl + kubeconfig của họ:
+Mình download Ubuntu 22.04 cloud image về ctrl01 và import vào namespace `vm-images`:
 
 ```bash
-# Trên máy local của tenant
-export KUBECONFIG=~/cust-xxx.kubeconfig
-virtctl vnc <vm-name>
+wget --progress=bar:force https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img \
+  -O /tmp/jammy.img
+python3 -m http.server 8888 --directory /tmp &
+
+kubectl apply -f - <<EOF
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: DataVolume
+metadata:
+  name: ubuntu-2204-golden
+  namespace: vm-images
+spec:
+  source:
+    http:
+      url: "http://10.10.200.11:8888/jammy.img"
+  storage:
+    accessModes: [ReadWriteMany]
+    volumeMode: Filesystem
+    resources:
+      requests:
+        storage: 10Gi
+    storageClassName: rook-cephfs
+EOF
+
+kubectl get dv ubuntu-2204-golden -n vm-images -w
+# NAME                 PHASE       PROGRESS   RESTARTS   AGE
+# ubuntu-2204-golden   Succeeded   100.0%     0          3m
 ```
 
----
-
-
-## 16. Demo: Bán cho 3 khách hàng khác nhau
-
-Đây là phần demo flow thật sự của GPU cloud. Mỗi khách hàng có nhu cầu khác nhau, lab này phục vụ cả 3 trên cùng một cluster — chính xác mô hình kinh doanh của cloud provider thương mại.
-
-### 16.1 Tổng quan 3 khách hàng 
-
-| KH | Tenant name | Sản phẩm mua | Node phục vụ | GPU pool | Login method |
-|---|---|---|---|---|---|
-| **KH1** | `cust-cpu` | 1 VM Ubuntu 22.04, 2 vCPU, 4 GB RAM, không GPU | ctrl01 | cpu-only | SSH qua Floating IP `10.10.200.66:22` |
-| **KH2** | `cust-gpu-whole` | 1 VM Windows Server 2022, 4 vCPU, 8 GB RAM, **1 GPU nguyên** | ctrl02 | whole | RDP qua Floating IP `10.10.200.67:3389` |
-| **KH3** | `cust-gpu-shared` | 1 container, **1/4 GPU shared** | ctrl03 | shared | `kubectl exec` qua Headlamp / kubeconfig |
-
-Mỗi tenant có ResourceQuota riêng, NetworkPolicy isolation tự động qua Capsule, nodeSelector inject để workload land đúng pool.
-
-### 16.2 Admin chuẩn bị Tenants
-
-Trên ctrl01 (admin), chạy script đã tạo ở section 14:
+Khi có KH mua VM Ubuntu, admin clone PVC vào tenant namespace:
 
 ```bash
-# KH1 — cpu only, 0 GPU, 1 VM
-~/create-tenant.sh cust-cpu cpu-only 0 1
+# Grant CDI cross-namespace clone permission
+kubectl apply -f - <<EOF
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cdi-cloner
+  namespace: vm-images
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: <tenant-namespace>
+roleRef:
+  kind: ClusterRole
+  name: edit
+  apiGroup: rbac.authorization.k8s.io
+EOF
 
-# KH2 — whole GPU, 1 GPU, 1 VM
-~/create-tenant.sh cust-gpu-whole whole 1 1
-
-# KH3 — shared GPU, 1 GPU slice, 0 VM (chỉ container)
-~/create-tenant.sh cust-gpu-shared shared 1 0
-```
-
-Verify cả 3 tenant lên:
-
-```bash
-kubectl get tenants.capsule.clastix.io
-# NAME                STATE    NAMESPACE QUOTA    NAMESPACE COUNT
-# cust-cpu            Active   1                  1
-# cust-gpu-whole      Active   1                  1
-# cust-gpu-shared     Active   1                  1
-
-kubectl get ns -l 'capsule.clastix.io/tenant'
-# NAME                STATUS   AGE
-# cust-cpu            Active   30s
-# cust-gpu-whole      Active   25s
-# cust-gpu-shared     Active   20s
-
-# Verify RoleBinding tự động sinh bởi Capsule với role tenant-owner (không phải cluster-admin)
-kubectl -n cust-cpu get rolebinding
-# NAME                          ROLE                       AGE
-# capsule-cust-cpu-0            ClusterRole/tenant-owner   30s
-
-# Verify SA KHÔNG có cluster-admin
-kubectl get clusterrolebinding | grep cust-cpu
-# (empty — đúng, không có ClusterRoleBinding cluster-admin nào)
-```
-
-3 kubeconfig đã sinh ở `~/kubeconfigs/`:
-- `cust-cpu.kubeconfig`
-- `cust-gpu-whole.kubeconfig`
-- `cust-gpu-shared.kubeconfig`
-
-Trong demo dưới, mỗi customer dùng kubeconfig của họ — admin **không** đụng nữa.
-
-### 16.3 KH1 — cust-cpu mua VM Ubuntu 22.04 (không GPU)
-
-Khách hàng: agency làm web design, cần VM dev environment có Ubuntu. Không cần GPU.
-
-KH1 dùng `cust-cpu.kubeconfig`:
-
-```bash
-export KUBECONFIG=~/kubeconfigs/cust-cpu.kubeconfig
-
-# Verify quyền hạn — chỉ thấy namespace của mình
-kubectl get pods -A 2>&1 | head -3
-# Error from server (Forbidden): pods is forbidden: User "system:serviceaccount:cust-cpu:cust-cpu-owner"
-# cannot list resource "pods" in API group "" at the cluster scope
-
-kubectl get pods   # default namespace = cust-cpu
-# No resources found in cust-cpu namespace.
-
-kubectl get ns
-# Chỉ thấy 1 namespace: cust-cpu  (Capsule webhook filter)
-```
-
-Đây là isolation thật — không phải fake do cluster-admin. Cụ thể nếu thử với secret tenant khác:
-
-```bash
-kubectl get secrets -n cust-gpu-whole 2>&1 | head -2
-# Error from server (Forbidden): secrets is forbidden ... cannot list resource "secrets" in the namespace "cust-gpu-whole"
-```
-
-Bước 1: Import Ubuntu 22.04 cloud image qua DataVolume:
-
-```bash
 kubectl apply -f - <<EOF
 apiVersion: cdi.kubevirt.io/v1beta1
 kind: DataVolume
 metadata:
   name: ubuntu-2204-img
-  namespace: cust-cpu
+  namespace: <tenant-namespace>
 spec:
   source:
-    http:
-      url: "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
+    pvc:
+      namespace: vm-images
+      name: ubuntu-2204-golden
   storage:
     accessModes: [ReadWriteMany]
+    volumeMode: Filesystem
     resources:
       requests:
         storage: 10Gi
-    storageClassName: rook-ceph-block-rwx   # RWX để hỗ trợ live migration sau này
-    volumeMode: Block
+    storageClassName: rook-cephfs
 EOF
-
-# Chờ import (~2-3 phút, file ~600MB)
-kubectl get dv ubuntu-2204-img -w
-# NAME              PHASE       PROGRESS   ...
-# ubuntu-2204-img   Succeeded   100.0%
 ```
 
-Bước 2: Tạo VM với cloud-init (set user `ubuntu`, install SSH key, expose port 22):
+### 11.2 Windows Server 2022 — VM golden image
 
-```bash
-# Generate SSH key cho demo (KH1 thực tế dùng key của họ)
-ssh-keygen -t ed25519 -N "" -f ~/cust-cpu-key
-SSH_KEY=$(cat ~/cust-cpu-key.pub)
+Mình SCP Windows ISO từ máy local lên ctrl01 rồi import vào `vm-images`. Bước này chỉ làm một lần.
 
-kubectl apply -f - <<EOF
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: ubuntu-cloudinit
-  namespace: cust-cpu
-type: Opaque
-stringData:
-  userdata: |
-    #cloud-config
-    hostname: cust-cpu-vm
-    users:
-      - name: ubuntu
-        sudo: ALL=(ALL) NOPASSWD:ALL
-        shell: /bin/bash
-        ssh_authorized_keys:
-          - ${SSH_KEY}
-        lock_passwd: false
-        passwd: \$6\$rounds=4096\$tWQTcD3X\$ZWX0n5kNcXqVZpLB0EsXEVm/oFNkXqIzG.YBxN6PJtBJ/wjQXUgwLDOZGoHnPRJfBz4uy3yqYqDQQuRz5ZBP0/  # 'ubuntu123'
-    package_update: true
-    packages:
-      - htop
-      - net-tools
-      - curl
-    runcmd:
-      - systemctl enable --now ssh
-      - echo "KH1 lab cust-cpu — Ubuntu 22.04 VM ready" > /etc/motd
----
-apiVersion: kubevirt.io/v1
-kind: VirtualMachine
-metadata:
-  name: cust-cpu-vm
-  namespace: cust-cpu
-  labels:
-    customer: cust-cpu
-    workload-type: dev-vm
-spec:
-  runStrategy: Always
-  instancetype:
-    kind: VirtualMachineClusterInstancetype
-    name: u1.small
-  preference:
-    kind: VirtualMachineClusterPreference
-    name: ubuntu
-  template:
-    metadata:
-      labels:
-        customer: cust-cpu
-        kubevirt.io/vm: cust-cpu-vm
-    spec:
-      # nodeSelector: KHÔNG cần set thủ công — Capsule auto-inject gpu-pool: cpu-only
-      domain:
-        devices:
-          disks:
-            - name: rootdisk
-              disk:
-                bus: virtio
-            - name: cloudinitdisk
-              disk:
-                bus: virtio
-          interfaces:
-            - name: default
-              masquerade: {}
-          networkInterfaceMultiqueue: true
-      networks:
-        - name: default
-          pod: {}
-      volumes:
-        - name: rootdisk
-          dataVolume:
-            name: ubuntu-2204-img
-        - name: cloudinitdisk
-          cloudInitNoCloud:
-            secretRef:
-              name: ubuntu-cloudinit
-EOF
-
-# Chờ VM running (~30 giây sau khi DV ready)
-kubectl get vm,vmi -n cust-cpu
-# NAME                                          AGE   STATUS    READY
-# virtualmachine.kubevirt.io/cust-cpu-vm        1m    Running   True
-#
-# NAME                                                  AGE   PHASE     IP           NODENAME   READY
-# virtualmachineinstance.kubevirt.io/cust-cpu-vm        1m    Running   10.42.x.x    ctrl01     True
+```powershell
+# Trên Windows laptop
+scp "D:\anhle\soft\iso\2022SERVER_EVAL_x64FRE_en-us.iso" root@10.10.200.11:/tmp/win2022.iso
 ```
 
-Verify VM land đúng **ctrl01** (cpu-only node):
-
 ```bash
-kubectl get vmi cust-cpu-vm -o jsonpath='{.status.nodeName}'
-# ctrl01
-```
+python3 -m http.server 8888 --directory /tmp &
 
-Bước 3: Expose SSH qua Floating IP `10.10.200.66`:
-
-```bash
-kubectl apply -f - <<EOF
-apiVersion: v1
-kind: Service
-metadata:
-  name: cust-cpu-vm-ssh
-  namespace: cust-cpu
-  annotations:
-    io.cilium/lb-ipam-ips: "10.10.200.66"
-spec:
-  type: LoadBalancer
-  selector:
-    customer: cust-cpu
-    kubevirt.io/vm: cust-cpu-vm
-  ports:
-    - name: ssh
-      port: 22
-      targetPort: 22
-      protocol: TCP
-EOF
-
-kubectl get svc -n cust-cpu cust-cpu-vm-ssh
-# NAME              TYPE           CLUSTER-IP   EXTERNAL-IP    PORT(S)
-# cust-cpu-vm-ssh   LoadBalancer   10.43.x.x    10.10.200.66   22:NodePort/TCP
-```
-
-Bước 4: KH1 SSH vào VM **giống VPS thật**:
-
-```bash
-ssh -i ~/cust-cpu-key ubuntu@10.10.200.66
-# The authenticity of host '10.10.200.66 (10.10.200.66)' can't be established.
-# ED25519 key fingerprint is ...
-# Are you sure you want to continue connecting (yes/no)? yes
-#
-# Welcome to Ubuntu 22.04.x LTS (GNU/Linux 5.15.x-x86_64)
-# KH1 lab cust-cpu — Ubuntu 22.04 VM ready
-#
-# ubuntu@cust-cpu-vm:~$ uname -a
-# Linux cust-cpu-vm 5.15.0-x86_64 #1 SMP ... x86_64 GNU/Linux
-#
-# ubuntu@cust-cpu-vm:~$ cat /etc/os-release | head -2
-# PRETTY_NAME="Ubuntu 22.04.x LTS"
-# NAME="Ubuntu"
-#
-# ubuntu@cust-cpu-vm:~$ nproc
-# 2
-# ubuntu@cust-cpu-vm:~$ free -h
-#                total        used        free      shared  buff/cache   available
-# Mem:           3.8Gi       235Mi       3.0Gi       1.0Mi       637Mi       3.4Gi
-```
-
-KH1 thấy VM đúng spec đã mua: Ubuntu 22.04, 2 vCPU, ~4 GB RAM. SSH work bình thường, có thể `sudo`, install package, chạy service — giống VPS DigitalOcean hay AWS EC2.
-
-Console qua VNC (nếu KH1 muốn xem boot screen, recover khi network mất):
-
-```bash
-# Trên máy local KH1
-virtctl --kubeconfig=~/kubeconfigs/cust-cpu.kubeconfig vnc cust-cpu-vm
-# Mở virt-viewer / TigerVNC tự động
-```
-
-### 16.4 KH2 — cust-gpu-whole mua VM Windows Server 2022 + 1 GPU nguyên
-
-Khách hàng: studio làm 3D rendering, cần Windows VM với GPU full power cho phần mềm như Blender, Maya, V-Ray.
-
-KH2 dùng `cust-gpu-whole.kubeconfig`:
-
-```bash
-export KUBECONFIG=~/kubeconfigs/cust-gpu-whole.kubeconfig
-```
-
-Bước 1: Chuẩn bị Windows ISO + virtio-win driver. Windows Server 2022 ISO download trực tiếp từ Microsoft Evaluation Center (180 ngày trial):
-
-URL: `https://software-static.download.prss.microsoft.com/sg/download/888969d5-f34g-4e03-ac9d-1f9786c66749/SERVER_EVAL_x64FRE_en-us.iso` *(URL thay đổi theo session; download manual từ https://www.microsoft.com/en-us/evalcenter/download-windows-server-2022 và host lên web server local hoặc upload qua virtctl image-upload)*.
-
-Cách đơn giản nhất: dùng `virtctl image-upload` để upload ISO từ máy local lên cluster:
-
-```bash
-# Trên máy local KH2 (đã có ISO và kubeconfig)
-virtctl --kubeconfig=~/kubeconfigs/cust-gpu-whole.kubeconfig \
-  image-upload pvc windows-2022-iso \
-  --namespace=cust-gpu-whole \
-  --size=6Gi \
-  --image-path=./windows_server_2022_eval.iso \
-  --storage-class=rook-ceph-block \
-  --access-mode=ReadWriteOnce \
-  --insecure \
-  --wait-secs=600
-```
-
-Hoặc nếu host ISO trên web server (HTTP) thì dùng DataVolume:
-
-```bash
 kubectl apply -f - <<EOF
 apiVersion: cdi.kubevirt.io/v1beta1
 kind: DataVolume
 metadata:
   name: windows-2022-iso
-  namespace: cust-gpu-whole
+  namespace: vm-images
 spec:
   source:
     http:
-      url: "http://<your-web-server>/windows_server_2022_eval.iso"
+      url: "http://10.10.200.11:8888/win2022.iso"
   storage:
     accessModes: [ReadWriteOnce]
+    volumeMode: Filesystem
     resources:
       requests:
         storage: 6Gi
     storageClassName: rook-ceph-block
-EOF
-```
-
-virtio-win driver (qua containerDisk — không cần upload):
-
-```bash
-# Sẽ mount image kubevirt/virtio-container-disk:v1.8.0 trực tiếp trong VM spec
-```
-
-Bước 2: Tạo blank disk 60 GB cho Windows install (RBD-RWX để live migrate):
-
-```bash
-kubectl apply -f - <<EOF
+---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: windows-2022-rootdisk
-  namespace: cust-gpu-whole
+  name: windows-2022-golden
+  namespace: vm-images
 spec:
-  accessModes: [ReadWriteMany]   # RWX cho live migration
+  accessModes: [ReadWriteMany]
   storageClassName: rook-ceph-block-rwx
   volumeMode: Block
   resources:
@@ -2823,36 +1949,29 @@ spec:
 EOF
 ```
 
-Bước 3: Tạo VM Windows Server 2022 với 1 GPU (whole):
+Tạo VM installer để cài Windows:
 
 ```bash
 kubectl apply -f - <<EOF
 apiVersion: kubevirt.io/v1
 kind: VirtualMachine
 metadata:
-  name: cust-gpu-whole-win
-  namespace: cust-gpu-whole
-  labels:
-    customer: cust-gpu-whole
-    workload-type: windows-gpu-vm
+  name: windows-installer
+  namespace: vm-images
 spec:
-  runStrategy: Manual   # Start manual để KH2 install OS
+  runStrategy: Manual
   template:
-    metadata:
-      labels:
-        customer: cust-gpu-whole
-        kubevirt.io/vm: cust-gpu-whole-win
     spec:
-      # Capsule auto-inject nodeSelector: gpu-pool: whole → land ctrl02
+      nodeSelector:
+        gpu-pool: whole
       domain:
         cpu:
           cores: 4
           sockets: 1
           threads: 1
         memory:
-          guest: 8Gi
+          guest: 6Gi
         firmware:
-          uuid: "6c8a93f1-2026-05-27-aaaa-b1b2b3b4b5b6"
           bootloader:
             efi:
               secureBoot: false
@@ -2895,7 +2014,587 @@ spec:
             - name: default
               masquerade: {}
               model: e1000
-        # GPU resource — fake-gpu-operator allocate
+      networks:
+        - name: default
+          pod: {}
+      volumes:
+        - name: rootdisk
+          persistentVolumeClaim:
+            claimName: windows-2022-golden
+        - name: installer-iso
+          persistentVolumeClaim:
+            claimName: windows-2022-iso
+        - name: virtiocontainerdisk
+          containerDisk:
+            image: quay.io/kubevirt/virtio-container-disk:v1.8.0
+EOF
+
+virtctl start windows-installer -n vm-images
+```
+
+Mở VNC console để cài Windows (MobaXterm → VNC → `10.10.200.11:5900`):
+
+```bash
+virtctl vnc windows-installer -n vm-images --proxy-only --port=5900 --address=0.0.0.0
+```
+
+Trong installer:
+
+1. Boot từ DVD → ngôn ngữ → edition **Standard Desktop Experience**
+2. Custom install → Load driver → `viostor\2k22\amd64` → install → disk 60 GB hiện ra → Next → Install
+3. Reboot → tạo Administrator password → login desktop
+4. Mount virtio-win CD → `virtio-win-gt-x64.msi` → install tất cả driver → reboot
+
+Bật RDP rồi chạy sysprep để hoàn tất golden image:
+
+```powershell
+Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+Restart-Service -Name TermService -Force
+
+C:\Windows\System32\Sysprep\sysprep.exe /generalize /oobe /shutdown
+```
+
+Sau khi VMI chuyển sang phase `Succeeded`, xóa installer VM:
+
+```bash
+kubectl get pvc -n vm-images windows-2022-golden
+# NAME                   STATUS   VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS
+# windows-2022-golden    Bound    ...      60Gi       RWX            rook-ceph-block-rwx
+
+kubectl delete vm windows-installer -n vm-images
+kubectl delete dv windows-2022-iso -n vm-images
+```
+
+Khi có KH mua Windows VM, admin clone từ golden image:
+
+```bash
+kubectl apply -f - <<EOF
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cdi-cloner
+  namespace: vm-images
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: <tenant-namespace>
+roleRef:
+  kind: ClusterRole
+  name: edit
+  apiGroup: rbac.authorization.k8s.io
+EOF
+
+kubectl apply -f - <<EOF
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: DataVolume
+metadata:
+  name: windows-2022-rootdisk
+  namespace: <tenant-namespace>
+spec:
+  source:
+    pvc:
+      namespace: vm-images
+      name: windows-2022-golden
+  storage:
+    accessModes: [ReadWriteMany]
+    volumeMode: Block
+    resources:
+      requests:
+        storage: 60Gi
+    storageClassName: rook-ceph-block-rwx
+EOF
+
+kubectl get dv -n <tenant-namespace> windows-2022-rootdisk -w
+# NAME                    PHASE       PROGRESS   RESTARTS   AGE
+# windows-2022-rootdisk   Succeeded   100.0%                32s
+```
+
+### 11.3 Container template — CUDA workload (KH3)
+
+Mình lưu sẵn manifest CUDA container vào ConfigMap để admin tái dùng cho các tenant GPU shared:
+
+```bash
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cuda-container-template
+  namespace: vm-images
+data:
+  template.yaml: |
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: TENANT-data
+      namespace: TENANT-NAMESPACE
+    spec:
+      accessModes: [ReadWriteOnce]
+      storageClassName: rook-ceph-block
+      resources:
+        requests:
+          storage: 10Gi
+    ---
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: TENANT-gpu-app
+      namespace: TENANT-NAMESPACE
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app: TENANT-gpu-app
+      template:
+        metadata:
+          labels:
+            app: TENANT-gpu-app
+        spec:
+          containers:
+            - name: cuda
+              image: nvcr.io/nvidia/cuda:12.6.0-base-ubuntu22.04
+              command: ["sh", "-c"]
+              args:
+                - |
+                  apt-get update -qq && apt-get install -qq -y openssh-server > /dev/null 2>&1
+                  mkdir -p /run/sshd
+                  echo 'root:PASSWD' | chpasswd
+                  sed -i 's/#PermitRootLogin .*/PermitRootLogin yes/' /etc/ssh/sshd_config
+                  sed -i 's/#PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+                  /usr/sbin/sshd -D
+              resources:
+                requests:
+                  cpu: 500m
+                  memory: 1Gi
+                  nvidia.com/gpu: 1
+                limits:
+                  cpu: 2
+                  memory: 2Gi
+                  nvidia.com/gpu: 1
+              ports:
+                - containerPort: 22
+              env:
+                - name: NODE_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: spec.nodeName
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+          volumes:
+            - name: data
+              persistentVolumeClaim:
+                claimName: TENANT-data
+EOF
+```
+
+---
+
+## 12. Demo: Bán cho 3 khách hàng khác nhau
+
+Đây là phần demo flow thật sự của GPU cloud. Mỗi khách hàng có nhu cầu khác nhau, lab này phục vụ cả 3 trên cùng một cluster — chính xác mô hình kinh doanh của cloud provider thương mại.
+
+### 12.1 Tổng quan 3 khách hàng 
+
+| KH | Tenant name | Sản phẩm mua | Node phục vụ | GPU pool | Login method |
+|---|---|---|---|---|---|
+| **KH1** | `cust-cpu` | 1 VM Ubuntu 22.04, 2 vCPU, 4 GB RAM, không GPU | ctrl01 | cpu-only | SSH qua Floating IP `10.10.200.66:22` |
+| **KH2** | `cust-gpu-whole` | 1 VM Windows Server 2022, 4 vCPU, 8 GB RAM, **1 GPU nguyên** | ctrl02 | whole | RDP qua Floating IP `10.10.200.67:3389` |
+| **KH3** | `cust-gpu-shared` | 1 container, **1/4 GPU shared** | ctrl03 | shared | `kubectl exec` qua Headlamp / kubeconfig |
+
+Mỗi tenant có ResourceQuota riêng, NetworkPolicy isolation tự động qua Capsule, nodeSelector inject để workload land đúng pool.
+
+### 12.2 Admin chuẩn bị Tenants
+
+Trên ctrl01 (admin), chạy script đã tạo ở section 10:
+
+```bash
+# KH1 — cpu only, 0 GPU, 1 VM
+~/create-tenant.sh cust-cpu cpu-only 0 1
+
+# KH2 — whole GPU, 1 GPU, 1 VM
+~/create-tenant.sh cust-gpu-whole whole 1 1
+
+# KH3 — shared GPU, 1 GPU slice, 0 VM (chỉ container)
+~/create-tenant.sh cust-gpu-shared shared 1 0
+```
+
+Verify cả 3 tenant lên:
+
+```bash
+kubectl get tenants.capsule.clastix.io
+# NAME                STATE    NAMESPACE QUOTA    NAMESPACE COUNT
+# cust-cpu            Active   1                  1
+# cust-gpu-whole      Active   1                  1
+# cust-gpu-shared     Active   1                  1
+
+kubectl get ns -l 'capsule.clastix.io/tenant'
+# NAME                STATUS   AGE
+# cust-cpu            Active   30s
+# cust-gpu-whole      Active   25s
+# cust-gpu-shared     Active   20s
+
+# Verify RoleBinding với role tenant-owner (không phải cluster-admin)
+kubectl -n cust-cpu get rolebinding
+# NAME                          ROLE                       AGE
+# capsule-cust-cpu-0            ClusterRole/tenant-owner   30s
+
+# Verify SA KHÔNG có cluster-admin
+kubectl get clusterrolebinding | grep cust-cpu
+# (empty — đúng, không có ClusterRoleBinding cluster-admin nào)
+```
+
+3 kubeconfig đã sinh ở `~/kubeconfigs/`:
+- `cust-cpu.kubeconfig`
+- `cust-gpu-whole.kubeconfig`
+- `cust-gpu-shared.kubeconfig`
+
+Mình clone golden image vào từng tenant namespace (thao tác admin, dùng pattern từ section 11):
+
+```bash
+# KH1 — clone Ubuntu golden image → cust-cpu
+kubectl apply -f - <<EOF
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cdi-cloner
+  namespace: vm-images
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: cust-cpu
+roleRef:
+  kind: ClusterRole
+  name: edit
+  apiGroup: rbac.authorization.k8s.io
+EOF
+
+kubectl apply -f - <<EOF
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: DataVolume
+metadata:
+  name: ubuntu-2204-img
+  namespace: cust-cpu
+spec:
+  source:
+    pvc:
+      namespace: vm-images
+      name: ubuntu-2204-golden
+  storage:
+    accessModes: [ReadWriteMany]
+    volumeMode: Filesystem
+    resources:
+      requests:
+        storage: 10Gi
+    storageClassName: rook-cephfs
+EOF
+
+# KH2 — clone Windows golden image → cust-gpu-whole
+kubectl apply -f - <<EOF
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cdi-cloner
+  namespace: vm-images
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: cust-gpu-whole
+roleRef:
+  kind: ClusterRole
+  name: edit
+  apiGroup: rbac.authorization.k8s.io
+EOF
+
+kubectl apply -f - <<EOF
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: DataVolume
+metadata:
+  name: windows-2022-rootdisk
+  namespace: cust-gpu-whole
+spec:
+  source:
+    pvc:
+      namespace: vm-images
+      name: windows-2022-golden
+  storage:
+    accessModes: [ReadWriteMany]
+    volumeMode: Block
+    resources:
+      requests:
+        storage: 60Gi
+    storageClassName: rook-ceph-block-rwx
+EOF
+
+# Chờ cả 2 clone xong
+kubectl get dv -n cust-cpu ubuntu-2204-img -w
+kubectl get dv -n cust-gpu-whole windows-2022-rootdisk -w
+```
+
+Trong demo dưới, mỗi customer dùng kubeconfig của họ — admin **không** đụng nữa.
+
+### 12.3 KH1 — cust-cpu mua VM Ubuntu 22.04 (không GPU)
+
+Khách hàng: agency làm web design, cần VM dev environment có Ubuntu. Không cần GPU.
+
+KH1 dùng `cust-cpu.kubeconfig`:
+
+```bash
+export KUBECONFIG=~/kubeconfigs/cust-cpu.kubeconfig
+
+# Verify quyền hạn — chỉ thấy namespace của mình
+kubectl get pods -A 2>&1 | head -3
+# Error from server (Forbidden): pods is forbidden: User "system:serviceaccount:cust-cpu:cust-cpu-owner"
+# cannot list resource "pods" in API group "" at the cluster scope
+
+kubectl get pods   # default namespace = cust-cpu
+# No resources found in cust-cpu namespace.
+
+kubectl get ns
+# Error from server (Forbidden): namespaces is forbidden: User "system:serviceaccount:cust-cpu:cust-cpu-owner"
+# cannot list resource "namespaces" in API group "" at the cluster scope
+```
+
+Đây là isolation thật — không phải fake do cluster-admin. Cụ thể nếu thử với secret tenant khác:
+
+```bash
+kubectl get secrets -n cust-gpu-whole 2>&1 | head -2
+# Error from server (Forbidden): secrets is forbidden: User "system:serviceaccount:cust-cpu:cust-cpu-owner"
+# cannot list resource "secrets" in API group "" in the namespace "cust-gpu-whole"
+```
+
+PVC `ubuntu-2204-img` đã được admin clone sẵn vào namespace `cust-cpu` ở bước 12.2.
+
+Bước 1: Tạo VM với cloud-init (password login, sudo):
+
+```bash
+# Gen password hash — thay <your-password> bằng pass thực
+PASSWD_HASH=$(openssl passwd -6 '<your-password>')
+
+kubectl apply -f - <<EOF
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ubuntu-cloudinit
+  namespace: cust-cpu
+type: Opaque
+stringData:
+  userdata: |
+    #cloud-config
+    hostname: cust-cpu-vm
+    users:
+      - name: ubuntu
+        sudo: ALL=(ALL) NOPASSWD:ALL
+        shell: /bin/bash
+        lock_passwd: false
+        passwd: ${PASSWD_HASH}
+    ssh_pwauth: true
+    runcmd:
+      - systemctl enable --now ssh
+      - echo "KH1 lab cust-cpu — Ubuntu 22.04 VM ready" > /etc/motd
+---
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: cust-cpu-vm
+  namespace: cust-cpu
+  labels:
+    customer: cust-cpu
+    workload-type: dev-vm
+spec:
+  runStrategy: Always
+  instancetype:
+    kind: VirtualMachineClusterInstancetype
+    name: u1.small
+  preference:
+    kind: VirtualMachineClusterPreference
+    name: ubuntu
+  template:
+    metadata:
+      labels:
+        customer: cust-cpu
+        kubevirt.io/vm: cust-cpu-vm
+    spec:
+      # Không có GPU request → scheduler tự chọn ctrl01 (node không có gpu-pool label)
+      domain:
+        devices:
+          disks:
+            - name: rootdisk
+              disk:
+                bus: virtio
+            - name: cloudinitdisk
+              disk:
+                bus: virtio
+          interfaces:
+            - name: default
+              masquerade: {}
+          networkInterfaceMultiqueue: true
+      networks:
+        - name: default
+          pod: {}
+      volumes:
+        - name: rootdisk
+          dataVolume:
+            name: ubuntu-2204-img
+        - name: cloudinitdisk
+          cloudInitNoCloud:
+            secretRef:
+              name: ubuntu-cloudinit
+EOF
+
+# Chờ VM running (~30 giây sau khi DV ready)
+kubectl get vm,vmi -n cust-cpu
+# NAME                                     AGE   STATUS    READY
+# virtualmachine.kubevirt.io/cust-cpu-vm   22s   Running   True
+#
+# NAME                                             AGE   PHASE     IP            NODENAME   READY
+# virtualmachineinstance.kubevirt.io/cust-cpu-vm   22s   Running   10.42.0.219   ctrl01     True
+```
+
+Verify VM land đúng **ctrl01** (cpu-only node):
+
+```bash
+kubectl get vmi cust-cpu-vm -o jsonpath='{.status.nodeName}' && echo
+# ctrl01
+```
+
+Bước 3: Expose SSH qua Floating IP `10.10.200.66`:
+
+```bash
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Service
+metadata:
+  name: cust-cpu-vm-ssh
+  namespace: cust-cpu
+  annotations:
+    io.cilium/lb-ipam-ips: "10.10.200.66"
+spec:
+  type: LoadBalancer
+  selector:
+    customer: cust-cpu
+    kubevirt.io/vm: cust-cpu-vm
+  ports:
+    - name: ssh
+      port: 22
+      targetPort: 22
+      protocol: TCP
+EOF
+
+kubectl get svc -n cust-cpu cust-cpu-vm-ssh
+# NAME              TYPE           CLUSTER-IP     EXTERNAL-IP    PORT(S)        AGE
+# cust-cpu-vm-ssh   LoadBalancer   10.43.78.140   10.10.200.66   22:32051/TCP   8s
+```
+
+Bước 4: KH1 SSH vào VM **giống VPS thật**:
+
+```bash
+ssh ubuntu@10.10.200.66
+```
+
+KH1 SSH vào VM — Ubuntu 22.04, 1 vCPU, ~2 GB RAM (`u1.small`). Network bên trong VM là NAT masquerade (`10.0.2.2/24`) do KubeVirt quản lý; KH1 chỉ cần biết IP ngoài `10.10.200.66` để SSH, không cần quan tâm đến IP nội bộ pod:
+
+```
+ubuntu@cust-cpu-vm:~$ ip -br a
+lo               UNKNOWN        127.0.0.1/8 ::1/128
+enp1s0           UP             10.0.2.2/24 metric 100
+
+ubuntu@cust-cpu-vm:~$ free -h
+               total        used        free      shared  buff/cache   available
+Mem:           1.9Gi       194Mi       923Mi       1.0Mi       780Mi       1.5Gi
+
+ubuntu@cust-cpu-vm:~$ lsblk
+NAME    MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+vda     252:0    0   10G  0 disk
+├─vda1  252:1    0  9.9G  0 part /
+├─vda14 252:14   0    4M  0 part
+└─vda15 252:15   0  106M  0 part /boot/efi
+```
+
+Serial console (recover khi network mất, không cần GUI):
+
+```bash
+virtctl console cust-cpu-vm -n cust-cpu --kubeconfig=/root/kubeconfigs/cust-cpu.kubeconfig
+# Thoát: Ctrl+]
+```
+
+### 12.4 KH2 — cust-gpu-whole mua VM Windows Server 2022 + 1 GPU nguyên
+
+Khách hàng: studio làm 3D rendering, cần Windows VM với GPU full power cho phần mềm như Blender, Maya, V-Ray.
+
+KH2 dùng `cust-gpu-whole.kubeconfig`:
+
+```bash
+export KUBECONFIG=~/kubeconfigs/cust-gpu-whole.kubeconfig
+```
+
+PVC `windows-2022-rootdisk` đã được admin clone sẵn từ golden image vào namespace `cust-gpu-whole` ở bước 12.2.
+
+Bước 1: KH2 tạo VM Windows (không cần ISO — OS đã có trong PVC):
+
+```bash
+kubectl apply -f - <<EOF
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: cust-gpu-whole-win
+  namespace: cust-gpu-whole
+  labels:
+    customer: cust-gpu-whole
+    workload-type: windows-gpu-vm
+spec:
+  runStrategy: Manual
+  template:
+    metadata:
+      labels:
+        customer: cust-gpu-whole
+        kubevirt.io/vm: cust-gpu-whole-win
+    spec:
+      nodeSelector:
+        gpu-pool: whole
+      domain:
+        cpu:
+          cores: 4
+          sockets: 1
+          threads: 1
+        memory:
+          guest: 6Gi
+        firmware:
+          uuid: "6c8a93f1-2026-05-27-aaaa-b1b2b3b4b5b6"
+          bootloader:
+            efi:
+              secureBoot: false
+        clock:
+          timezone: "Asia/Ho_Chi_Minh"
+          timer:
+            hpet:
+              present: false
+            hyperv: {}
+            pit:
+              tickPolicy: delay
+            rtc:
+              tickPolicy: catchup
+        features:
+          acpi: {}
+          apic: {}
+          smm:
+            enabled: true
+          hyperv:
+            relaxed: {}
+            vapic: {}
+            spinlocks:
+              spinlocks: 8191
+        devices:
+          tpm: {}
+          disks:
+            - name: rootdisk
+              disk:
+                bus: virtio
+          interfaces:
+            - name: default
+              masquerade: {}
+              model: e1000
         resources:
           requests:
             nvidia.com/gpu: 1
@@ -2908,76 +2607,36 @@ spec:
         - name: rootdisk
           persistentVolumeClaim:
             claimName: windows-2022-rootdisk
-        - name: installer-iso
-          persistentVolumeClaim:
-            claimName: windows-2022-iso     # Hoặc dùng DataVolume nếu HTTP import
-        - name: virtiocontainerdisk
-          containerDisk:
-            image: quay.io/kubevirt/virtio-container-disk:v1.8.0
 EOF
 ```
 
-Bước 4: Start VM và install Windows qua VNC console:
+Bước 2: Start VM — Windows boot thẳng từ golden image, chạy OOBE (setup SID mới sau sysprep):
 
 ```bash
-virtctl --kubeconfig=~/kubeconfigs/cust-gpu-whole.kubeconfig \
+virtctl --kubeconfig=/root/kubeconfigs/cust-gpu-whole.kubeconfig \
   start cust-gpu-whole-win -n cust-gpu-whole
 
-# Chờ VMI running (~30 giây)
 kubectl get vmi -n cust-gpu-whole cust-gpu-whole-win
-# NAME                  AGE   PHASE     IP    NODENAME   READY
-# cust-gpu-whole-win    30s   Running         ctrl02     True
-
-# Verify schedule ctrl02 (whole GPU pool)
-kubectl get vmi -n cust-gpu-whole cust-gpu-whole-win -o jsonpath='{.status.nodeName}'
-# ctrl02
-
-# Verify GPU allocated ở K8s level
-kubectl describe vmi -n cust-gpu-whole cust-gpu-whole-win | grep -i gpu
-# nvidia.com/gpu: 1
+# NAME                 AGE   PHASE     IP           NODENAME   READY
+# cust-gpu-whole-win   49s   Running   10.42.1.92   ctrl02     True
 ```
 
-Mở VNC console để cài Windows:
+Mở VNC để hoàn tất OOBE (chọn region, tạo Administrator password — ~2 phút):
 
 ```bash
-virtctl --kubeconfig=~/kubeconfigs/cust-gpu-whole.kubeconfig \
-  vnc cust-gpu-whole-win -n cust-gpu-whole
-# Mở virt-viewer
+virtctl --kubeconfig=/root/kubeconfigs/cust-gpu-whole.kubeconfig \
+  vnc cust-gpu-whole-win -n cust-gpu-whole --proxy-only --port=5900 --address=0.0.0.0
 ```
 
-Trong installer Windows:
-
-1. Boot từ DVD (ISO) — chọn ngôn ngữ, license edition (Standard Desktop Experience cho có GUI)
-2. Custom install → ban đầu không thấy disk vì chưa load virtio driver
-3. Click **Load driver** → Browse → chọn CD drive virtio-win → folder `viostor\2k22\amd64` → install
-4. Disk 60 GB hiện ra → Next → Install
-5. Install 5-10 phút. Reboot.
-6. Tạo Administrator password (lab: `Win2k22Lab!`)
-7. Login Windows desktop
-
-Sau khi Windows desktop hiện, mount virtio-win CD và install **tất cả driver** (chuột vào folder root CD → `virtio-win-gt-x64.msi` → run). Reboot.
-
-**Enable RDP** (PowerShell as Administrator):
+Bước 3: Enable RDP (PowerShell as Administrator trong VM):
 
 ```powershell
-# Bật RDP
 Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
-# Mở firewall
 Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-# Cho phép RDP nhẹ (NLA off cho lab demo dễ test; production phải bật NLA)
-Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0
-# Restart service
 Restart-Service -Name TermService -Force
 ```
 
-Verify RDP listen:
-
-```powershell
-Get-NetTCPConnection -LocalPort 3389
-# Phải thấy LocalPort 3389 Listen
-```
-
-Bước 5: Expose RDP qua Floating IP `10.10.200.67`:
+Bước 4: Expose RDP qua Floating IP `10.10.200.67`:
 
 ```bash
 kubectl apply -f - <<EOF
@@ -3001,7 +2660,14 @@ spec:
 EOF
 ```
 
-Bước 6: KH2 RDP từ máy Windows / Mac / Linux:
+Sau khi RDP Service đã có EXTERNAL-IP, tắt VNC listener trên ctrl01 (Ctrl+C trong terminal đang chạy virtctl, hoặc kill process):
+
+```bash
+# Trên ctrl01 — tắt VNC proxy
+pkill -f "virtctl.*vnc.*proxy-only"
+```
+
+Bước 5: KH2 RDP từ máy Windows / Mac / Linux:
 
 ```
 # Trên máy KH2
@@ -3010,7 +2676,7 @@ mstsc /v:10.10.200.67       # Windows Remote Desktop
 # Hoặc: rdesktop / xfreerdp trên Linux
 
 User: Administrator
-Password: Win2k22Lab!
+Password: 
 ```
 
 Login thành công vào Windows Server 2022 desktop — full UI, có thể mở Server Manager, Device Manager, install application, chạy phần mềm.
@@ -3045,13 +2711,13 @@ kubectl --kubeconfig=~/rke2.yaml describe vmi cust-gpu-whole-win -n cust-gpu-who
 kubectl --kubeconfig=~/kubeconfigs/cust-gpu-whole.kubeconfig describe vmi cust-gpu-whole-win | grep -i nvidia
 ```
 
-Trong KubeVirt Manager UI (http://10.10.200.64, admin view): VM `cust-gpu-whole-win` hiển thị với badge "GPU: 1", node ctrl02.
+Trong KubeVirt Manager UI (http://10.10.200.62, admin view): VM `cust-gpu-whole-win` hiển thị với badge "GPU: 1", node ctrl02.
 
-**Production path:** thay `fake-gpu-operator` bằng **NVIDIA GPU Operator** + GPU thật trên ctrl02 + VFIO passthrough enabled. Khi đó VM Windows sẽ thấy A100/H100 thật trong Device Manager → nvidia-smi.exe work → CUDA workload chạy được. **Tất cả manifest VM, Capsule, Kueue ở lab này giữ nguyên không đổi.**
+**Production path:** thay `fake-gpu-operator` bằng **NVIDIA GPU Operator** + GPU thật trên ctrl02 + VFIO passthrough enabled. Khi đó VM Windows sẽ thấy A100/H100 thật trong Device Manager → nvidia-smi.exe work → CUDA workload chạy được. **Tất cả manifest VM, Capsule, nodeSelector topology ở lab này giữ nguyên không đổi.**
 
 Đó là điểm mạnh của setup này: orchestration layer là production-ready, chỉ cần swap operator để có GPU thật.
 
-### 16.5 KH3 — cust-gpu-shared mua 1 container + GPU chia nhỏ
+### 12.5 KH3 — cust-gpu-shared mua 1 container + GPU chia nhỏ
 
 Khách hàng: ML engineer làm inference NLP, chỉ cần fractional GPU (1/4 A100 đủ chạy small model). Không cần VM full OS, container đủ.
 
@@ -3097,7 +2763,7 @@ spec:
         app: cust-gpu-shared-app
         customer: cust-gpu-shared
     spec:
-      # Capsule auto-inject nodeSelector: gpu-pool: shared → land ctrl03
+      # Capsule inject nodeSelector cho regular Pod (không phải virt-launcher) → land ctrl03
       containers:
         - name: cuda
           image: nvcr.io/nvidia/cuda:12.6.0-base-ubuntu22.04
@@ -3198,20 +2864,7 @@ root@cust-gpu-shared-app-xxxxx:/# df -h /data
 
 KH3 thấy đúng spec: 2 CPU limit, 2GB RAM, 1 GPU (slice), 10GB persistent volume `/data`.
 
-**Cách 2 — Headlamp terminal trong browser:**
-
-KH3 mở http://10.10.200.65 (Headlamp), login bằng token từ kubeconfig:
-
-```bash
-cat ~/kubeconfigs/cust-gpu-shared.kubeconfig | grep "token:" | awk '{print $2}'
-# eyJhbGciOi... (paste vào Headlamp login)
-```
-
-Trong Headlamp UI:
-- Navigation: `Workloads → Pods → cust-gpu-shared → cust-gpu-shared-app-xxxxx`
-- Button "Terminal" → mở shell trong browser, không cần kubectl local
-
-**Cách 3 — SSH qua Floating IP (nếu KH3 muốn dùng SSH client truyền thống):**
+**Cách 2 — SSH qua Floating IP:**
 
 ```bash
 kubectl apply -f - <<EOF
@@ -3255,7 +2908,7 @@ kubectl describe node ctrl03 | grep -A1 "Allocated resources:" | head -10
 
 Nếu tạo thêm tenant `cust-gpu-shared-2` và xin 1 GPU slice, sẽ schedule được trên cùng ctrl03 — đó chính là multi-tenant GPU sharing.
 
-### 16.6 Verify cross-tenant isolation
+### 12.6 Verify cross-tenant isolation
 
 Kiểm tra 3 tenant không thấy được nhau:
 
@@ -3346,219 +2999,15 @@ Mỗi node phục vụ đúng nhóm khách hàng tương ứng. GPU node (ctrl02
 
 ---
 
-## 17. Test HA — Tắt 1 node
-
-Demo cuối cùng: kiểm tra HA khi mất 1 node. Lab này converged 3 node — mỗi node giữ etcd member, Ceph mon+osd, kube-apiserver, workload. Mất 1 node trong cluster 3 node là tình huống "etcd quorum vẫn đủ (2/3)" — không phải tình huống tốt nhất nhưng còn sống được.
-
-Chiến lược test: tắt **ctrl02** (node có VM Windows của KH2 đang chạy). Đây là tình huống xấu nhất vì:
-- KH2 đang RDP, sẽ mất session
-- ctrl02 holds 1 etcd member, 1 Ceph mon, 1 Ceph osd, 1 mgr replica
-- ctrl02 holds whole-GPU pool — không node nào khác có pool `whole` để failover
-
-**Bước 1:** snapshot trạng thái trước khi tắt:
-
-```bash
-# Health checks
-kubectl get nodes
-# Tất cả 3 node Ready
-
-kubectl -n rook-ceph exec deploy/rook-ceph-tools -- ceph -s
-# cluster:
-#   health: HEALTH_OK
-#   services:
-#     mon: 3 daemons, quorum a,b,c
-#     osd: 3 osds: 3 up (since 2h), 3 in
-# data:
-#   pools: ... pgs: active+clean
-
-kubectl get etcd -A
-# Hoặc check qua rke2:
-/var/lib/rancher/rke2/bin/kubectl --kubeconfig /etc/rancher/rke2/rke2.yaml \
-  -n kube-system exec etcd-ctrl01 -- etcdctl \
-  --endpoints=https://127.0.0.1:2379 \
-  --cacert=/var/lib/rancher/rke2/server/tls/etcd/server-ca.crt \
-  --cert=/var/lib/rancher/rke2/server/tls/etcd/server-client.crt \
-  --key=/var/lib/rancher/rke2/server/tls/etcd/server-client.key \
-  member list
-# Member list 3 → 2 sẽ sau khi tắt
-```
-
-**Bước 2:** tắt ctrl02 (graceful shutdown qua ESXi hoặc `poweroff` trên ctrl02):
-
-```bash
-# Trên ctrl02
-systemctl stop rke2-server
-poweroff
-```
-
-Khoảng **30-60 giây** sau:
-
-**Bước 3:** quan sát hệ thống react:
-
-```bash
-# Trên ctrl01
-kubectl get nodes
-# NAME     STATUS     ROLES                       AGE   VERSION
-# ctrl01   Ready      control-plane,etcd,master   3h    v1.35.4+rke2r1
-# ctrl02   NotReady   control-plane,etcd,master   3h    v1.35.4+rke2r1
-# ctrl03   Ready      control-plane,etcd,master   3h    v1.35.4+rke2r1
-
-# VIP failover qua node khác (kube-vip leader election)
-ip a | grep 10.10.200.51
-# Nếu chạy lệnh này trên ctrl01 và VIP move sang ctrl01 → sẽ thấy
-# Hoặc check trên ctrl03:
-ssh ctrl03 'ip a | grep 10.10.200.51'
-
-# Cilium L2 Announcements failover các Service IP
-# - Service nào ctrl02 đang ARP → bị mất ngắn (~10-15s) → leader election → ctrl01 hoặc ctrl03 take over
-# - Floating IP cust-cpu (10.10.200.66) và cust-gpu-shared (10.10.200.68) work bình thường
-# - Floating IP cust-gpu-whole (10.10.200.67) → service vẫn có IP, nhưng VM behind nó đã chết với ctrl02
-```
-
-**Bước 4:** trạng thái 3 KH sau khi mất ctrl02:
-
-| KH | VM/Pod | Node | Trạng thái sau khi mất ctrl02 |
-|---|---|---|---|
-| KH1 (cust-cpu) | `cust-cpu-vm` | ctrl01 | ✅ Vẫn chạy, SSH `10.10.200.66` work |
-| KH2 (cust-gpu-whole) | `cust-gpu-whole-win` | ctrl02 | ❌ Mất — VMI Terminating, không có node nào còn pool `whole` |
-| KH3 (cust-gpu-shared) | container | ctrl03 | ✅ Vẫn chạy, SSH `10.10.200.68` work |
-
-```bash
-# Verify
-kubectl get vmi -A
-# NAMESPACE       NAME                    AGE   PHASE       IP    NODENAME   READY
-# cust-cpu        cust-cpu-vm             3h    Running           ctrl01     True
-# cust-gpu-whole  cust-gpu-whole-win      2h    Failed            ctrl02     False
-```
-
-**Bước 5:** Ceph trạng thái:
-
-```bash
-kubectl -n rook-ceph exec deploy/rook-ceph-tools -- ceph -s
-# cluster:
-#   health: HEALTH_WARN
-#           1/3 mons down
-#           Degraded data redundancy: pgs degraded
-#   services:
-#     mon: 2 daemons, quorum a,c (out of 3)
-#     osd: 3 osds: 2 up, 2 in
-#   data:
-#     pgs: 64 active+undersized+degraded
-```
-
-Replication=3 cứu data: mỗi PG có 3 replica trên 3 OSD → mất 1 OSD → còn 2 replica → vẫn READ/WRITE bình thường, chỉ degraded, không mất data.
-
-```bash
-# I/O vẫn work mặc dù health WARN
-kubectl --kubeconfig=~/kubeconfigs/cust-cpu.kubeconfig exec -n cust-cpu pod/... -- dd if=/dev/zero of=/tmp/test bs=1M count=100
-# 100+0 records in
-# 100+0 records out
-# 104857600 bytes (105 MB) copied, 0.5 s, 210 MB/s
-```
-
-**Bước 6:** etcd quorum:
-
-```bash
-/var/lib/rancher/rke2/bin/kubectl --kubeconfig /etc/rancher/rke2/rke2.yaml \
-  -n kube-system exec etcd-ctrl01 -- etcdctl \
-  --endpoints=https://127.0.0.1:2379 \
-  --cacert=/var/lib/rancher/rke2/server/tls/etcd/server-ca.crt \
-  --cert=/var/lib/rancher/rke2/server/tls/etcd/server-client.crt \
-  --key=/var/lib/rancher/rke2/server/tls/etcd/server-client.key \
-  endpoint health --cluster
-# https://10.10.200.11:2379  ok ...
-# https://10.10.200.12:2379  unhealthy ...
-# https://10.10.200.13:2379  ok ...
-
-# 2/3 healthy = quorum đủ, kube-apiserver vẫn serve request
-```
-
-**Bước 7:** Bài học cho production:
-
-| Vấn đề lab | Cause | Mitigation production |
-|---|---|---|
-| KH2 mất VM khi node down | Pool `whole` chỉ trên 1 node | ≥2 node với pool `whole`, dùng affinity spread, live migration trước khi maintenance |
-| Ceph HEALTH_WARN khi mất 1 OSD | Failure domain = host, chỉ 3 OSD | Mở rộng ≥4 OSD nodes, failure domain = rack/zone nếu multi-rack |
-| etcd quorum 2/3 (chịu được tiếp 0 lỗi) | Cluster 3 node | ≥5 control-plane cho etcd (chịu 2 node mất) |
-| Service LB latency failover ~15s | Cilium L2 lease duration 15s | Tune lease 5s (chấp nhận risk flap), hoặc dùng BGP mode |
-| Khôi phục thủ công ctrl02 | Single ESXi host | DRS + HA cluster, hoặc DRBD/RPI replication etcd |
-
-**Bước 8:** Recovery — bật lại ctrl02:
-
-```bash
-# Power on ctrl02 qua ESXi
-# Hoặc nếu chỉ stop service:
-systemctl start rke2-server
-```
-
-Sau ~3-5 phút:
-
-```bash
-kubectl get nodes
-# Tất cả 3 node lại Ready
-
-kubectl -n rook-ceph exec deploy/rook-ceph-tools -- ceph -s
-# health: HEALTH_OK (sau khi backfill xong, ~5-15 phút tùy data size)
-
-# VM của KH2 vẫn ở trạng thái Failed — phải start lại
-kubectl --kubeconfig=~/kubeconfigs/cust-gpu-whole.kubeconfig \
-  patch vm cust-gpu-whole-win --type=merge -p '{"spec":{"runStrategy":"Always"}}'
-
-# Hoặc admin restart
-virtctl --kubeconfig=~/rke2.yaml start cust-gpu-whole-win -n cust-gpu-whole
-```
-
-VM Windows boot lại trên ctrl02 (vì Windows ko bị crash dirty — chỉ là power loss → Windows boot recovery → desktop). KH2 RDP lại được. **Data trên RBD-RWX volume nguyên vẹn nhờ replication=3.**
-
-**Live migration test (preventive failover) — nếu KH2 biết trước maintenance:**
-
-Trong production, trước khi maintain ctrl02, admin live-migrate VM Windows sang... không có pool whole nào khác → migration fail. Đây là lý do production cần ≥2 GPU node cho mỗi pool. Với pool `cpu-only` thì migrate được:
-
-```bash
-# Migrate VM Ubuntu KH1 từ ctrl01 sang... cũng chỉ có ctrl01 trong pool cpu-only của lab
-# → cần ≥2 node trong pool để migrate work
-```
-
-Demo migration đơn giản: relabel ctrl03 tạm `gpu-pool=cpu-only` (lab demo, không production):
-
-```bash
-# Admin temporary, để demo migrate
-kubectl label node ctrl03 gpu-pool=cpu-only-extra --overwrite
-
-# Update tenant cust-cpu để cho phép cả 2 label
-kubectl edit tenant cust-cpu
-# spec.nodeSelector: gpu-pool: "cpu-only|cpu-only-extra"  (hoặc dùng matchExpressions)
-
-# Trigger migration
-virtctl migrate cust-cpu-vm -n cust-cpu
-kubectl get vmim -n cust-cpu -w
-# NAME                  PHASE       VMI
-# kubevirt-migrate-xx   Scheduling  cust-cpu-vm
-# kubevirt-migrate-xx   Running     cust-cpu-vm
-# kubevirt-migrate-xx   Succeeded   cust-cpu-vm
-
-# VMI đã move
-kubectl get vmi -n cust-cpu cust-cpu-vm -o jsonpath='{.status.nodeName}'
-# ctrl03 (sau khi migrate)
-```
-
-Live migration thành công nhờ **RBD-RWX** block-mode — disk được multi-attach vào 2 node trong quá trình transition. RWO single-attach sẽ block migration.
-
----
-
-## 18. Service URLs & Credentials
+## 13. Service URLs & Credentials
 
 Tổng hợp endpoint của lab:
 
 | Service | URL / Endpoint | Credentials |
 |---|---|---|
 | Kubernetes API (VIP) | https://10.10.200.51:6443 | Admin: `~/rke2.yaml`; Tenant: `~/kubeconfigs/<tenant>.kubeconfig` |
-| Cilium Gateway | http://10.10.200.60 (HTTP) / https://10.10.200.60 (HTTPS) | TLS từ `lab-ca-issuer` |
 | Ceph Dashboard | http://10.10.200.61:7000 | `admin` / `kubectl -n rook-ceph get secret rook-ceph-dashboard-password -o jsonpath="{['data']['password']}"\|base64 -d` |
-| Grafana | http://10.10.200.62 | `admin` / `Lab-2026-Admin` |
-| Prometheus | http://10.10.200.63:9090 | (no auth — lab; production: oauth2-proxy) |
-| KubeVirt Manager | http://10.10.200.64 | (SA cluster-admin, admin-only) |
-| Headlamp | http://10.10.200.65 | K8s token từ kubeconfig của tenant |
+| KubeVirt Manager | http://10.10.200.62 | (SA cluster-admin, admin-only) |
 | Hubble UI | `cilium hubble ui` (port-forward) | (no auth — lab) |
 | **KH1 — cust-cpu (Ubuntu VM SSH)** | `ssh -i ~/cust-cpu-key ubuntu@10.10.200.66` | SSH key (auto) hoặc password `ubuntu123` |
 | **KH2 — cust-gpu-whole (Windows RDP)** | `mstsc /v:10.10.200.67` | `Administrator` / `Win2k22Lab!` |
@@ -3576,11 +3025,7 @@ ADMIN_PW='NewSecurePw2026!'
 kubectl -n rook-ceph exec deploy/rook-ceph-tools -- bash -c \
   "echo -n '${ADMIN_PW}' > /tmp/pw && ceph dashboard ac-user-set-password admin -i /tmp/pw"
 
-# Reset Grafana admin password
-kubectl -n monitoring exec -it deploy/kube-prometheus-stack-grafana -c grafana -- \
-  grafana cli admin reset-admin-password NewPassword2026
-
-# Lấy token tenant cho Headlamp
+# Lấy token tenant (dùng với kubectl, virtctl)
 kubectl -n cust-gpu-shared get secret cust-gpu-shared-owner-token -o jsonpath='{.data.token}' | base64 -d
 ```
 
@@ -3603,66 +3048,27 @@ Lab này dùng `disable: ufw` nên không cần manual rule, nhưng production p
 
 ---
 
-## 19. Lời kết
+## 14. Lời kết
 
 Lab này đã chỉ ra full pattern của một Next-Gen GPU Cloud thương mại trên Kubernetes:
 
 **Cái lab demo được:**
 
 1. **HA Kubernetes 3-node** với etcd quorum + kube-vip VIP API + Cilium L2 Announcements (không cần MetalLB)
-2. **Distributed storage** Rook-Ceph với replication=3 an toàn, 3 StorageClass cho 3 use case (RBD RWO, RBD block-mode RWX, CephFS), VolumeSnapshot bật, dashboard
+2. **Distributed storage** Rook-Ceph với replication=3 an toàn, 3 StorageClass cho 3 use case (RBD RWO, RBD block-mode RWX, CephFS), dashboard
 3. **VM lẫn container** trên cùng cluster qua KubeVirt \+ CDI — cùng scheduler, cùng network, cùng storage
 4. **GPU multi-pool topology**: phân bổ 3 node theo loại khách hàng (CPU-only, whole, shared) — đúng cách GPU cloud thực tế tận dụng phần cứng
 5. **Multi-tenancy hard isolation** qua Capsule với **custom ClusterRole `tenant-owner`** không cluster-admin, NetworkPolicy auto, nodeSelector inject, ResourceQuota hard limit
-6. **Job queueing** với Kueue cho fair-share GPU scheduling
-7. **Observability stack** kube-prometheus-stack + Grafana + Hubble + Ceph dashboard
-8. **2 portal khác nhau**: KubeVirt Manager cho admin, Headlamp cho tenant — token-based login
+6. **Observability**: Hubble network visibility + Ceph dashboard
+7. **KubeVirt Manager** — admin portal quản lý VM, console VNC, live migration
+8. **Golden image workflow** — cài OS một lần, clone PVC cho mỗi KH mới (<30 giây/lần)
 9. **3 chân dung khách hàng** chạy song song với 3 loại workload + 3 cách access (SSH, RDP, kubectl exec) — đúng business model GPU cloud
-10. **HA test** mất 1 node: data safe nhờ replication=3, VM trên pool còn lại work bình thường
 
 **Cái lab KHÔNG demo được (giới hạn fake-gpu-operator):**
 
 - Windows Device Manager không thấy NVIDIA GPU (chỉ "QEMU Standard VGA")
 - `nvidia-smi.exe` trong Windows không có device thật
 - CUDA workload trong VM/container không tính toán thật, chỉ giả lập binary
-
-**Production migration path:**
-
-Thay đúng 1 component để toàn bộ pattern hoạt động với GPU thật:
-
-```bash
-# Bỏ fake-gpu-operator
-helm -n gpu-operator uninstall gpu-operator
-
-# Cài NVIDIA GPU Operator trên cùng node ctrl02, ctrl03 với label gpu-pool
-helm repo add nvidia https://helm.ngc.nvidia.com/nvidia
-helm install --wait --generate-name \
-  -n gpu-operator --create-namespace \
-  nvidia/gpu-operator \
-  --version=<latest>
-```
-
-NVIDIA GPU Operator sẽ:
-- Install driver lên node (hoặc dùng host driver)
-- Setup VFIO cho PCI passthrough vào KubeVirt VM
-- DCGM exporter → Prometheus → Grafana dashboard 12239 work full
-- nvidia-smi thật trong container/VM
-
-**Tất cả manifest tenant (Capsule Tenant, VM spec, container Deployment, Kueue queue) ở lab này giữ nguyên** — chỉ component layer thấp nhất thay đổi. Đó là điểm mạnh của thiết kế Kubernetes-native: orchestration patterns tách rời khỏi hardware specifics.
-
-**Roadmap mở rộng từ lab này lên production:**
-
-| Phase | Hành động | Time estimate |
-|---|---|---|
-| 1 | Swap fake → real GPU Operator + 1 node có A100 thật | 1-2 ngày |
-| 2 | Mở rộng node count: ≥5 control-plane, ≥3 GPU per pool, ≥4 OSD nodes | 1 tuần |
-| 3 | Tách network: mgmt + pod + storage + GPU fabric (RoCE/InfiniBand) | 2 tuần |
-| 4 | Backup/DR: Velero + Ceph RBD mirror sang DC khác | 1-2 tuần |
-| 5 | Billing & metering: DCGM time-series → custom usage aggregator → invoicing | 4-8 tuần |
-| 6 | Customer portal: replace Headlamp generic với portal có signup, billing, ticket, API key, SSH key, marketplace | 2-3 tháng |
-| 7 | Multi-region: Cilium Cluster Mesh + Rook multi-cluster + KubeVirt cross-cluster live migration | 3-6 tháng |
-
-Cloud provider thế hệ mới (CoreWeave, Lambda, Nebius) đều đi qua roadmap tương tự, phần lớn dựa trên cùng stack Kubernetes-native vì lý do operator skill set, ecosystem maturity, và tốc độ feature từ CNCF projects.
 
 Với 3 VM Ubuntu 24.04 trên ESXi và ~16GB RAM mỗi máy, lab này có thể chạy được trong vài giờ và demo full pattern của một GPU cloud production. Bài học quan trọng nhất: **Kubernetes thế hệ 2026 đủ trưởng thành để chạy production virtualization + GPU workload thay OpenStack**, đặc biệt khi KubeVirt đã có PCIe NUMA awareness và HAL chuẩn bị cho multi-hypervisor.
 

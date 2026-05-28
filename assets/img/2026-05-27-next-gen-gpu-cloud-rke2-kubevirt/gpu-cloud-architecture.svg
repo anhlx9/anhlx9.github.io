@@ -116,16 +116,8 @@
       <text x="44" y="40" font-size="10" fill="#a5b4fc">Multi-tenancy · nodeSelector</text>
     </g>
 
-    <!-- Kueue -->
-    <g transform="translate(268, 38)">
-      <rect x="0" y="0" width="195" height="55" rx="10" fill="#1e1b4b" stroke="#8b5cf6" stroke-width="1.5"/>
-      <text x="14" y="34" font-size="21">⏱️</text>
-      <text x="44" y="24" font-size="13" font-weight="700" fill="#ffffff">Kueue</text>
-      <text x="44" y="40" font-size="10" fill="#a5b4fc">GPU queueing · fair-share</text>
-    </g>
-
     <!-- fake-gpu-operator -->
-    <g transform="translate(476, 38)">
+    <g transform="translate(353, 38)">
       <rect x="0" y="0" width="215" height="55" rx="10" fill="#1a2e0a" stroke="#76b900" stroke-width="1.5"/>
       <text x="14" y="34" font-size="21">⚡</text>
       <text x="44" y="24" font-size="13" font-weight="700" fill="#ffffff">fake-gpu-operator</text>
@@ -133,31 +125,23 @@
     </g>
 
     <!-- KubeVirt + CDI -->
-    <g transform="translate(704, 38)">
+    <g transform="translate(666, 38)">
       <rect x="0" y="0" width="205" height="55" rx="10" fill="#0c4a6e" stroke="#0ea5e9" stroke-width="1.5"/>
       <text x="14" y="34" font-size="21">💻</text>
       <text x="44" y="24" font-size="13" font-weight="700" fill="#ffffff">KubeVirt + CDI</text>
       <text x="44" y="40" font-size="10" fill="#7dd3fc">VM (KVM) như Pod</text>
     </g>
 
-    <!-- Cilium Gateway API + L2 -->
-    <g transform="translate(922, 38)">
-      <rect x="0" y="0" width="245" height="55" rx="10" fill="#0c2233" stroke="#06b6d4" stroke-width="1.5"/>
+    <!-- Cilium CNI + L2 Announcements -->
+    <g transform="translate(969, 38)">
+      <rect x="0" y="0" width="235" height="55" rx="10" fill="#0c2233" stroke="#06b6d4" stroke-width="1.5"/>
       <text x="14" y="34" font-size="21">🌐</text>
-      <text x="44" y="24" font-size="13" font-weight="700" fill="#06b6d4">Cilium Gateway API</text>
+      <text x="44" y="24" font-size="13" font-weight="700" fill="#06b6d4">Cilium CNI</text>
       <text x="44" y="40" font-size="10" fill="#67e8f9">L2 Announcements · LB .60–.99</text>
     </g>
 
-    <!-- cert-manager -->
-    <g transform="translate(1180, 38)">
-      <rect x="0" y="0" width="185" height="55" rx="10" fill="#3b1010" stroke="#f87171" stroke-width="1.5"/>
-      <text x="14" y="34" font-size="21">🔐</text>
-      <text x="44" y="24" font-size="13" font-weight="700" fill="#ffffff">cert-manager</text>
-      <text x="44" y="40" font-size="10" fill="#fca5a5">TLS · selfsigned CA</text>
-    </g>
-
     <!-- Headlamp -->
-    <g transform="translate(1378, 38)">
+    <g transform="translate(1302, 38)">
       <rect x="0" y="0" width="175" height="55" rx="10" fill="#1e293b" stroke="#94a3b8" stroke-width="1.5"/>
       <text x="14" y="34" font-size="21">🔦</text>
       <text x="44" y="24" font-size="13" font-weight="700" fill="#ffffff">Headlamp</text>
@@ -165,7 +149,7 @@
     </g>
 
     <!-- KubeVirt Manager -->
-    <g transform="translate(1566, 38)">
+    <g transform="translate(1575, 38)">
       <rect x="0" y="0" width="185" height="55" rx="10" fill="#1e293b" stroke="#94a3b8" stroke-width="1.5"/>
       <text x="14" y="34" font-size="21">🖥️</text>
       <text x="44" y="24" font-size="13" font-weight="700" fill="#ffffff">KubeVirt Mgr</text>
@@ -183,7 +167,7 @@
       <rect x="0" y="0" width="760" height="42" rx="8" fill="#1e293b" stroke="#fbbf24" stroke-width="1.5"/>
       <text x="18" y="27" font-size="17">🎯</text>
       <text x="44" y="22" font-size="13" font-weight="700" fill="#fbbf24">kube-vip ARP · API VIP: 10.10.200.51:6443</text>
-      <text x="44" y="36" font-size="11" fill="#fde68a">etcd quorum 3  ·  GW .60  ·  Ceph .61  ·  Grafana .62  ·  Prom .63  ·  KVM-Mgr .64  ·  Headlamp .65  ·  VM .66 .67</text>
+      <text x="44" y="36" font-size="11" fill="#fde68a">etcd quorum 3  ·  Ceph .61  ·  KVM-Mgr .62  ·  KH1-cpu .66  ·  KH2-win .67  ·  KH3-gpu .68</text>
     </g>
 
     <!-- NODE ctrl01 — CPU ONLY -->
@@ -387,7 +371,7 @@
           <text x="168" y="32" font-size="9" fill="#fde68a">nvidia.com/gpu = 8 · time-slicing replicas=4</text>
           <g transform="translate(168, 41)">
             <rect x="0"   y="0" width="18" height="14" rx="2" fill="#f59e0b"/>
-            <rect x="22"  y="0" width="18" height="14" rx="2" fill="#f59e0b"/>
+            <rect x="22"  y="0" width="18" height="14" rx="2" fill="#475569"/>
             <rect x="44"  y="0" width="18" height="14" rx="2" fill="#475569"/>
             <rect x="66"  y="0" width="18" height="14" rx="2" fill="#475569"/>
             <rect x="88"  y="0" width="18" height="14" rx="2" fill="#475569"/>
@@ -395,7 +379,7 @@
             <rect x="132" y="0" width="18" height="14" rx="2" fill="#475569"/>
             <rect x="154" y="0" width="18" height="14" rx="2" fill="#475569"/>
           </g>
-          <text x="340" y="59" font-size="9" fill="#a3a3a3">1/4 GPU/slot · KH3</text>
+          <text x="340" y="59" font-size="9" fill="#a3a3a3">1/8 slice · KH3</text>
         </g>
       </g>
 
@@ -432,7 +416,7 @@
       <text x="18" y="28" font-size="19">🔌</text>
       <text x="46" y="25" font-size="14" font-weight="700" fill="#06b6d4">ens160 — Management / API / LB</text>
       <text x="46" y="43" font-size="11" fill="#cbd5e1">10.10.200.0/24 · SSH · RKE2 API · Cilium L2 Pool: 200.60–99</text>
-      <text x="46" y="58" font-size="10" fill="#94a3b8">VIP .51  ·  GW .60  ·  Ceph .61  ·  Grafana .62  ·  Prom .63  ·  KVM-Mgr .64  ·  Headlamp .65  ·  VM .66 .67</text>
+      <text x="46" y="58" font-size="10" fill="#94a3b8">VIP .51  ·  Ceph .61  ·  KVM-Mgr .62  ·  KH1-cpu .66  ·  KH2-win .67  ·  KH3-gpu .68</text>
     </g>
 
     <g transform="translate(920, 35)">
