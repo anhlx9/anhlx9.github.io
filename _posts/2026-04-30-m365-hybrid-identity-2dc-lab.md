@@ -2,9 +2,9 @@
 title: "Triển khai Hybrid Identity: AD on-premise đồng bộ lên Microsoft 365 với Entra Connect"
 categories:
 - System
-- Windows Server
-- Active Directory
-- Microsoft 365
+- Windows-Server
+- Active-Directory
+- Microsoft-365
 feature_image: "/assets/postbanner.jpg"
 feature_text: |
   ### Lab thực tế: Dựng 2 Domain Controller, đồng bộ AD lên Microsoft Entra ID, sử dụng Exchange Online (M365 Business Basic)
@@ -15,7 +15,7 @@ Bài lab hướng dẫn triển khai mô hình **Hybrid Identity** chuẩn produ
 > **Mục tiêu lab**: Tạo user trong AD on-premise → sync lên Entra ID → login `user1@anhle.com.vn` vào Outlook Web thành công. Lab này **không cấu hình mail flow** (không thêm MX record), chỉ tập trung vào phần **Identity Sync** và **xác thực cloud**.
 
 
-![](/assets/img/2026-04-30-m365-hybrid-identity-2dc-lab/hybrid-identity-diagram.png)
+![](/assets/img/2026-04-30-m365-hybrid-identity-2dc-lab/00.png)
 
 ![](/assets/img/2026-04-30-m365-hybrid-identity-2dc-lab/46.png)
 
@@ -103,7 +103,7 @@ Trong lab này, **UPN của user trong AD được đặt thẳng là `user1@anh
 
 #### 2.1. Topology
 
-![Topology](/assets/img/2026-04-30-m365-hybrid-identity-2dc-lab/hybrid-identity-diagram.png)
+![](/assets/img/2026-04-30-m365-hybrid-identity-2dc-lab/00.png)
 
 #### 2.2. Kế hoạch IP và VM
 
