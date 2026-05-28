@@ -1,5 +1,5 @@
 ---
-title: "Next-Gen GPU Cloud với Kubernetes Lab"
+title: "Next-Gen GPU Cloud: Hội Tụ VM & Container Trên Kubernetes"
 categories:
 - Kubernetes
 - Ceph
@@ -10,7 +10,6 @@ tags:
 - ceph
 - capsule
 - cilium
-- headlamp
 feature_image: "/assets/postbanner.jpg"
 feature_text: |
   ### Kubernetes-native Next-Gen GPU Cloud: RKE2 HA, KubeVirt, Rook-Ceph, multi-tenant GPU provisioning với 3 khách hàng — CPU-only, whole-GPU VM Windows, shared-GPU container
@@ -31,9 +30,8 @@ Stack:
 7. **kube-vip** — VIP Kubernetes API HA
 
 > **Phạm vi bài**
-> - Lược bỏ một số thành phần — Kueue, Cilium Gateway API, Prometheus/Grafana, VolumeSnapshot, ... — để tập trung vào **demo business flow**: cấp phát GPU linh hoạt bán cho 3 loại khách hàng, đúng mô hình GPU cloud thương mại trong thời đại AI
-> - Stack công nghệ là thứ mình đang quan tâm; kiến trúc và phân bổ resource theo hạ tầng mình có
-> - **Nếu áp dụng, bạn cần điều chỉnh spec VM, IP range và số node cho phù hợp với môi trường của mình**
+> - Do nội dung quá dài, mình lược bỏ một số thành phần — Kueue, Cilium Gateway API, Prometheus/Grafana, VolumeSnapshot,... — để tập trung vào **demo business flow**: cấp phát GPU linh hoạt bán cho 3 loại khách hàng, đúng mô hình GPU cloud thương mại trong thời đại AI
+> - Stack công nghệ là những thứ mình đang quan tâm; kiến trúc và phân bổ resource theo hạ tầng mình có. **Nếu áp dụng, bạn cần điều chỉnh spec VM, IP range, số node và các thành phần cho phù hợp với môi trường của mình**
 
 <img src="../assets/img/2026-05-27-next-gen-gpu-cloud-rke2-kubevirt/gpu-cloud-architecture.svg"/>
 
@@ -243,9 +241,7 @@ cni: cilium
 disable:
   - rke2-ingress-nginx          # Không dùng ingress nginx
   - rke2-canal                  # Bỏ canal, dùng Cilium
-  - rke2-snapshot-validation-webhook   # Bỏ webhook validation cho VolumeSnapshot (lab); production nên giữ
-
-# Giữ rke2-snapshot-controller để hỗ trợ VolumeSnapshot Ceph RBD
+  - rke2-snapshot-validation-webhook   # Lab; production nên giữ
 
 # Kube-proxy disabled — Cilium replace bằng eBPF
 disable-kube-proxy: true
@@ -1094,8 +1090,7 @@ kubectl -n cdi patch cdi cdi --type merge --patch '
 {
   "spec": {
     "config": {
-      "scratchSpaceStorageClass": "rook-ceph-block",
-      "uploadProxyURLOverride": "https://10.10.200.69:443"
+      "scratchSpaceStorageClass": "rook-ceph-block"
     }
   }
 }'
@@ -1633,11 +1628,6 @@ rules:
   # === CDI ===
   - apiGroups: ["cdi.kubevirt.io"]
     resources: ["datavolumes","dataimportcrons","datasources"]
-    verbs: ["get","list","watch","create","update","patch","delete"]
-  
-  # === Snapshot (cho VM/PVC snapshot) ===
-  - apiGroups: ["snapshot.storage.k8s.io"]
-    resources: ["volumesnapshots","volumesnapshotcontents"]
     verbs: ["get","list","watch","create","update","patch","delete"]
   
   # === Networking trong namespace ===
@@ -2416,7 +2406,7 @@ spec:
         customer: cust-cpu
         kubevirt.io/vm: cust-cpu-vm
     spec:
-      # Không có GPU request → scheduler tự chọn ctrl01 (node không có gpu-pool label)
+      # Không có GPU request — Capsule inject nodeSelector gpu-pool=cpu-only → land ctrl01
       domain:
         devices:
           disks:
@@ -3009,8 +2999,8 @@ Tổng hợp endpoint của lab:
 | Ceph Dashboard | http://10.10.200.61:7000 | `admin` / `kubectl -n rook-ceph get secret rook-ceph-dashboard-password -o jsonpath="{['data']['password']}"\|base64 -d` |
 | KubeVirt Manager | http://10.10.200.62 | (SA cluster-admin, admin-only) |
 | Hubble UI | `cilium hubble ui` (port-forward) | (no auth — lab) |
-| **KH1 — cust-cpu (Ubuntu VM SSH)** | `ssh -i ~/cust-cpu-key ubuntu@10.10.200.66` | SSH key (auto) hoặc password `ubuntu123` |
-| **KH2 — cust-gpu-whole (Windows RDP)** | `mstsc /v:10.10.200.67` | `Administrator` / `Win2k22Lab!` |
+| **KH1 — cust-cpu (Ubuntu VM SSH)** | `ssh ubuntu@10.10.200.66` | `ubuntu` / `<your-password>` (set trong cloud-init section 12.3) |
+| **KH2 — cust-gpu-whole (Windows RDP)** | `mstsc /v:10.10.200.67` | `Administrator` / `<your-oobe-password>` (set trong OOBE section 12.4) |
 | **KH3 — cust-gpu-shared (Container SSH)** | `ssh root@10.10.200.68` | `root` / `GpuShared2026` |
 
 Recovery commands quan trọng:
