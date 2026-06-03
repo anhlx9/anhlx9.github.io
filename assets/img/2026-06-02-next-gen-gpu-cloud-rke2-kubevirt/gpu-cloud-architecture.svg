@@ -52,47 +52,47 @@
 
   <!-- TITLE -->
   <text x="900" y="55" text-anchor="middle" font-size="36" font-weight="800" fill="#ffffff" letter-spacing="1">ANHLX LAB · NEXT-GEN GPU CLOUD ARCHITECTURE</text>
-  <text x="900" y="88" text-anchor="middle" font-size="17" font-weight="400" fill="#94a3b8" letter-spacing="3">RKE2 · KubeVirt · Rook-Ceph · Cilium · Capsule · 3 NODE HA LAB</text>
+  <text x="900" y="88" text-anchor="middle" font-size="17" font-weight="400" fill="#94a3b8" letter-spacing="3">RKE2 · KubeVirt · Rook-Ceph · Kube-OVN · Capsule · 3 NODE HA LAB</text>
   <line x1="600" y1="105" x2="1200" y2="105" stroke="#76b900" stroke-width="2"/>
 
   <!-- TENANT LAYER (y=120) — 3 boxes aligned above 3 nodes -->
   <g transform="translate(0, 120)">
     <text x="60" y="20" font-size="13" font-weight="700" fill="#94a3b8" letter-spacing="2">TENANTS / CUSTOMERS</text>
 
-    <!-- KH1 cust-cpu — aligned above ctrl01 (node center x≈340) -->
+    <!-- KH1 cust-gpu-whole — aligned above ctrl01 (node center x≈340) -->
     <g transform="translate(210, 32)">
       <rect x="0" y="0" width="260" height="100" rx="14" fill="url(#tenantA)" filter="url(#softShadow)"/>
       <circle cx="32" cy="32" r="18" fill="#ffffff" opacity="0.2"/>
-      <text x="32" y="40" text-anchor="middle" font-size="20">🖥️</text>
-      <text x="62" y="28" font-size="15" font-weight="700" fill="#ffffff">cust-cpu</text>
-      <text x="62" y="45" font-size="11" fill="#e0e7ff">CPU-only · VM Ubuntu</text>
+      <text x="32" y="40" text-anchor="middle" font-size="20">⚡</text>
+      <text x="62" y="28" font-size="15" font-weight="700" fill="#ffffff">cust-gpu-whole</text>
+      <text x="62" y="45" font-size="11" fill="#e0e7ff">Container CUDA · Nguyên GPU</text>
       <line x1="14" y1="57" x2="246" y2="57" stroke="#ffffff" stroke-width="1" opacity="0.3"/>
-      <text x="14" y="72" font-size="10" fill="#dbeafe">⬢ No GPU · VM Ubuntu 22.04</text>
-      <text x="14" y="87" font-size="10" fill="#dbeafe">ns: cust-cpu · node: ctrl01</text>
+      <text x="14" y="72" font-size="10" fill="#dbeafe">⬢ 2 GPU whole · VPC 192.168.10.0/24</text>
+      <text x="14" y="87" font-size="10" fill="#dbeafe">EIP: 10.10.200.71 · SSH · ctrl01</text>
     </g>
 
-    <!-- KH2 cust-gpu-whole — aligned above ctrl02 (node center x≈900) -->
+    <!-- KH2 cust-gpu-shared — aligned above ctrl02 (node center x≈900) -->
     <g transform="translate(770, 32)">
       <rect x="0" y="0" width="260" height="100" rx="14" fill="url(#tenantB)" filter="url(#softShadow)"/>
       <circle cx="32" cy="32" r="18" fill="#ffffff" opacity="0.2"/>
-      <text x="32" y="40" text-anchor="middle" font-size="20">🪟</text>
-      <text x="62" y="28" font-size="15" font-weight="700" fill="#ffffff">cust-gpu-whole</text>
-      <text x="62" y="45" font-size="11" fill="#fef3c7">Whole GPU · VM Windows</text>
+      <text x="32" y="40" text-anchor="middle" font-size="20">📦</text>
+      <text x="62" y="28" font-size="15" font-weight="700" fill="#ffffff">cust-gpu-shared</text>
+      <text x="62" y="45" font-size="11" fill="#fef3c7">Fractional GPU · Container</text>
       <line x1="14" y1="57" x2="246" y2="57" stroke="#ffffff" stroke-width="1" opacity="0.3"/>
-      <text x="14" y="72" font-size="10" fill="#fde68a">⬢ 1× A100 nguyên · Win 2022</text>
-      <text x="14" y="87" font-size="10" fill="#fde68a">ns: cust-gpu-whole · node: ctrl02</text>
+      <text x="14" y="72" font-size="10" fill="#fde68a">⬢ 2 GPU slice · VPC 192.168.20.0/24</text>
+      <text x="14" y="87" font-size="10" fill="#fde68a">EIP: 10.10.200.72 · SSH · ctrl02</text>
     </g>
 
-    <!-- KH3 cust-gpu-shared — aligned above ctrl03 (node center x≈1460) -->
+    <!-- KH3 cust-cpu — aligned above ctrl03 (node center x≈1460) -->
     <g transform="translate(1330, 32)">
       <rect x="0" y="0" width="260" height="100" rx="14" fill="url(#tenantC)" filter="url(#softShadow)"/>
       <circle cx="32" cy="32" r="18" fill="#ffffff" opacity="0.2"/>
-      <text x="32" y="40" text-anchor="middle" font-size="20">📦</text>
-      <text x="62" y="28" font-size="15" font-weight="700" fill="#ffffff">cust-gpu-shared</text>
-      <text x="62" y="45" font-size="11" fill="#ede9fe">Fractional GPU · Container</text>
+      <text x="32" y="40" text-anchor="middle" font-size="20">🖥️</text>
+      <text x="62" y="28" font-size="15" font-weight="700" fill="#ffffff">cust-cpu</text>
+      <text x="62" y="45" font-size="11" fill="#ede9fe">VM Ubuntu + VM Windows · CPU</text>
       <line x1="14" y1="57" x2="246" y2="57" stroke="#ffffff" stroke-width="1" opacity="0.3"/>
-      <text x="14" y="72" font-size="10" fill="#ddd6fe">⬢ 1/4 GPU time-slice · CUDA</text>
-      <text x="14" y="87" font-size="10" fill="#ddd6fe">ns: cust-gpu-shared · node: ctrl03</text>
+      <text x="14" y="72" font-size="10" fill="#ddd6fe">⬢ No GPU · VPC 192.168.30.0/24</text>
+      <text x="14" y="87" font-size="10" fill="#ddd6fe">EIP: 10.10.200.73 · SSH+RDP · ctrl03</text>
     </g>
   </g>
 
@@ -132,20 +132,20 @@
       <text x="44" y="40" font-size="10" fill="#7dd3fc">VM (KVM) như Pod</text>
     </g>
 
-    <!-- Cilium CNI + L2 Announcements -->
+    <!-- Kube-OVN CNI -->
     <g transform="translate(969, 38)">
       <rect x="0" y="0" width="235" height="55" rx="10" fill="#0c2233" stroke="#06b6d4" stroke-width="1.5"/>
       <text x="14" y="34" font-size="21">🌐</text>
-      <text x="44" y="24" font-size="13" font-weight="700" fill="#06b6d4">Cilium CNI</text>
-      <text x="44" y="40" font-size="10" fill="#67e8f9">L2 Announcements · LB .60–.99</text>
+      <text x="44" y="24" font-size="13" font-weight="700" fill="#06b6d4">Kube-OVN CNI</text>
+      <text x="44" y="40" font-size="10" fill="#67e8f9">VPC Isolation · NAT-GW · EIP Pool</text>
     </g>
 
-    <!-- Headlamp -->
+    <!-- Multus CNI -->
     <g transform="translate(1302, 38)">
       <rect x="0" y="0" width="175" height="55" rx="10" fill="#1e293b" stroke="#94a3b8" stroke-width="1.5"/>
-      <text x="14" y="34" font-size="21">🔦</text>
-      <text x="44" y="24" font-size="13" font-weight="700" fill="#ffffff">Headlamp</text>
-      <text x="44" y="40" font-size="10" fill="#cbd5e1">Tenant self-service UI</text>
+      <text x="14" y="34" font-size="21">🔗</text>
+      <text x="44" y="24" font-size="13" font-weight="700" fill="#ffffff">Multus CNI</text>
+      <text x="44" y="40" font-size="10" fill="#cbd5e1">VM secondary NIC · NAD</text>
     </g>
 
     <!-- KubeVirt Manager -->
@@ -167,10 +167,10 @@
       <rect x="0" y="0" width="760" height="42" rx="8" fill="#1e293b" stroke="#fbbf24" stroke-width="1.5"/>
       <text x="18" y="27" font-size="17">🎯</text>
       <text x="44" y="22" font-size="13" font-weight="700" fill="#fbbf24">kube-vip ARP · API VIP: 10.10.200.51:6443</text>
-      <text x="44" y="36" font-size="11" fill="#fde68a">etcd quorum 3  ·  Ceph .61  ·  KVM-Mgr .62  ·  KH1-cpu .66  ·  KH2-win .67  ·  KH3-gpu .68</text>
+      <text x="44" y="36" font-size="11" fill="#fde68a">etcd quorum 3  ·  Ceph .61  ·  KVM-Mgr .62  ·  KH1-whole .71  ·  KH2-shared .72  ·  KH3-cpu .73</text>
     </g>
 
-    <!-- NODE ctrl01 — CPU ONLY -->
+    <!-- NODE ctrl01 — WHOLE GPU -->
     <g transform="translate(80, 115)">
       <rect x="0" y="0" width="520" height="405" rx="16" fill="url(#nodeGrad)" stroke="#475569" stroke-width="2" filter="url(#softShadow)"/>
       <rect x="0" y="0" width="520" height="48" rx="16" fill="#1e293b"/>
@@ -178,8 +178,8 @@
       <text x="18" y="32" font-size="21">🖥️</text>
       <text x="50" y="31" font-size="17" font-weight="800" fill="#ffffff">ctrl01</text>
       <text x="112" y="31" font-size="12" fill="#94a3b8">10.10.200.11 · 8 vCPU · 16 GB</text>
-      <rect x="400" y="13" width="108" height="22" rx="11" fill="#3b82f6"/>
-      <text x="454" y="28" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">CPU ONLY</text>
+      <rect x="400" y="13" width="108" height="22" rx="11" fill="#76b900"/>
+      <text x="454" y="28" text-anchor="middle" font-size="10" font-weight="700" fill="#0a0e27">WHOLE GPU</text>
 
       <!-- Control plane -->
       <g transform="translate(14, 62)">
@@ -196,15 +196,15 @@
           <text x="186" y="27" font-size="9" fill="#a5b4fc">member 1/3</text>
           <rect x="316" y="0" width="164" height="35" rx="6" fill="#1e1b4b" stroke="#8b5cf6"/>
           <text x="324" y="22" font-size="13">🕸️</text>
-          <text x="344" y="14" font-size="10" font-weight="700" fill="#fff">Cilium CNI</text>
-          <text x="344" y="27" font-size="9" fill="#a5b4fc">eBPF · kube-proxy replace</text>
+          <text x="344" y="14" font-size="10" font-weight="700" fill="#fff">Kube-OVN</text>
+          <text x="344" y="27" font-size="9" fill="#a5b4fc">OVN · VPC routing</text>
         </g>
       </g>
 
       <!-- Compute — CPU ONLY -->
       <g transform="translate(14, 147)">
         <rect x="0" y="0" width="492" height="105" rx="10" fill="url(#layerCompute)" stroke="#10b981" stroke-width="1"/>
-        <text x="12" y="19" font-size="10" font-weight="700" fill="#6ee7b7" letter-spacing="1">COMPUTE · WORKLOADS (CPU-ONLY POOL)</text>
+        <text x="12" y="19" font-size="10" font-weight="700" fill="#6ee7b7" letter-spacing="1">COMPUTE · WORKLOADS (WHOLE GPU POOL)</text>
         <g transform="translate(12, 27)">
           <rect x="0" y="0" width="150" height="65" rx="6" fill="#064e3b" stroke="#10b981"/>
           <text x="8" y="20" font-size="13">📦</text>
@@ -212,11 +212,16 @@
           <text x="8" y="40" font-size="13">💻</text>
           <text x="28" y="38" font-size="10" font-weight="700" fill="#fff">KubeVirt handler</text>
           <text x="28" y="52" font-size="9" fill="#a7f3d0">virt-launcher pods</text>
-          <rect x="158" y="0" width="322" height="65" rx="6" fill="#1e293b" stroke="#3b82f6"/>
-          <text x="168" y="18" font-size="11" font-weight="700" fill="#93c5fd">gpu-pool=cpu-only · No GPU</text>
-          <text x="168" y="33" font-size="9" fill="#94a3b8">Tenant: cust-cpu</text>
-          <text x="168" y="47" font-size="9" fill="#94a3b8">VM Ubuntu 22.04 · CPU + RAM workloads</text>
-          <text x="168" y="60" font-size="9" fill="#475569">nvidia.com/gpu → not advertised on this node</text>
+          <rect x="158" y="0" width="322" height="65" rx="6" fill="#1a2e0a" stroke="#76b900"/>
+          <text x="168" y="15" font-size="11" font-weight="700" fill="#fff">gpu-pool=whole · 2× A100 (integer)</text>
+          <text x="168" y="27" font-size="9" fill="#bef264">nvidia.com/gpu = 2 · fake-gpu-operator</text>
+          <text x="168" y="38" font-size="9" fill="#67e8f9">VPC: cust-gpu-whole-vpc · 192.168.10.0/24</text>
+          <rect x="168" y="42" width="38" height="15" rx="3" fill="#f59e0b"/>
+          <text x="187" y="53" text-anchor="middle" font-size="8" font-weight="700" fill="#000">GPU 1</text>
+          <rect x="212" y="42" width="38" height="15" rx="3" fill="#475569"/>
+          <text x="231" y="53" text-anchor="middle" font-size="8" font-weight="700" fill="#fff">GPU 2</text>
+          <text x="258" y="53" font-size="9" fill="#6b7280">free</text>
+          <text x="340" y="53" font-size="9" fill="#6b7280">Container CUDA ← KH1</text>
         </g>
       </g>
 
@@ -246,7 +251,7 @@
       </g>
     </g>
 
-    <!-- NODE ctrl02 — WHOLE GPU -->
+    <!-- NODE ctrl02 — SHARED GPU -->
     <g transform="translate(640, 115)">
       <rect x="0" y="0" width="520" height="405" rx="16" fill="url(#nodeGrad)" stroke="#475569" stroke-width="2" filter="url(#softShadow)"/>
       <rect x="0" y="0" width="520" height="48" rx="16" fill="#1e293b"/>
@@ -254,8 +259,8 @@
       <text x="18" y="32" font-size="21">🖥️</text>
       <text x="50" y="31" font-size="17" font-weight="800" fill="#ffffff">ctrl02</text>
       <text x="112" y="31" font-size="12" fill="#94a3b8">10.10.200.12 · 8 vCPU · 16 GB</text>
-      <rect x="393" y="13" width="115" height="22" rx="11" fill="#76b900"/>
-      <text x="450" y="28" text-anchor="middle" font-size="10" font-weight="700" fill="#0a0e27">WHOLE GPU</text>
+      <rect x="393" y="13" width="115" height="22" rx="11" fill="#f59e0b"/>
+      <text x="450" y="28" text-anchor="middle" font-size="10" font-weight="700" fill="#0a0e27">SHARED GPU</text>
 
       <g transform="translate(14, 62)">
         <rect x="0" y="0" width="492" height="72" rx="10" fill="url(#layerCP)" stroke="#7c3aed" stroke-width="1"/>
@@ -271,15 +276,15 @@
           <text x="186" y="27" font-size="9" fill="#a5b4fc">member 2/3</text>
           <rect x="316" y="0" width="164" height="35" rx="6" fill="#1e1b4b" stroke="#8b5cf6"/>
           <text x="324" y="22" font-size="13">🕸️</text>
-          <text x="344" y="14" font-size="10" font-weight="700" fill="#fff">Cilium CNI</text>
-          <text x="344" y="27" font-size="9" fill="#a5b4fc">eBPF · kube-proxy replace</text>
+          <text x="344" y="14" font-size="10" font-weight="700" fill="#fff">Kube-OVN</text>
+          <text x="344" y="27" font-size="9" fill="#a5b4fc">OVN · VPC routing</text>
         </g>
       </g>
 
       <!-- Compute — Whole GPU -->
       <g transform="translate(14, 147)">
         <rect x="0" y="0" width="492" height="105" rx="10" fill="url(#layerCompute)" stroke="#10b981" stroke-width="1"/>
-        <text x="12" y="19" font-size="10" font-weight="700" fill="#6ee7b7" letter-spacing="1">COMPUTE · WORKLOADS (WHOLE GPU POOL)</text>
+        <text x="12" y="19" font-size="10" font-weight="700" fill="#6ee7b7" letter-spacing="1">COMPUTE · WORKLOADS (SHARED GPU POOL)</text>
         <g transform="translate(12, 27)">
           <rect x="0" y="0" width="150" height="65" rx="6" fill="#064e3b" stroke="#10b981"/>
           <text x="8" y="20" font-size="13">📦</text>
@@ -287,15 +292,21 @@
           <text x="8" y="40" font-size="13">💻</text>
           <text x="28" y="38" font-size="10" font-weight="700" fill="#fff">KubeVirt handler</text>
           <text x="28" y="52" font-size="9" fill="#a7f3d0">virt-launcher pods</text>
-          <rect x="158" y="0" width="322" height="65" rx="6" fill="#1a2e0a" stroke="#76b900"/>
-          <text x="168" y="18" font-size="11" font-weight="700" fill="#fff">gpu-pool=whole · 2× A100 (integer)</text>
-          <text x="168" y="32" font-size="9" fill="#bef264">nvidia.com/gpu = 2 · fake-gpu-operator</text>
-          <rect x="168" y="42" width="38" height="15" rx="3" fill="#f59e0b"/>
-          <text x="187" y="53" text-anchor="middle" font-size="8" font-weight="700" fill="#000">GPU 1</text>
-          <rect x="212" y="42" width="38" height="15" rx="3" fill="#475569"/>
-          <text x="231" y="53" text-anchor="middle" font-size="8" font-weight="700" fill="#fff">GPU 2</text>
-          <text x="258" y="53" font-size="9" fill="#6b7280">free</text>
-          <text x="340" y="53" font-size="9" fill="#6b7280">VM Win2022 ← KH2</text>
+          <rect x="158" y="0" width="322" height="65" rx="6" fill="#1a2e0a" stroke="#f59e0b"/>
+          <text x="168" y="15" font-size="11" font-weight="700" fill="#fff">gpu-pool=shared · 2×A100 ÷ 4 slices</text>
+          <text x="168" y="27" font-size="9" fill="#fde68a">nvidia.com/gpu = 8 · time-slicing replicas=4</text>
+          <text x="168" y="38" font-size="9" fill="#67e8f9">VPC: cust-gpu-shared-vpc · 192.168.20.0/24</text>
+          <g transform="translate(168, 41)">
+            <rect x="0"   y="0" width="18" height="14" rx="2" fill="#f59e0b"/>
+            <rect x="22"  y="0" width="18" height="14" rx="2" fill="#f59e0b"/>
+            <rect x="44"  y="0" width="18" height="14" rx="2" fill="#475569"/>
+            <rect x="66"  y="0" width="18" height="14" rx="2" fill="#475569"/>
+            <rect x="88"  y="0" width="18" height="14" rx="2" fill="#475569"/>
+            <rect x="110" y="0" width="18" height="14" rx="2" fill="#475569"/>
+            <rect x="132" y="0" width="18" height="14" rx="2" fill="#475569"/>
+            <rect x="154" y="0" width="18" height="14" rx="2" fill="#475569"/>
+          </g>
+          <text x="340" y="59" font-size="9" fill="#a3a3a3">2/8 slice · KH2</text>
         </g>
       </g>
 
@@ -325,7 +336,7 @@
       </g>
     </g>
 
-    <!-- NODE ctrl03 — SHARED GPU -->
+    <!-- NODE ctrl03 — CPU ONLY -->
     <g transform="translate(1200, 115)">
       <rect x="0" y="0" width="520" height="405" rx="16" fill="url(#nodeGrad)" stroke="#475569" stroke-width="2" filter="url(#softShadow)"/>
       <rect x="0" y="0" width="520" height="48" rx="16" fill="#1e293b"/>
@@ -333,8 +344,8 @@
       <text x="18" y="32" font-size="21">🖥️</text>
       <text x="50" y="31" font-size="17" font-weight="800" fill="#ffffff">ctrl03</text>
       <text x="112" y="31" font-size="12" fill="#94a3b8">10.10.200.13 · 8 vCPU · 16 GB</text>
-      <rect x="393" y="13" width="115" height="22" rx="11" fill="#f59e0b"/>
-      <text x="450" y="28" text-anchor="middle" font-size="10" font-weight="700" fill="#0a0e27">SHARED GPU</text>
+      <rect x="393" y="13" width="115" height="22" rx="11" fill="#3b82f6"/>
+      <text x="450" y="28" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">CPU ONLY</text>
 
       <g transform="translate(14, 62)">
         <rect x="0" y="0" width="492" height="72" rx="10" fill="url(#layerCP)" stroke="#7c3aed" stroke-width="1"/>
@@ -350,15 +361,15 @@
           <text x="186" y="27" font-size="9" fill="#a5b4fc">member 3/3</text>
           <rect x="316" y="0" width="164" height="35" rx="6" fill="#1e1b4b" stroke="#8b5cf6"/>
           <text x="324" y="22" font-size="13">🕸️</text>
-          <text x="344" y="14" font-size="10" font-weight="700" fill="#fff">Cilium CNI</text>
-          <text x="344" y="27" font-size="9" fill="#a5b4fc">eBPF · kube-proxy replace</text>
+          <text x="344" y="14" font-size="10" font-weight="700" fill="#fff">Kube-OVN</text>
+          <text x="344" y="27" font-size="9" fill="#a5b4fc">OVN · VPC routing</text>
         </g>
       </g>
 
       <!-- Compute — Shared GPU (time-slicing) -->
       <g transform="translate(14, 147)">
         <rect x="0" y="0" width="492" height="105" rx="10" fill="url(#layerCompute)" stroke="#10b981" stroke-width="1"/>
-        <text x="12" y="19" font-size="10" font-weight="700" fill="#6ee7b7" letter-spacing="1">COMPUTE · WORKLOADS (SHARED GPU POOL)</text>
+        <text x="12" y="19" font-size="10" font-weight="700" fill="#6ee7b7" letter-spacing="1">COMPUTE · WORKLOADS (CPU-ONLY POOL)</text>
         <g transform="translate(12, 27)">
           <rect x="0" y="0" width="150" height="65" rx="6" fill="#064e3b" stroke="#10b981"/>
           <text x="8" y="20" font-size="13">📦</text>
@@ -366,20 +377,11 @@
           <text x="8" y="40" font-size="13">💻</text>
           <text x="28" y="38" font-size="10" font-weight="700" fill="#fff">KubeVirt handler</text>
           <text x="28" y="52" font-size="9" fill="#a7f3d0">virt-launcher pods</text>
-          <rect x="158" y="0" width="322" height="65" rx="6" fill="#1a2e0a" stroke="#f59e0b"/>
-          <text x="168" y="18" font-size="11" font-weight="700" fill="#fff">gpu-pool=shared · 2×A100 ÷ 4 slices</text>
-          <text x="168" y="32" font-size="9" fill="#fde68a">nvidia.com/gpu = 8 · time-slicing replicas=4</text>
-          <g transform="translate(168, 41)">
-            <rect x="0"   y="0" width="18" height="14" rx="2" fill="#f59e0b"/>
-            <rect x="22"  y="0" width="18" height="14" rx="2" fill="#475569"/>
-            <rect x="44"  y="0" width="18" height="14" rx="2" fill="#475569"/>
-            <rect x="66"  y="0" width="18" height="14" rx="2" fill="#475569"/>
-            <rect x="88"  y="0" width="18" height="14" rx="2" fill="#475569"/>
-            <rect x="110" y="0" width="18" height="14" rx="2" fill="#475569"/>
-            <rect x="132" y="0" width="18" height="14" rx="2" fill="#475569"/>
-            <rect x="154" y="0" width="18" height="14" rx="2" fill="#475569"/>
-          </g>
-          <text x="340" y="59" font-size="9" fill="#a3a3a3">1/8 slice · KH3</text>
+          <rect x="158" y="0" width="322" height="65" rx="6" fill="#1e293b" stroke="#3b82f6"/>
+          <text x="168" y="18" font-size="11" font-weight="700" fill="#93c5fd">gpu-pool=cpu-only · No GPU</text>
+          <text x="168" y="31" font-size="9" fill="#94a3b8">Tenant: cust-cpu · VM Ubuntu + VM Windows</text>
+          <text x="168" y="44" font-size="9" fill="#67e8f9">VPC: cust-cpu-vpc · 192.168.30.0/24</text>
+          <text x="168" y="57" font-size="9" fill="#94a3b8">Ubuntu .30.x + Win2022 .30.y · EIP .73</text>
         </g>
       </g>
 
@@ -415,16 +417,16 @@
       <rect x="0" y="0" width="840" height="68" rx="12" fill="#0c1e3a" stroke="#06b6d4" stroke-width="1.5"/>
       <text x="18" y="28" font-size="19">🔌</text>
       <text x="46" y="25" font-size="14" font-weight="700" fill="#06b6d4">ens160 — Management / API / LB</text>
-      <text x="46" y="43" font-size="11" fill="#cbd5e1">10.10.200.0/24 · SSH · RKE2 API · Cilium L2 Pool: 200.60–99</text>
-      <text x="46" y="58" font-size="10" fill="#94a3b8">VIP .51  ·  Ceph .61  ·  KVM-Mgr .62  ·  KH1-cpu .66  ·  KH2-win .67  ·  KH3-gpu .68</text>
+      <text x="46" y="43" font-size="11" fill="#cbd5e1">10.10.200.0/24 · SSH · RKE2 API · EIP Pool: 200.60–99 · Provider Network</text>
+      <text x="46" y="58" font-size="10" fill="#94a3b8">VIP .51  ·  Ceph .61  ·  KVM-Mgr .62  ·  KH1-whole .71  ·  KH2-shared .72  ·  KH3-cpu .73</text>
     </g>
 
     <g transform="translate(920, 35)">
       <rect x="0" y="0" width="840" height="68" rx="12" fill="#1a0a2e" stroke="#a855f7" stroke-width="1.5"/>
       <text x="18" y="28" font-size="19">🔁</text>
       <text x="46" y="25" font-size="14" font-weight="700" fill="#c084fc">ens192 — Cluster / Storage</text>
-      <text x="46" y="43" font-size="11" fill="#cbd5e1">10.10.201.0/24 · Cilium VXLAN Pod-to-Pod · Ceph OSD replication</text>
-      <text x="46" y="58" font-size="11" fill="#cbd5e1">Pod CIDR 10.42.0.0/16 · Service CIDR 10.43.0.0/16 · DNS 10.43.0.10</text>
+      <text x="46" y="43" font-size="11" fill="#cbd5e1">10.10.201.0/24 · Kube-OVN Geneve Pod-to-Pod · Ceph OSD replication</text>
+      <text x="46" y="58" font-size="11" fill="#cbd5e1">Pod CIDR 10.42.0.0/16 · Svc CIDR 10.43.0.0/16 · Join CIDR 100.64.0.0/16</text>
     </g>
   </g>
 
@@ -437,7 +439,7 @@
     </g>
     <g transform="translate(400, 18)">
       <circle cx="0" cy="10" r="6" fill="#76b900"/>
-      <text x="14" y="14" font-size="12" font-weight="700" fill="#bef264">GPU: 2 whole (ctrl02) + 8 fractional (ctrl03 · 2 GPU × 4 slices)</text>
+      <text x="14" y="14" font-size="12" font-weight="700" fill="#bef264">GPU: 2 whole (ctrl01) + 8 fractional (ctrl02 · 2 GPU × 4 slices)</text>
     </g>
     <g transform="translate(850, 18)">
       <circle cx="0" cy="10" r="6" fill="#06b6d4"/>
@@ -445,7 +447,7 @@
     </g>
     <g transform="translate(1360, 18)">
       <circle cx="0" cy="10" r="6" fill="#f59e0b"/>
-      <text x="14" y="14" font-size="12" font-weight="700" fill="#fbbf24">Live-migrate VM · RBD RWX block</text>
+      <text x="14" y="14" font-size="12" font-weight="700" fill="#fbbf24">Live-migrate VM · RBD RWX · VPC isolation L3</text>
     </g>
   </g>
 </svg>
