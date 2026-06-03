@@ -19,11 +19,11 @@ GPU Cloud thế hệ mới không chỉ bán GPU — mà bán **compute linh ho�
 
 Mình build lab này để PoC toàn bộ business flow đó: 3 node Ubuntu 24.04 converged all-in-one, phân bổ theo tier GPU — **ctrl01** (whole GPU: container CUDA nguyên GPU KH1), **ctrl02** (fractional GPU: container CUDA 2 GPU chia nhỏ KH2), **ctrl03** (CPU-only: VM Ubuntu + VM Windows KH3). CNI mình chọn **Kube-OVN** thay Cilium vì cần VPC/Subnet/NAT-Gateway native per tenant — đúng model cloud provider thương mại, không phải chỉ NetworkPolicy filter trên flat network.
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/gpu-cloud-architecture.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/gpu-cloud-architecture.png)
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/00.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/00.png)
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/000.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/000.png)
 
 Stack:
 
@@ -423,7 +423,7 @@ kubectl get nodes -o wide
 # NotReady là expected — chưa có CNI
 ```
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/01.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/01.png)
 
 ### 3.2 Join ctrl02, ctrl03
 
@@ -474,7 +474,7 @@ kubectl get pods -n kube-system -l component=etcd -o wide
 # Phải thấy 3 etcd pod trên 3 node
 ```
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/02.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/02.png)
 
 ---
 
@@ -517,7 +517,7 @@ kubectl get subnet ovn-default
 # ovn-default   ovn        ovn-cluster   IPv4       10.16.0.0/16    false     false
 ```
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/03.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/03.png)
 
 **Provider Network** — bridge Kube-OVN vào ens160, tạo OVS bridge `br-provider` trên mỗi node:
 
@@ -830,7 +830,7 @@ kubectl -n rook-ceph get cephcluster
 kubectl -n rook-ceph get pods
 ```
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/04.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/04.png)
 
 ### 5.3 Tạo Pools + StorageClass (replication=3, RBD-RWX, CephFS)
 
@@ -1013,7 +1013,7 @@ kubectl -n rook-ceph exec deploy/rook-ceph-tools -- ceph osd status
 kubectl -n rook-ceph exec deploy/rook-ceph-tools -- ceph df
 ```
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/05.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/05.png)
 
 ### 5.5 Ceph Dashboard
 
@@ -1049,15 +1049,15 @@ Truy cập http://10.10.200.61:7000 với user `admin` và password vừa lấy.
 
 > Lưu ý: Ceph tự redirect sang IP của active MGR node — đây là behavior bình thường, dashboard vẫn hoạt động đầy đủ.
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/06.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/06.png)
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/07.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/07.png)
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/08.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/08.png)
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/09.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/09.png)
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/10.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/10.png)
 
 ---
 
@@ -1112,7 +1112,7 @@ kubectl get pods -n kubevirt
 # virt-operator-xxxxx          1/1 Running (x2)
 ```
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/11.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/11.png)
 
 Cài CDI:
 
@@ -1230,9 +1230,9 @@ Truy cập http://10.10.200.62 — admin có thể list VM, start/stop/restart, 
 
 > Lưu ý: KubeVirt Manager không có built-in authentication. Production nên đặt sau ingress với OAuth2 Proxy (e.g., oauth2-proxy + Keycloak) hoặc basic auth. Lab này chỉ expose trong VLAN nội bộ nên không cần.
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/12.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/12.png)
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/13.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/13.png)
 
 VM size catalog — admin dùng khi provision VM cho KH3 Ubuntu (lab.u1.small.1x2) và KH3 Windows (lab.win.4x6):
 
@@ -1325,7 +1325,7 @@ spec:
 EOF
 ```
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/14.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/14.png)
 
 ---
 
@@ -1365,7 +1365,7 @@ kubectl label node ctrl03 gpu-pool=cpu-only --overwrite
 kubectl get nodes -L gpu-pool,run.ai/simulated-gpu-node-pool
 ```
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/15.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/15.png)
 
 Bước 3: cài fake-gpu-operator với 2 node pool (whole + shared):
 
@@ -1383,7 +1383,7 @@ helm upgrade -i gpu-operator \
 kubectl -n gpu-operator get pods -o wide
 ```
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/16.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/16.png)
 
 Bước 4: configure time-slicing cho pool `shared`:
 
@@ -1416,7 +1416,7 @@ kubectl get nodes -o custom-columns=NAME:.metadata.name,POOL:.metadata.labels.ru
 # ctrl03   <none>   <none>
 ```
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/17.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/17.png)
 
 ---
 
@@ -1440,7 +1440,7 @@ kubectl get pods -n capsule-system
 # capsule-controller-manager-xxxxx   1/1 Running
 ```
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/18.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/18.png)
 
 ### 9.2 Tạo custom ClusterRole `tenant-owner`
 
@@ -1691,7 +1691,7 @@ kubectl get dv ubuntu-2204-golden -n vm-images -w
 # ubuntu-2204-golden   Succeeded   100.0%
 ```
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/19.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/19.png)
 
 ### 10.2 Windows Server 2022 — VM golden image
 
@@ -1849,25 +1849,25 @@ kubectl delete dv windows-2022-iso -n vm-images
 
 **Hoặc cài Windows qua Web Ui KubeVirt Manager**
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/20.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/20.png)
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/21.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/21.png)
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/22.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/22.png)
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/23.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/23.png)
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/24.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/24.png)
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/25.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/25.png)
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/26.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/26.png)
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/27.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/27.png)
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/28.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/28.png)
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/29.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/29.png)
 
 
 ### 10.3 Container template — CUDA workload
@@ -2066,7 +2066,7 @@ kubectl get clusterrolebinding | grep cust-gpu-whole
 # (empty)
 ```
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/30.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/30.png)
 
 #### 11.2.3 Deploy container CUDA nguyên GPU + verify
 
@@ -2195,9 +2195,9 @@ ssh root@10.10.200.71
 # root@cust-gpu-whole-app-xxxxx:~#
 ```
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/31.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/31.png)
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/32.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/32.png)
 
 ---
 
@@ -2289,7 +2289,7 @@ kubectl ko nbctl lr-route-list cust-gpu-shared-vpc
 ~/create-tenant.sh cust-gpu-shared shared 2 0
 ```
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/33.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/33.png)
 
 #### 11.3.3 Deploy container CUDA 2 GPU chia nhỏ + verify
 
@@ -2412,7 +2412,7 @@ kubectl get pod -n cust-gpu-shared ${POD} \
 # {"cpu": "2", "memory": "2Gi", "nvidia.com/gpu": "2"}
 ```
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/34.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/34.png)
 
 ---
 
@@ -2527,7 +2527,7 @@ kubectl get tenants.capsule.clastix.io cust-cpu
 # cust-cpu   Active   1                 1
 ```
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/35.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/35.png)
 
 #### 11.4.3 Provision VM Ubuntu + verify
 
@@ -2719,11 +2719,11 @@ Serial console (recover khi network mất):
 virtctl console cust-cpu-vm -n cust-cpu --kubeconfig=/root/kubeconfigs/cust-cpu.kubeconfig
 ```
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/36.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/36.png)
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/37.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/37.png)
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/38.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/38.png)
 
 #### 11.4.4 Provision VM Windows + verify
 
@@ -2882,13 +2882,13 @@ kubectl get vm,vmi -n cust-cpu -o wide
 mstsc /v:10.10.200.73
 ```
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/39.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/39.png)
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/40.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/40.png)
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/41.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/41.png)
 
-![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/42.png)
+![](/assets/img/2026-06-03-next-gen-gpu-cloud-rke2-kubevirt/42.png)
 
 ---
 
