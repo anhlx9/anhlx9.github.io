@@ -23,6 +23,8 @@ Mình build lab này để PoC toàn bộ business flow đó: 3 node Ubuntu 24.0
 
 ![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/00.png)
 
+![](/assets/img/2026-06-02-next-gen-gpu-cloud-rke2-kubevirt/000.png)
+
 Stack:
 
 1. **RKE2** — Kubernetes HA, CIS-hardened, etcd quorum 3 node
