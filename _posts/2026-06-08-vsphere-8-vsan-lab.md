@@ -15,6 +15,8 @@ feature_text: |
 
 ![](/assets/img/2026-06-08-vsphere-8-vsan-lab/topo.png)
 
+![](/assets/img/2026-06-08-vsphere-8-vsan-lab/000.png)
+
 ![](/assets/img/2026-06-08-vsphere-8-vsan-lab/00.png)
 
 
@@ -48,7 +50,7 @@ ISO sử dụng trong bài lab:
 | ESXi | `VMware-VMvisor-Installer-8.0U3j-25429389.x86_64.iso` |
 | vCenter | `VMware-VCSA-all-8.0.3-25413364.iso` |
 
-Mình setup 3 ESXi host, mỗi host có 3 disk: 1 disk cài OS ESXi và 2 disk dành cho vSAN (1 cache tier + 1 capacity tier). vCenter được deploy dưới dạng VCSA trên esxi01. 
+Mình setup 3 ESXi host, mỗi host có 4 disk: 1 disk cài OS ESXi và 3 disk dành cho vSAN (1 cache tier + 2 capacity tier). vCenter được deploy dưới dạng VCSA trên esxi01. 
 
 | Node | IP | vCPU | RAM | Disk |
 |------|----|------|-----|------|
