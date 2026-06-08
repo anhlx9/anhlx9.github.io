@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 520" width="860" height="520" font-family="'Segoe UI', Arial, sans-serif">
+
+  <!-- Background -->
+  <rect width="860" height="520" rx="14" fill="#f0f4f8"/>
+
+  <!-- ══ HEADER ══ -->
+  <rect x="20" y="16" width="820" height="52" rx="8" fill="#1565c0"/>
+  <text x="38" y="47" font-size="17" font-weight="700" fill="white" letter-spacing="0.3">VMware vSphere Lab — Hypervisor Cluster</text>
+
+  <!-- Version badge orange prominent -->
+  <rect x="574" y="22" width="252" height="38" rx="19" fill="#e65100"/>
+  <text x="700" y="37" font-size="10" font-weight="600" fill="#ffe0b2" text-anchor="middle">Current Latest — 06/2026</text>
+  <text x="700" y="52" font-size="12" font-weight="800" fill="white" text-anchor="middle">ESXi 8.0U3j · vCenter 8.0.3</text>
+
+  <!-- ══ vCENTER BOX ══ -->
+  <rect x="287" y="86" width="286" height="76" rx="8" fill="#fff8e1" stroke="#ef6c00" stroke-width="2.5"/>
+  <rect x="295" y="92" width="270" height="20" rx="4" fill="#ef6c00" opacity="0.18"/>
+  <text x="430" y="107" font-size="12" font-weight="700" fill="#bf360c" text-anchor="middle">vCenter Server Appliance 8.0.3</text>
+  <text x="430" y="124" font-size="11" fill="#5d4037" text-anchor="middle">10.10.200.50 · build 25413364</text>
+  <text x="430" y="141" font-size="10" fill="#8d6e63" text-anchor="middle">SSO: administrator@anhlx.local · domain: anhlx.local</text>
+
+  <!-- Connector lines vCenter → ESXi -->
+  <line x1="328" y1="162" x2="155" y2="190" stroke="#90a4ae" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <line x1="430" y1="162" x2="430" y2="190" stroke="#90a4ae" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <line x1="532" y1="162" x2="705" y2="190" stroke="#90a4ae" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <text x="224" y="173" font-size="9" fill="#ef6c00" font-weight="600" transform="rotate(-17,224,173)">VCSA VM</text>
+
+  <!-- ══ ESXI 01 ══ -->
+  <rect x="26" y="190" width="252" height="178" rx="8" fill="#e3f2fd" stroke="#1976d2" stroke-width="2"/>
+  <rect x="34" y="198" width="148" height="20" rx="10" fill="#1565c0"/>
+  <text x="108" y="212" font-size="10" font-weight="700" fill="white" text-anchor="middle">ESXi 8.0U3j · 25429389</text>
+  <rect x="190" y="198" width="80" height="20" rx="10" fill="#43a047"/>
+  <text x="230" y="212" font-size="9" font-weight="700" fill="white" text-anchor="middle">Dell A08</text>
+  <text x="152" y="235" font-size="14" font-weight="700" fill="#0d47a1" text-anchor="middle">esxi01</text>
+  <text x="152" y="249" font-size="9" fill="#e65100" text-anchor="middle" font-style="italic">★ vCenter VM deployed here</text>
+  <text x="152" y="263" font-size="11" fill="#1565c0" text-anchor="middle">10.10.200.11</text>
+  <text x="152" y="277" font-size="10" fill="#546e7a" text-anchor="middle">16 vCPU · 32 GB RAM</text>
+  <rect x="36" y="284" width="232" height="76" rx="4" fill="#bbdefb" opacity="0.7"/>
+  <text x="152" y="299" font-size="9" fill="#546e7a" text-anchor="middle">disk1: 1 TB (OS)</text>
+  <text x="152" y="313" font-size="9" fill="#0d47a1" text-anchor="middle">disk2: 100 GB (vSAN Cache)</text>
+  <text x="152" y="327" font-size="9" fill="#0d47a1" text-anchor="middle">disk3: 500 GB (vSAN Capacity)</text>
+  <text x="152" y="341" font-size="9" fill="#0d47a1" text-anchor="middle">disk4: 500 GB (vSAN Capacity)</text>
+
+  <!-- ══ ESXI 02 ══ -->
+  <rect x="304" y="190" width="252" height="178" rx="8" fill="#e3f2fd" stroke="#1976d2" stroke-width="2"/>
+  <rect x="312" y="198" width="148" height="20" rx="10" fill="#1565c0"/>
+  <text x="386" y="212" font-size="10" font-weight="700" fill="white" text-anchor="middle">ESXi 8.0U3j · 25429389</text>
+  <rect x="468" y="198" width="80" height="20" rx="10" fill="#43a047"/>
+  <text x="508" y="212" font-size="9" font-weight="700" fill="white" text-anchor="middle">Dell A08</text>
+  <text x="430" y="243" font-size="14" font-weight="700" fill="#0d47a1" text-anchor="middle">esxi02</text>
+  <text x="430" y="261" font-size="11" fill="#1565c0" text-anchor="middle">10.10.200.12</text>
+  <text x="430" y="275" font-size="10" fill="#546e7a" text-anchor="middle">16 vCPU · 32 GB RAM</text>
+  <rect x="314" y="284" width="232" height="76" rx="4" fill="#bbdefb" opacity="0.7"/>
+  <text x="430" y="299" font-size="9" fill="#546e7a" text-anchor="middle">disk1: 1 TB (OS)</text>
+  <text x="430" y="313" font-size="9" fill="#0d47a1" text-anchor="middle">disk2: 100 GB (vSAN Cache)</text>
+  <text x="430" y="327" font-size="9" fill="#0d47a1" text-anchor="middle">disk3: 500 GB (vSAN Capacity)</text>
+  <text x="430" y="341" font-size="9" fill="#0d47a1" text-anchor="middle">disk4: 500 GB (vSAN Capacity)</text>
+
+  <!-- ══ ESXI 03 ══ -->
+  <rect x="582" y="190" width="252" height="178" rx="8" fill="#e3f2fd" stroke="#1976d2" stroke-width="2"/>
+  <rect x="590" y="198" width="148" height="20" rx="10" fill="#1565c0"/>
+  <text x="664" y="212" font-size="10" font-weight="700" fill="white" text-anchor="middle">ESXi 8.0U3j · 25429389</text>
+  <rect x="746" y="198" width="80" height="20" rx="10" fill="#43a047"/>
+  <text x="786" y="212" font-size="9" font-weight="700" fill="white" text-anchor="middle">Dell A08</text>
+  <text x="708" y="243" font-size="14" font-weight="700" fill="#0d47a1" text-anchor="middle">esxi03</text>
+  <text x="708" y="261" font-size="11" fill="#1565c0" text-anchor="middle">10.10.200.13</text>
+  <text x="708" y="275" font-size="10" fill="#546e7a" text-anchor="middle">16 vCPU · 32 GB RAM</text>
+  <rect x="592" y="284" width="232" height="76" rx="4" fill="#bbdefb" opacity="0.7"/>
+  <text x="708" y="299" font-size="9" fill="#546e7a" text-anchor="middle">disk1: 1 TB (OS)</text>
+  <text x="708" y="313" font-size="9" fill="#0d47a1" text-anchor="middle">disk2: 100 GB (vSAN Cache)</text>
+  <text x="708" y="327" font-size="9" fill="#0d47a1" text-anchor="middle">disk3: 500 GB (vSAN Capacity)</text>
+  <text x="708" y="341" font-size="9" fill="#0d47a1" text-anchor="middle">disk4: 500 GB (vSAN Capacity)</text>
+
+  <!-- ══ vSAN LAYER ══ -->
+  <rect x="26" y="382" width="808" height="64" rx="8" fill="#e8f5e9" stroke="#388e3c" stroke-width="2"/>
+  <text x="430" y="405" font-size="13" font-weight="700" fill="#1b5e20" text-anchor="middle">vSAN 8 — Original Storage Architecture (OSA)</text>
+  <text x="430" y="423" font-size="10" fill="#2e7d32" text-anchor="middle">vsanDatastore · 1 cache + 2 capacity per host · FTT=1 · RAID-1 · ~1.5 TB usable</text>
+
+  <!-- ══ NETWORK LAYER ══ -->
+  <rect x="26" y="460" width="808" height="48" rx="8" fill="#ede7f6" stroke="#7b1fa2" stroke-width="2"/>
+  <text x="430" y="483" font-size="12" font-weight="700" fill="#4a148c" text-anchor="middle">VLAN 200 — 10.10.200.0/24</text>
+  <text x="430" y="498" font-size="10" fill="#7b1fa2" text-anchor="middle">GW: 10.10.200.1 · DNS: 8.8.8.8 · NTP: vn.pool.ntp.org</text>
+
+</svg>
