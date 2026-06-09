@@ -1,0 +1,183 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1020 660" style="max-width:100%;height:auto">
+  <defs>
+    <marker id="a-blue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#0284c7"/>
+    </marker>
+    <marker id="a-ora-e" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#d97706"/>
+    </marker>
+    <marker id="a-ora-s" markerWidth="8" markerHeight="6" refX="1" refY="3" orient="auto-start-reverse">
+      <polygon points="0 0,8 3,0 6" fill="#d97706"/>
+    </marker>
+    <marker id="a-grn" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#16a34a"/>
+    </marker>
+    <marker id="a-kpa" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#ea580c"/>
+    </marker>
+    <marker id="a-kpa-s" markerWidth="8" markerHeight="6" refX="1" refY="3" orient="auto-start-reverse">
+      <polygon points="0 0,8 3,0 6" fill="#ea580c"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1020" height="660" fill="#ffffff"/>
+
+  <!-- VLAN 200 zone -->
+  <rect x="60" y="108" width="900" height="522" rx="10"
+        fill="#f8faff" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="8,4"/>
+  <!-- VLAN label chip sits on top border -->
+  <rect x="72" y="100" width="218" height="16" fill="#ffffff" rx="3"/>
+  <text x="81" y="112" fill="#3b82f6" font-size="11" font-family="monospace" font-weight="bold">VLAN 200  ·  10.10.200.0/24</text>
+
+  <!-- ── Client ── -->
+  <rect x="435" y="14" width="150" height="44" rx="6"
+        fill="#f0f9ff" stroke="#0284c7" stroke-width="1.5"/>
+  <text x="510" y="33" text-anchor="middle" font-family="sans-serif"
+        font-size="12" font-weight="bold" fill="#0369a1">Client Browser</text>
+  <text x="510" y="50" text-anchor="middle" font-family="monospace"
+        font-size="10" fill="#0284c7">OWA / ECP</text>
+
+  <!-- Client → VIP split point -->
+  <line x1="510" y1="58" x2="510" y2="82" stroke="#0284c7" stroke-width="1.5"/>
+  <rect x="348" y="68" width="324" height="17" rx="3" fill="#fff7ed"/>
+  <text x="510" y="80" text-anchor="middle" font-family="monospace"
+        font-size="10" fill="#d97706">mail.anhlx.lab  ·  VIP 10.10.200.50</text>
+  <circle cx="510" cy="85" r="4" fill="#0284c7"/>
+
+  <!-- Split → LB01 and LB02 -->
+  <line x1="510" y1="85" x2="272" y2="113" stroke="#0284c7" stroke-width="1.5" marker-end="url(#a-blue)"/>
+  <line x1="510" y1="85" x2="748" y2="113" stroke="#0284c7" stroke-width="1.5" marker-end="url(#a-blue)"/>
+
+  <!-- ── LB01 MASTER ── -->
+  <rect x="152" y="115" width="240" height="90" rx="6"
+        fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="272" y="138" text-anchor="middle" font-family="sans-serif"
+        font-size="11" font-weight="bold" fill="#15803d">LB01 — HAProxy</text>
+  <text x="272" y="154" text-anchor="middle" font-family="monospace"
+        font-size="10" fill="#1e293b">10.10.200.31  ·  Ubuntu 24.04</text>
+  <text x="272" y="169" text-anchor="middle" font-family="monospace"
+        font-size="9" fill="#475569">mode tcp  ·  balance roundrobin</text>
+  <text x="272" y="185" text-anchor="middle" font-family="monospace"
+        font-size="9" font-weight="bold" fill="#ea580c">Keepalived MASTER  priority 100</text>
+
+  <!-- ── LB02 BACKUP ── -->
+  <rect x="628" y="115" width="240" height="90" rx="6"
+        fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="748" y="138" text-anchor="middle" font-family="sans-serif"
+        font-size="11" font-weight="bold" fill="#15803d">LB02 — HAProxy</text>
+  <text x="748" y="154" text-anchor="middle" font-family="monospace"
+        font-size="10" fill="#1e293b">10.10.200.32  ·  Ubuntu 24.04</text>
+  <text x="748" y="169" text-anchor="middle" font-family="monospace"
+        font-size="9" fill="#475569">mode tcp  ·  balance roundrobin</text>
+  <text x="748" y="185" text-anchor="middle" font-family="monospace"
+        font-size="9" font-weight="bold" fill="#ea580c">Keepalived BACKUP  priority 90</text>
+
+  <!-- Keepalived heartbeat LB01 ↔ LB02 -->
+  <line x1="392" y1="160" x2="628" y2="160"
+        stroke="#ea580c" stroke-width="1.5" stroke-dasharray="5,3"
+        marker-start="url(#a-kpa-s)" marker-end="url(#a-kpa)"/>
+  <rect x="432" y="148" width="156" height="16" rx="3" fill="#fff7ed"/>
+  <text x="510" y="159" text-anchor="middle" font-family="sans-serif"
+        font-size="9" fill="#ea580c">Keepalived heartbeat</text>
+
+  <!-- LB01 + LB02 → junction -->
+  <line x1="272" y1="205" x2="510" y2="250" stroke="#0284c7" stroke-width="1.2"/>
+  <line x1="748" y1="205" x2="510" y2="250" stroke="#0284c7" stroke-width="1.2"/>
+  <circle cx="510" cy="250" r="4" fill="#0284c7"/>
+  <rect x="458" y="256" width="104" height="14" rx="3" fill="#e0f2fe"/>
+  <text x="510" y="266" text-anchor="middle" font-family="sans-serif"
+        font-size="8" fill="#0284c7">forward pool</text>
+
+  <!-- Junction → EX01 and EX02 -->
+  <line x1="510" y1="250" x2="205" y2="280" stroke="#0284c7" stroke-width="1.5" marker-end="url(#a-blue)"/>
+  <line x1="510" y1="250" x2="815" y2="280" stroke="#0284c7" stroke-width="1.5" marker-end="url(#a-blue)"/>
+
+  <!-- ── EX01 ── -->
+  <rect x="88" y="282" width="230" height="102" rx="6"
+        fill="#faf5ff" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="203" y="303" text-anchor="middle" font-family="sans-serif"
+        font-size="13" font-weight="bold" fill="#6d28d9">EX01</text>
+  <text x="203" y="319" text-anchor="middle" font-family="monospace"
+        font-size="10" fill="#1e293b">10.10.200.21</text>
+  <text x="203" y="335" text-anchor="middle" font-family="monospace"
+        font-size="9" fill="#475569">MBDB01 Active  ·  MBDB02 Passive</text>
+  <text x="203" y="351" text-anchor="middle" font-family="monospace"
+        font-size="9" fill="#7c3aed">user1@anhlx.lab</text>
+  <text x="203" y="366" text-anchor="middle" font-family="monospace"
+        font-size="9" fill="#a78bfa">DAG member 1</text>
+
+  <!-- ── EX02 ── -->
+  <rect x="702" y="282" width="230" height="102" rx="6"
+        fill="#faf5ff" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="817" y="303" text-anchor="middle" font-family="sans-serif"
+        font-size="13" font-weight="bold" fill="#6d28d9">EX02</text>
+  <text x="817" y="319" text-anchor="middle" font-family="monospace"
+        font-size="10" fill="#1e293b">10.10.200.22</text>
+  <text x="817" y="335" text-anchor="middle" font-family="monospace"
+        font-size="9" fill="#475569">MBDB01 Passive  ·  MBDB02 Active</text>
+  <text x="817" y="351" text-anchor="middle" font-family="monospace"
+        font-size="9" fill="#7c3aed">user2@anhlx.lab</text>
+  <text x="817" y="366" text-anchor="middle" font-family="monospace"
+        font-size="9" fill="#a78bfa">DAG member 2</text>
+
+  <!-- DAG Replication double-headed arrow -->
+  <line x1="318" y1="333" x2="702" y2="333"
+        stroke="#d97706" stroke-width="2"
+        marker-start="url(#a-ora-s)" marker-end="url(#a-ora-e)"/>
+  <rect x="398" y="321" width="224" height="18" rx="4" fill="#fffbeb"/>
+  <text x="510" y="334" text-anchor="middle" font-family="sans-serif"
+        font-size="10" fill="#d97706">DAG Replication</text>
+
+  <!-- EX → DC vertical dashed -->
+  <line x1="203" y1="384" x2="203" y2="457"
+        stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="817" y1="384" x2="817" y2="457"
+        stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,3"/>
+
+  <!-- FSW Quorum: DAG midpoint → DC02 -->
+  <line x1="555" y1="343" x2="813" y2="457"
+        stroke="#16a34a" stroke-width="1.5" stroke-dasharray="6,3"
+        marker-end="url(#a-grn)"/>
+  <rect x="636" y="388" width="94" height="16" rx="3" fill="#f0fdf4"/>
+  <text x="684" y="399" text-anchor="middle" font-family="sans-serif"
+        font-size="9" fill="#16a34a">FSW Quorum</text>
+
+  <!-- ── DC01 ── -->
+  <rect x="88" y="459" width="230" height="90" rx="6"
+        fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="203" y="480" text-anchor="middle" font-family="sans-serif"
+        font-size="13" font-weight="bold" fill="#1d4ed8">DC01</text>
+  <text x="203" y="496" text-anchor="middle" font-family="monospace"
+        font-size="10" fill="#1e293b">10.10.200.11</text>
+  <text x="203" y="511" text-anchor="middle" font-family="monospace"
+        font-size="9" fill="#475569">Primary DC  ·  FSMO  ·  DNS</text>
+  <text x="203" y="526" text-anchor="middle" font-family="monospace"
+        font-size="9" fill="#475569">ADCS — Internal CA</text>
+
+  <!-- ── DC02 ── -->
+  <rect x="702" y="459" width="230" height="90" rx="6"
+        fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="817" y="480" text-anchor="middle" font-family="sans-serif"
+        font-size="13" font-weight="bold" fill="#1d4ed8">DC02</text>
+  <text x="817" y="496" text-anchor="middle" font-family="monospace"
+        font-size="10" fill="#1e293b">10.10.200.12</text>
+  <text x="817" y="511" text-anchor="middle" font-family="monospace"
+        font-size="9" fill="#475569">Secondary DC  ·  DNS</text>
+  <text x="817" y="526" text-anchor="middle" font-family="monospace"
+        font-size="9" font-weight="bold" fill="#16a34a">DAG FSW  ·  \\DC02\DAG-Witness</text>
+
+  <!-- AD Replication DC01 ↔ DC02 -->
+  <line x1="318" y1="504" x2="702" y2="504"
+        stroke="#3b82f6" stroke-width="1" stroke-dasharray="5,4"/>
+  <rect x="398" y="494" width="224" height="16" rx="3" fill="#eff6ff"/>
+  <text x="510" y="505" text-anchor="middle" font-family="sans-serif"
+        font-size="9" fill="#3b82f6">AD Replication</text>
+
+  <!-- Diagram title -->
+  <text x="510" y="590" text-anchor="middle" font-family="sans-serif"
+        font-size="16" font-weight="bold" fill="#c2410c"
+        letter-spacing="0.5">Exchange Server SE — DAG 2-Node On-Premises Lab</text>
+  <text x="510" y="612" text-anchor="middle" font-family="monospace"
+        font-size="10" fill="#64748b">anhlx.lab  ·  HAProxy + Keepalived  ·  MBDB01  ·  MBDB02</text>
+</svg>

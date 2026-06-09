@@ -13,13 +13,6 @@ feature_text: |
   ### Triển khai cụm hypervisor vSphere 8 với vSAN — bản mới nhất ESXi 8.0U3j & vCenter 8.0.3
 ---
 
-![](/assets/img/2026-06-08-vsphere-8-vsan-lab/topo.png)
-
-![](/assets/img/2026-06-08-vsphere-8-vsan-lab/000.png)
-
-![](/assets/img/2026-06-08-vsphere-8-vsan-lab/00.png)
-
-
 Kể từ khi Broadcom hoàn tất việc mua lại VMware cuối năm 2023, vSphere đã trải qua nhiều thay đổi về mô hình cấp phép và subscription, nhưng về mặt kỹ thuật vẫn tiếp tục phát triển mạnh. vSphere 8 mang theo vSAN 8 với kiến trúc ESA mới, cải tiến vSphere Lifecycle Manager, và giao diện vCenter được làm mới đáng kể.
 
 Một điểm thay đổi lớn về licensing: Broadcom bỏ hoàn toàn mô hình **perpetual license** và chuyển sang **subscription theo core** — không còn mua đứt như thời vSphere 7. Broadcom cũng gộp sản phẩm lại thành hai gói chính: **VMware vSphere Foundation (VVF)** giá ~$135/core/năm và **VMware Cloud Foundation (VCF)** giá ~$350/core/năm, với mức tối thiểu 16 core mỗi CPU socket. Mức tăng giá so với trước là 800–1.500% — không phải con số ước tính mà là mức đã được ghi nhận rộng rãi trong ngành. Điều này khiến nhiều doanh nghiệp vừa và nhỏ phải cân nhắc lại hoặc chuyển sang các nền tảng open-source như Proxmox VE. Với các tổ chức lớn đã đầu tư sâu vào hệ sinh thái VMware, vSphere 8 vẫn là lựa chọn ổn định — nhưng bài toán chi phí cần được tính kỹ hơn trước rất nhiều.
@@ -31,6 +24,12 @@ Bài lab này mình setup cụm 3 ESXi host, sử dụng các bản mới nhất
 - **Dell Custom Addon 8.0.3 A08** — build 24859861 (version mới nhất hiện tại dành cho server dòng Dell PowerEdge)
 
 > **Lưu ý:** Mình setup lab test với mục đích chia sẻ và nghiên cứu tính năng, không phải môi trường production — toàn bộ lab chạy trên ESXi 7.0.3 (nested virtualization).
+
+![](/assets/img/2026-06-08-vsphere-8-vsan-lab/topo.png)
+
+![](/assets/img/2026-06-08-vsphere-8-vsan-lab/000.png)
+
+![](/assets/img/2026-06-08-vsphere-8-vsan-lab/00.png)
 
 - [1. Lab Topology](#1-lab-topology)
 - [2. Cài đặt ESXi 8.0U3j](#2-cài-đặt-esxi-80u3j)
