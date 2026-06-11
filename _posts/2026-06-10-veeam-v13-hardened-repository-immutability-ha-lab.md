@@ -23,7 +23,7 @@ Mình dùng 2 phương pháp — Veeam Agent cài trực tiếp lên DC01 (giả
 
 ![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/00.png)
 
-![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/topo.svg)
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/topo.png)
 
 ## Mục lục
 - [Mục lục](#mục-lục)
@@ -57,9 +57,9 @@ Mình dùng 6 VM trên ESXi, tất cả trong VLAN 200 (`10.10.200.0/24`).
 
 ```
 Backup flow:
-  DC01 (Agent)   ──[BKP-DC01-Agent]────► VHR-01 ──[COPY-DC01-TO-VHR02]──► VHR-02
-  DC02 (VMware)  ──[BKP-DC02-VMware]──► VHR-01 ──[COPY-DC02-TO-VHR02]──► VHR-02
-  VBR-01 config  ──[Config Backup]──────────────────────────────────────► VHR-02
+  DC01 (Agent)   ──[BKP-DC01-Agent]────► VHR-01 ──┐
+  DC02 (VMware)  ──[BKP-DC02-VMware]──► VHR-01 ──┼──[COPY-ALL-TO-VHR02]──► VHR-02
+  VBR-01 config  ──[Config Backup]────────────────────────────────────────► VHR-02
 
   Immutability:  VHR-01 = 7 ngày  |  VHR-02 = 7 ngày  (độc lập)
 ```
@@ -323,12 +323,33 @@ Mô phỏng backup máy chủ vật lý hoặc VM không có quyền truy cập 
 | Computers | Add → chọn từ Protection Group `PG-Physical-Servers` → `dc01` |
 | Backup mode | **Entire computer** |
 | Storage → Repository | `VHR-01` |
-| Storage → Restore points | `7` |
+| Storage → Retention policy | `7` days |
+| Guest Processing | ✅ Enable application-aware processing · ☐ Guest file system indexing |
 | Schedule | Daily, 22:00 |
 
 > **Entire computer** tạo bare-metal restore point — có thể restore cả OS lẫn data kể cả khi thay phần cứng hoàn toàn. Với máy chủ vật lý production, đây là mode chuẩn.
 
-Chuột phải job → **Start** → verify **Success** và restore point xuất hiện trên VHR-01.
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/4.3png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/44.png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/45.png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/46.png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/47.png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/48.png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/49.png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/50.png)
+
+Chuột phải job → **Start** → verify **Success** và file backup xuất hiện trên VHR-01.
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/51.png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/52.png)
 
 **6.2 Job 2 — VMware Backup (DC02)**
 
@@ -341,13 +362,31 @@ Mô phỏng backup máy ảo production thông qua vCenter — Veeam dùng VMwar
 | Name | `BKP-DC02-VMware` |
 | Virtual Machines | Add VM → chọn `dc02` |
 | Storage → Repository | `VHR-01` |
-| Storage → Restore points | `7` |
-| Guest Processing | ✅ Enable application-aware processing · ✅ Enable guest file system indexing |
+| Storage → Retention policy | `7` days |
+| Guest Processing | ✅ Enable application-aware processing · ☐ Guest file system indexing |
 | Schedule | Daily, 22:00 |
 
-Ở bước **Guest Processing → Guest OS credentials**: add credentials của local admin hoặc domain admin trên dc02. Veeam dùng VSS để flush AD database trước khi snapshot — đảm bảo backup crash-consistent cho Active Directory.
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/53.png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/54.png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/55.png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/56.png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/57.png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/58.png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/59.png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/60.png)
 
 Sau khi tạo xong, chuột phải job → **Start** để chạy thử lần đầu. Verify status **Success** và có restore point trong **Home → Backups → Disk**.
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/61.png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/62.png)
 
 ---
 
@@ -355,33 +394,40 @@ Sau khi tạo xong, chuột phải job → **Start** để chạy thử lần đ
 
 Backup Copy Job sao chép dữ liệu từ VHR-01 sang VHR-02 ngay khi có restore point mới — đảm bảo VHR-02 luôn có bản sao độc lập mà không cần chờ schedule riêng.
 
-Mình tạo 2 copy jobs tương ứng với 2 source backup.
+Trong Veeam v13, một Backup Copy Job có thể gom nhiều source job vào cùng một wizard — mình chỉ cần tạo **1 copy job** cho cả 2 backup.
 
-**Copy Job 1 — Agent:**
-
-**Home** → **Backup Copy** → **Windows computer backup...**
+**Home** → **Backup Copy** → **Image-level backup...**
 
 | Field | Giá trị |
 |-------|---------|
-| Name | `COPY-DC01-TO-VHR02` |
-| Source | **From jobs** → chọn `BKP-DC01-Agent` |
+| Name | `COPY-ALL-TO-VHR02` |
+| Copy mode | ✅ **Immediate copy (mirroring)** |
+| Objects | Add → chọn `BKP-DC01-Agent` + `BKP-DC02-VMware` |
 | Target Repository | `VHR-02` |
-| Restore points to keep | `7` |
-| Copy mode | ✅ **Immediate copy** |
+| Retention policy | `7` days |
+| GFS (bắt buộc) | ✅ **Keep certain full backups** → `1 weekly` |
 
-**Copy Job 2 — VMware:**
+> **Lưu ý:** Backup Copy Job vào Hardened Repository (immutable) **bắt buộc bật GFS retention** — Veeam yêu cầu điều này để đảm bảo có ít nhất một full backup immutable trong chuỗi. Bỏ check GFS sẽ báo lỗi.
 
-**Home** → **Backup Copy** → **VMware vSphere backup...**
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/63.png)
 
-| Field | Giá trị |
-|-------|---------|
-| Name | `COPY-DC02-TO-VHR02` |
-| Source | **From jobs** → chọn `BKP-DC02-VMware` |
-| Target Repository | `VHR-02` |
-| Restore points to keep | `7` |
-| Copy mode (tab Schedule) | ✅ **Immediate copy** |
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/64.png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/65.png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/66.png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/67.png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/68.png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/69.png)
 
 Sau khi 2 primary backup jobs chạy xong, 2 copy jobs tự kích hoạt. Mình verify trong **Home → Backups → Disk (Copy)** thấy cả dc01 lẫn dc02 có restore point trên VHR-02.
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/70.png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/71.png)
 
 ---
 
@@ -401,12 +447,11 @@ Config Backup lưu toàn bộ cấu hình VBR — jobs, credentials, repository 
 
 Mình chọn VHR-02 thay vì VHR-01 vì kịch bản failover quan trọng nhất là cả vbr-01 lẫn VHR-01 cùng không đến được — lúc đó chỉ cần VHR-02 là đủ để rebuild toàn bộ.
 
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/72.png)
+
 Nhấn **Backup Now** để tạo bản config backup đầu tiên ngay lập tức. Mình SSH vào vhr-02 verify:
 
-```bash
-ls -lh /mnt/backup/VBRConfig/
-# Kết quả: file .bco mới nhất, kích thước vài MB
-```
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/73.png)
 
 ---
 
@@ -422,13 +467,21 @@ Trong vSphere Client → vhr-01 → **Power Off**.
 
 Chuột phải `BKP-DC02-VMware` → **Start**. Job báo lỗi không kết nối được VHR-01 — đây là expected behavior. Điểm quan trọng là bản sao trên VHR-02 từ lần chạy trước vẫn nguyên vẹn và đang trong trạng thái immutable.
 
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/74.png)
+
 **Bước 3 — Restore DC02 từ VHR-02:**
 
 **Home** → **Backups** → **Disk (Copy)** → tìm `dc02` → chuột phải → **Restore entire VM...**
 
-Veeam đọc trực tiếp từ VHR-02. Chọn restore point mới nhất → restore to original location → **Finish**.
+Veeam đọc trực tiếp từ VHR-02. Chọn restore point mới nhất → **Finish**.
 
 Verify dc02 boot lại bình thường, đăng nhập được vào domain.
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/75.png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/76.png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/76.png)
 
 ---
 
@@ -485,7 +538,7 @@ SSH vào vhr-02, copy file `.bco` mới nhất ra một Windows network share ho
 ls -lt /mnt/backup/VBRConfig/
 ```
 
-Copy file `.bco` sang `C:\Temp\` trên vbr-02 (qua shared folder hoặc SCP).
+Copy file `.bco` sang `E:\` trên vbr-02 (qua shared folder hoặc SCP).
 
 **Bước 3 — Cài Veeam trên VBR-02:**
 
@@ -499,7 +552,7 @@ Mở Veeam Console trên vbr-02 → **Main Menu (≡)** → **Configuration Rest
 
 | Bước wizard | Cấu hình |
 |-------------|---------|
-| Restore from | **Local path** → trỏ đến file `.bco` tại `C:\Temp\` |
+| Restore from | **Local path** → trỏ đến file `.bco` tại `E:\` |
 | Encryption passphrase | `<config-backup-passphrase>` |
 | Restore options | ✅ **Restore jobs in disabled state** |
 
@@ -507,9 +560,35 @@ Chọn **Restore jobs in disabled state** để review trước khi cho phép jo
 
 Nhấn **Restore** → Veeam import toàn bộ: repositories, credentials, jobs, schedules.
 
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/77.png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/78.png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/79.png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/80.png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/81.png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/82.png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/83.png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/84.png)
+
+
 **Bước 5 — Verify kết nối repository:**
 
 **Backup Infrastructure** → **Backup Repositories** → chuột phải **VHR-02** → **Rescan**. Repository kết nối thành công, Veeam đọc được danh sách backup files và restore points.
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/84.png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/85.png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/86.png)
+
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/87.png)
+
 
 **Bước 6 — Restore DC02 từ VBR-02:**
 
