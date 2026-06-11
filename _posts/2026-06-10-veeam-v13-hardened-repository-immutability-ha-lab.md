@@ -17,7 +17,7 @@ feature_text: |
   ### Veeam VBR 13, Linux Hardened Repository XFS, Immutability 7 ngày, backup VMware + Agent, test 3 kịch bản restore
 ---
 
-Backup là layer cuối cùng của defense — nhưng cũng là mục tiêu số một của kẻ tấn công: chiếm được backup server là xóa được tất cả bản sao và buộc nạn nhân trả tiền chuộc. Lab này mình dựng Veeam VBR 13 với 2 Linux Hardened Repository (XFS + Immutability 7 ngày) trên Ubuntu 24.04, backup primary vào VHR-01 rồi nhân bản ngay sang VHR-02 qua Backup Copy Job Immediate, sau đó test 3 kịch bản thực tế: mất storage, mất VM production, và mất chính Veeam server.
+Backup là layer cuối cùng của defense — và cũng là mục tiêu tấn công đầu tiên khi ransomware xâm nhập hệ thống. Nếu backup bị mã hóa hoặc xóa cùng với data production, khả năng phục hồi gần như bằng không. Immutability giải quyết đúng điểm này: bản backup được khóa trong một khoảng thời gian cố định. Lab này mình dựng Veeam VBR 13 với 2 Linux Hardened Repository (XFS + Immutability 7 ngày) trên Ubuntu 24.04, backup primary vào VHR-01 rồi nhân bản ngay sang VHR-02 qua Backup Copy Job Immediate, sau đó test 3 kịch bản thực tế: mất storage, mất VM production, và mất chính Veeam server.
 
 Mình dùng 2 phương pháp — Veeam Agent cài trực tiếp lên DC01 (giả lập máy chủ vật lý), VMware-native backup qua vCenter cho DC02 — cả 2 đều có bản sao trên 2 repo độc lập theo 3-2-1. Linux Hardened Repository hoàn toàn dùng được cho doanh nghiệp — chỉ cần VM thêm disk, không cần hạ tầng phụ; quy mô lớn mới cần nâng lên Ceph RadosGW hoặc MinIO với Object Lock — scale tốt hơn, tách khỏi filesystem và không bypass được kể cả bởi admin.
 
@@ -329,7 +329,7 @@ Mô phỏng backup máy chủ vật lý hoặc VM không có quyền truy cập 
 
 > **Entire computer** tạo bare-metal restore point — có thể restore cả OS lẫn data kể cả khi thay phần cứng hoàn toàn. Với máy chủ vật lý production, đây là mode chuẩn.
 
-![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/4.3png)
+![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/43.png)
 
 ![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/44.png)
 
@@ -423,7 +423,7 @@ Trong Veeam v13, một Backup Copy Job có thể gom nhiều source job vào cù
 
 ![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/69.png)
 
-Sau khi 2 primary backup jobs chạy xong, 2 copy jobs tự kích hoạt. Mình verify trong **Home → Backups → Disk (Copy)** thấy cả dc01 lẫn dc02 có restore point trên VHR-02.
+Sau khi 2 primary backup jobs chạy xong, copy job tự kích hoạt. Mình verify trong **Home → Backups → Disk (Copy)** thấy cả dc01 lẫn dc02 có restore point trên VHR-02.
 
 ![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/70.png)
 
@@ -478,8 +478,6 @@ Veeam đọc trực tiếp từ VHR-02. Chọn restore point mới nhất → **
 Verify dc02 boot lại bình thường, đăng nhập được vào domain.
 
 ![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/75.png)
-
-![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/76.png)
 
 ![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/76.png)
 
@@ -581,8 +579,6 @@ Nhấn **Restore** → Veeam import toàn bộ: repositories, credentials, jobs,
 
 **Backup Infrastructure** → **Backup Repositories** → chuột phải **VHR-02** → **Rescan**. Repository kết nối thành công, Veeam đọc được danh sách backup files và restore points.
 
-![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/84.png)
-
 ![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/85.png)
 
 ![](/assets/img/2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab/86.png)
@@ -602,4 +598,4 @@ Thực hiện tương tự Test 2. Verify DC02 boot lại, AD sync với DC01.
 
 ### Lời kết
 
-Lab này mình đi qua đủ vòng đời của một hạ tầng backup nghiêm túc — từ dựng Linux Hardened Repository với XFS Immutability, backup song song 2 phương pháp VMware và Agent, đến test cả 3 kịch bản thất bại: mất storage, mất VM, mất chính Veeam server. Điểm quan trọng nhất là Backup Copy Job (Immediate) kết hợp Config Backup lưu về repo độc lập VHR-02 tạo ra 2 lớp bảo vệ tách biệt hoàn toàn — kể cả khi site chính down, recovery vẫn thực hiện được từ một điểm duy nhất còn lại. Bước tiếp theo nếu muốn nâng thêm: thêm Capacity Tier đẩy cold backup lên S3-compatible object storage (MinIO) và bật Object Lock để có immutability layer thứ ba theo chuẩn 3-2-1-1-0.
+Lab này mình đi qua đủ vòng đời của một hạ tầng backup nghiêm túc — từ dựng Linux Hardened Repository với XFS Immutability, backup song song 2 phương pháp VMware và Agent, đến test cả 3 kịch bản thất bại: mất storage, mất VM, mất chính Veeam server. Điểm quan trọng nhất là Backup Copy Job (Immediate) kết hợp Config Backup lưu về repo độc lập VHR-02 tạo ra 2 lớp bảo vệ tách biệt hoàn toàn — kể cả khi site chính down, recovery vẫn thực hiện được từ một điểm duy nhất còn lại. Bước tiếp theo nếu muốn nâng thêm: thêm Capacity Tier đẩy cold backup lên S3-compatible object storage (Ceph) và bật Object Lock để có immutability layer thứ ba theo chuẩn 3-2-1-1-0.
