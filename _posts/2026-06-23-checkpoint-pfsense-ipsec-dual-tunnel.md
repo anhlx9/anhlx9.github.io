@@ -13,12 +13,12 @@ tags:
 - docker
 feature_image: "/assets/postbanner.jpg"
 feature_text: |
-  ### 2 IPsec tunnel từ pfSense CARP pair vào site khách hàng Check Point, Zabbix monitor qua SNMP
+  ### IPsec S2S VPN dual-tunnel giữa pfSense CARP HA và Check Point R81.20, Zabbix monitor qua SNMP
 ---
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/topo.svg)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/topo.svg)
 
-Khi cung cấp dịch vụ monitoring cho site khách hàng chạy Check Point, kết nối VPN là bắt buộc để Zabbix có thể với tới các thiết bị trong mạng nội bộ của khách. Bên mình dùng 2 pfSense chạy CARP HA, mỗi node dựng 1 IPsec tunnel riêng về Check Point gateway của khách — tổng cộng 2 tunnel song song đảm bảo không mất kết nối monitoring khi 1 pfSense node gặp sự cố. Lab mô phỏng giám sát với Zabbix 7.0 LTS chạy bằng Docker Compose trên Ubuntu 24.04, monitor Ubuntu VM phía khách hàng qua SNMP qua đường tunnel này.
+IPsec S2S VPN giữa pfSense và Check Point là bài toán phổ biến khi 2 site dùng thiết bị khác vendor. Lab này dựng thêm một lớp redundancy bằng CARP HA: 2 pfSense node, mỗi node tạo 1 IPsec tunnel riêng về Check Point gateway — tổng cộng 2 tunnel song song, đảm bảo kết nối không bị gián đoạn khi 1 node gặp sự cố. Trên đường tunnel này, mình triển khai Zabbix 7.0 LTS bằng Docker Compose để monitor Ubuntu VM phía Check Point qua SNMPv2c.
 
 | Component | Version |
 |-----------|---------|
@@ -45,9 +45,12 @@ Khi cung cấp dịch vụ monitoring cho site khách hàng chạy Check Point, 
   - [Docker Compose file](#docker-compose-file)
   - [Khởi động](#khởi-động)
   - [Truy cập Zabbix từ ngoài qua pfSense Port Forward](#truy-cập-zabbix-từ-ngoài-qua-pfsense-port-forward)
-- [10. Cấu hình SNMP trên Ubuntu site khách hàng](#10-cấu-hình-snmp-trên-ubuntu-site-khách-hàng)
+- [10. Cấu hình SNMP trên ubuntu-202-11](#10-cấu-hình-snmp-trên-ubuntu-202-11)
 - [11. Verify VPN tunnel](#11-verify-vpn-tunnel)
 - [12. Thêm host vào Zabbix và kiểm tra monitoring](#12-thêm-host-vào-zabbix-và-kiểm-tra-monitoring)
+  - [Bật SNMP trên Check Point Gaia](#bật-snmp-trên-check-point-gaia)
+  - [Bật SNMP trên pfSense](#bật-snmp-trên-pfsense)
+  - [Thêm Check Point và pfSense vào Zabbix](#thêm-check-point-và-pfsense-vào-zabbix)
 - [13. Test Failover: Node pfSense-1 down](#13-test-failover-node-pfsense-1-down)
   - [Chuẩn bị: xác nhận baseline](#chuẩn-bị-xác-nhận-baseline)
   - [Test — Tắt pfSense-1 hoàn toàn](#test--tắt-pfsense-1-hoàn-toàn)
@@ -55,9 +58,9 @@ Khi cung cấp dịch vụ monitoring cho site khách hàng chạy Check Point, 
 
 ### 1. Mô hình lab
 
-Mình chia lab thành 2 site rõ ràng:
+Mình chia lab thành 2 site:
 
-**Bên mình (Monitoring site):**
+**Site A — pfSense + Zabbix (VLAN 201):**
 
 | Node | WAN (VLAN 200) | LAN | Vai trò |
 |------|----------------|-----|---------|
@@ -66,7 +69,7 @@ Mình chia lab thành 2 site rõ ràng:
 | — | — | 10.10.201.50 | CARP LAN VIP |
 | zabbix-201-11 | — | 10.10.201.11/24 | Zabbix 7.0 (Docker) |
 
-**Site khách hàng (Check Point site):**
+**Site B — Check Point (VLAN 202):**
 
 | Node | WAN (VLAN 200) | LAN | Vai trò |
 |------|----------------|-----|---------|
@@ -77,11 +80,11 @@ Mình chia lab thành 2 site rõ ràng:
 
 ### 2. Chuẩn bị Objects trên SmartConsole
 
-Mình cấu hình phía Check Point trước — tạo các object đại diện cho 2 pfSense node bên mình.
+Mình cấu hình phía Check Point trước — tạo các object đại diện cho 2 pfSense node của Site A.
 
 **Tạo Interoperable Device cho pfSense-1:** Vào **Objects → New → Gateways and Servers → Interoperable Device...**:
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/01.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/01.png)
 
 Điền thông tin pfsense-1 và click **OK**:
 
@@ -90,13 +93,13 @@ Mình cấu hình phía Check Point trước — tạo các object đại diện
 | Name | pfsense-1 |
 | IPv4 Address | 10.10.200.11 |
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/02.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/02.png)
 
 Tương tự tạo **pfsense-2** với IP `10.10.200.12`.
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/03.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/03.png)
 
-**Tạo Network object cho LAN bên mình:** Vào **Objects → New → Network...**:
+**Tạo Network object cho LAN Site A:** Vào **Objects → New → Network...**:
 
 | Field | Value |
 |-------|-------|
@@ -104,9 +107,9 @@ Tương tự tạo **pfsense-2** với IP `10.10.200.12`.
 | Network address | 10.10.201.0 |
 | Net mask | 255.255.255.0 |
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/04.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/04.png)
 
-**Tạo Network object cho LAN khách hàng:**
+**Tạo Network object cho LAN Site B:**
 
 | Field | Value |
 |-------|-------|
@@ -114,7 +117,7 @@ Tương tự tạo **pfsense-2** với IP `10.10.200.12`.
 | Network address | 10.10.202.0 |
 | Net mask | 255.255.255.0 |
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/05.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/05.png)
 
 ### 3. Cấu hình VPN Domain
 
@@ -123,16 +126,16 @@ Mình khai báo VPN Domain cho từng object để Check Point biết subnet nà
 **Gateway Check Point** — double-click gateway → **Network Management** → **VPN Domain**:
 - Chọn **User defined** → chọn `net-customer-lan`
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/06.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/06.png)
 
 **Object pfsense-1** — double-click → **IPSec VPN** → **VPN Domain**:
 - Chọn **User defined** → chọn `net-monitoring-lan`
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/07.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/07.png)
 
 **Object pfsense-2** — tương tự, chọn `net-monitoring-lan` (cùng subnet vì CARP pair).
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/08.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/08.png)
 
 ### 4. Tạo Star VPN Community
 
@@ -140,7 +143,7 @@ Mình tạo Star Community với Check Point làm center, 2 pfSense là satellit
 
 Vào menu **New... → More → VPN Community → Star Community...**, đặt tên `VPN-Monitoring`.
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/09.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/09.png)
 
 **Tab Gateways:**
 - **Center Gateways:** thêm gateway `Checkpoint`
@@ -148,7 +151,7 @@ Vào menu **New... → More → VPN Community → Star Community...**, đặt t�
 
 Failover giữa 2 tunnel hoạt động tự nhiên: pfsense-1 và pfsense-2 cùng là satellite với VPN domain `net-monitoring-lan`. Check Point duy trì Permanent Tunnel đến cả 2 — khi tunnel pfsense-1 down, traffic tự động chuyển qua pfsense-2 mà không cần cấu hình thêm.
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/10.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/10.png)
 
 **Tab Encryption** — chọn **Custom encryption suite**, IKEv2 only:
 
@@ -169,14 +172,14 @@ IKE Security Association (Phase 2):
 | Use Perfect Forward Secrecy | ✓ |
 | Diffie-Hellman Group | Group 14 (2048 bit) |
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/11.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/11.png)
 
 **Tab Tunnel Management:**
 - **Set Permanent Tunnels:** ✓ → chọn **On specific tunnels in the community** → click **Select Gateways...** chọn `pfsense-1` và `pfsense-2`
 - **Tunnel down track:** Log
 - **VPN Tunnel Sharing:** One VPN tunnel per subnet pair
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/12.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/12.png)
 
 **Tab Shared Secret:**
 
@@ -187,22 +190,22 @@ IKE Security Association (Phase 2):
 
 > Password trong bài dùng `Zxc123!@#` — đổi lại trong môi trường thực tế.
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/13.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/13.png)
 
 Click **OK** để lưu community.
 
 ### 5. Security Policy
 
-Mình thêm rule cho phép traffic monitoring qua VPN. Vào **Security Policies → Policy → Add Rule**:
+Mình thêm rule cho phép traffic 2 chiều qua VPN. Vào **Security Policies → Policy → Add Rule**:
 
 | No. | Name | Source | Destination | VPN | Services & Applications | Action | Track |
 |-----|------|--------|-------------|-----|------------------------|--------|-------|
-| 2 | Monitoring-to-Customer | net-monitoring-lan | net-customer-lan | VPN-Monitoring | Any | Accept | Log |
-| 3 | Customer-to-Monitoring | net-customer-lan | net-monitoring-lan | VPN-Monitoring | Any | Accept | Log |
+| 2 | SiteA-to-SiteB | net-monitoring-lan | net-customer-lan | VPN-Monitoring | Any | Accept | Log |
+| 3 | SiteB-to-SiteA | net-customer-lan | net-monitoring-lan | VPN-Monitoring | Any | Accept | Log |
 
 **Publish** → **Install Policy** lên gateway Check Point.
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/14.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/14.png)
 
 ### 6. Cấu hình pfSense-1
 
@@ -233,7 +236,7 @@ Vào **VPN → IPsec → Tunnels → Add P1**:
 | Delay | 10 |
 | Max failures | 5 |
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/15.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/15.png)
 
 #### Phase 2
 
@@ -256,9 +259,9 @@ Click **Show Phase 2 Entries → Add P2**:
 
 **Save → Apply Changes.**
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/16.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/16.png)
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/17.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/17.png)
 
 #### Firewall Rules
 
@@ -272,17 +275,19 @@ Vào **Firewall → Rules → IPsec → Add**:
 | Protocol | Any |
 | Source | Network — `10.10.202.0/24` |
 | Destination | Network — `10.10.201.0/24` |
-| Description | Allow customer-LAN inbound |
+| Description | Allow Site-B inbound |
 
 **Save → Apply Changes.**
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/18.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/18.png)
 
 #### Kiểm tra trạng thái tunnel
 
 Vào **Status → IPsec → Overview** để xác nhận tunnel pfSense-1 lên thành công. Phase 1 hiện **Established** và Phase 2 hiện **Installed** là đã kết nối xong.
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/19.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/19.png)
+
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/20.png)
 
 ### 7. Cấu hình pfSense-2
 
@@ -290,24 +295,24 @@ pfSense-2 cấu hình hoàn toàn tương tự pfSense-1. WAN interface khác (`
 
 **Phase 1** — giống pfSense-1, Remote Gateway vẫn là `10.10.200.21`, Pre-Shared Key `Zxc123!@#`.
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/21.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/21.png)
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/22.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/22.png)
 
 **Phase 2** — giống pfSense-1: Local `10.10.201.0/24`, Remote `10.10.202.0/24`.
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/23.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/23.png)
 
 
 **Firewall Rules → IPsec** — thêm rule giống pfSense-1.
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/25.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/25.png)
 
 #### Kiểm tra 2 tunnel trên Check Point
 
 Mở **Check Point SmartView Monitor** → **Tunnels → Tunnels on Gateway → Checkpoint**. Cả 2 tunnel về pfsense-1 (`10.10.200.11`) và pfsense-2 (`10.10.200.12`) đều hiển thị **State: Up** là thành công.
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/24.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/24.png)
 
 ### 8. Cấu hình CARP VIP LAN trên pfSense
 
@@ -327,20 +332,20 @@ Mình tạo CARP VIP `10.10.201.50` trên LAN interface của cả 2 pfSense đ�
 
 **Save → Apply Changes.**
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/26.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/26.png)
 
 **Trên pfSense-2** — cấu hình giống hệt pfSense-1, chỉ khác **Skew: 100** để pfSense-2 là backup.
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/27.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/27.png)
 
 Sau khi apply trên cả 2 node, vào **Status → Dashboard → widget CARP Status** để xác nhận:
 
 - pfSense-1: `10.10.201.50` → **MASTER**
 - pfSense-2: `10.10.201.50` → **BACKUP**
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/28.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/28.png)
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/29.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/29.png)
 
 Trên VM `zabbix-201-11`, đặt default gateway là `10.10.201.50`:
 
@@ -452,17 +457,17 @@ Vào **Firewall → NAT → Port Forward → Add**:
 
 **Save → Apply Changes.**
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/30.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/30.png)
 
 Truy cập Zabbix tại `http://10.10.200.11:8080`.
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/31.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/31.png)
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/32.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/32.png)
 
-### 10. Cấu hình SNMP trên Ubuntu site khách hàng
+### 10. Cấu hình SNMP trên ubuntu-202-11
 
-Mình cài và cấu hình `snmpd` trên `ubuntu-202-11` (`10.10.202.11`) để Zabbix có thể poll SNMP.
+Mình cài và cấu hình `snmpd` trên `ubuntu-202-11` (`10.10.202.11`) để Zabbix poll SNMP qua tunnel.
 
 ```bash
 apt update && apt install -y snmpd snmp
@@ -521,7 +526,7 @@ snmpwalk -v2c -c public 10.10.202.11 1.3.6.1.2.1.4.20
 
 Nhận được sysName và danh sách IP interface trả về là tunnel hoạt động và SNMP reachable qua đường VPN.
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/33.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/33.png)
 
 ### 12. Thêm host vào Zabbix và kiểm tra monitoring
 
@@ -532,7 +537,7 @@ Mình vào Zabbix web (`http://10.10.201.11`) → **Configuration → Hosts → 
 | Field | Value |
 |-------|-------|
 | Host name | ubuntu-202-11 |
-| Visible name | Ubuntu Customer Site |
+| Visible name | Ubuntu Site B |
 | Groups | Linux servers |
 
 **Tab Interfaces — Add → SNMP:**
@@ -549,14 +554,85 @@ Mình vào Zabbix web (`http://10.10.201.11`) → **Configuration → Hosts → 
 
 Click **Add** để lưu host.
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/34.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/34.png)
 
 Sau 1–2 phút, mình vào **Monitoring → Latest data** → filter host `ubuntu-202-11`. Các item như CPU utilization, memory, network interfaces sẽ bắt đầu có data.
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/35.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/35.png)
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/36.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/36.png)
 
+#### Bật SNMP trên Check Point Gaia
+
+Mình vào Gaia Portal (`https://10.10.200.21`) → **System Management → SNMP**.
+
+**SNMP General Settings** — tick **Enable SNMP Agent**, Version giữ nguyên **v1 / v2 / v3 (any)**, click **Apply**.
+
+**Agent Interfaces** — giữ tất cả interface được chọn (eth0, eth1, lo).
+
+**V1 / V2 Settings** — điền `public` vào **Read Only Community String**, click **Apply**.
+
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/36a.png)
+
+#### Bật SNMP trên pfSense
+
+Thực hiện trên **cả 2 node** pfSense-1 và pfSense-2. Vào **Services → SNMP**:
+
+**SNMP Daemon** — tick **Enable the SNMP Daemon and its controls**.
+
+**SNMP Daemon Settings:**
+
+| Field | Value |
+|-------|-------|
+| Polling Port | 161 |
+| Read Community String | public |
+
+**SNMP Modules** — giữ nguyên mặc định (MibII, Netgraph, PF, Host Resources, UCD, Regex đều được chọn).
+
+**Interface Binding:**
+
+| Field | Value |
+|-------|-------|
+| Internet Protocol | IPv4 |
+| Bind Interfaces | LAN |
+
+Click **Save**.
+
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/36b.png)
+
+#### Thêm Check Point và pfSense vào Zabbix
+
+Mình dùng toàn bộ **LAN IP** để tránh phụ thuộc vào WAN routing: pfSense-1/2 reach trực tiếp qua LAN 201, Check Point reach qua IPsec tunnel (LAN 202). Thêm lần lượt 3 host vào **Configuration → Hosts → Create host**.
+
+**Host: checkpoint** — dùng IP LAN `10.10.202.254` (qua IPsec tunnel):
+
+| Tab | Field | Value |
+|-----|-------|-------|
+| Host | Host name | checkpoint |
+| Host | Groups | Applications |
+| Interfaces | IP address | 10.10.202.254 |
+| Interfaces | Port | 161 |
+| Interfaces | SNMP version | SNMPv2 |
+| Interfaces | SNMP community | public |
+| Templates | — | Check Point Next Generation Firewall by SNMP |
+
+**Host: pfsense-1** — dùng IP LAN `10.10.201.254`:
+
+| Tab | Field | Value |
+|-----|-------|-------|
+| Host | Host name | pfsense-1 |
+| Host | Groups | Applications |
+| Interfaces | IP address | 10.10.201.254 |
+| Interfaces | Port | 161 |
+| Interfaces | SNMP version | SNMPv2 |
+| Interfaces | SNMP community | public |
+| Templates | — | PFSense by SNMP |
+
+**Host: pfsense-2** — tương tự pfsense-1, IP `10.10.201.253`.
+
+Click **Add** cho từng host. Sau 1–2 phút, mình vào **Monitoring → Latest data** → filter từng host để xác nhận data đang về.
+
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/36c.png)
 
 ### 13. Test Failover: Node pfSense-1 down
 
@@ -566,11 +642,11 @@ Thiết kế này failover theo **cấp node**: CARP VIP gắn với pfSense nod
 
 Mình xác nhận trạng thái ban đầu trước khi test:
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/37.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/37.png)
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/38.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/38.png)
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/39.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/39.png)
 
 ```bash
 # Từ zabbix-201-11 — xác nhận SNMP hoạt động trước khi test
@@ -586,11 +662,11 @@ ping -c 4 10.10.202.11
 
 2. **CARP failover** — trên **pfSense-2** → **Status → Dashboard → widget CARP Status**: sau ~5 giây, entry `10.10.201.50` chuyển từ **BACKUP** sang **MASTER**.
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/40.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/40.png)
 
-1. **Tunnel failover** — trên **Check Point SmartView Monitor** → Tunnel-2 (`10.10.200.12`) vẫn **Up**.
+3. **Tunnel failover** — trên **Check Point SmartView Monitor** → Tunnel-2 (`10.10.200.12`) vẫn **Up**.
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/41.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/41.png)
 
 
 4. Kiểm tra SNMP vẫn hoạt động — `zabbix-201-11` lúc này đi qua VIP `10.10.201.50` (pfSense-2 MASTER) → Tunnel-2 → `ubuntu-202-11`:
@@ -605,10 +681,10 @@ snmpget -v2c -c public 10.10.202.11 SNMPv2-MIB::sysName.0
 
 > **Lưu ý Port Forward**: Khi pfSense-1 down, URL `http://10.10.200.11:8080` không còn hoạt động. Nếu cần admin access vào Zabbix web khi pfSense-1 down, thêm cùng rule Port Forward trên pfSense-2 (**Firewall → NAT → Port Forward**, WAN `10.10.200.12:8080` → `10.10.201.11:80`).
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/42.png)
+![](../assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/42.png)
 
 6. **Khôi phục**: bật lại pfSense-1 → pfSense-1 giành lại **MASTER** (Skew 0), Tunnel-1 renegotiate tự động.
 
 ### Lời kết
 
-Mình đã hoàn thành toàn bộ stack: 2 IPsec tunnel từ pfSense CARP pair vào site khách hàng Check Point, Zabbix 7.0 LTS trên Docker Compose poll SNMP qua tunnel về Ubuntu VM phía khách, và kiểm tra failover cả tunnel lẫn CARP. Khi pfSense-1 down, VIP chuyển sang pfSense-2 trong vài giây và Check Point tự định tuyến qua Tunnel-2 — Zabbix không mất data. Mô hình này phù hợp thực tế khi cần monitoring nhiều site khách hàng — mỗi khách thêm 1–2 tunnel mới vào Star Community, không cần thay đổi gì ở Zabbix server. Bước tiếp theo có thể mở rộng thêm SNMP trap để nhận alert chủ động từ phía khách thay vì chỉ poll.
+Trọng tâm của lab là cặp pfSense CARP: mỗi node dựng 1 tunnel riêng về Check Point, nên khi pfSense-1 down hoàn toàn, CARP VIP tự chuyển sang pfSense-2 và Tunnel-2 vẫn đang sẵn sàng — Zabbix không mất kết nối. Check Point chỉ đóng vai remote end, không cần can thiệp gì. Mô hình dễ mở rộng: thêm site mới chỉ cần tạo thêm 2 tunnel (1 từ mỗi pfSense), Zabbix server không thay đổi. 
