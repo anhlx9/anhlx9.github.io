@@ -1,0 +1,173 @@
+<svg width="980" height="600" viewBox="0 0 980 600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="m-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#10b981"/>
+    </marker>
+    <marker id="m-green-r" markerWidth="10" markerHeight="7" refX="1" refY="3.5" orient="auto-start-reverse">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#10b981"/>
+    </marker>
+    <marker id="m-amber" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="m-amber-r" markerWidth="10" markerHeight="7" refX="1" refY="3.5" orient="auto-start-reverse">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="m-blue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#60a5fa"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="980" height="600" fill="#111827"/>
+
+  <!-- Title -->
+  <text x="490" y="33" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="15" font-weight="bold" fill="#f9fafb">
+    IPsec S2S VPN — Check Point R81.20 + pfSense CARP Dual Tunnel Redundancy
+  </text>
+
+  <!-- ===== MONITORING SITE ===== -->
+  <rect x="15" y="48" width="283" height="510" rx="10" fill="#0d1b2e" stroke="#1d4ed8" stroke-width="1.5"/>
+  <rect x="15" y="48" width="283" height="28" rx="10" fill="#1d4ed8" opacity="0.45"/>
+  <text x="156" y="68" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="12" font-weight="bold" fill="#bfdbfe">◉  MONITORING SITE</text>
+  <text x="156" y="87" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="10" fill="#4b5563">VLAN 201 — 10.10.201.0/24</text>
+
+  <!-- pfSense-1 -->
+  <rect x="33" y="100" width="248" height="90" rx="7" fill="#0f1e35" stroke="#2563eb" stroke-width="1.5"/>
+  <rect x="47" y="115" width="36" height="28" rx="4" fill="#1d4ed8"/>
+  <text x="65" y="128" text-anchor="middle" font-family="monospace" font-size="8" fill="#bfdbfe">&#9638; FW</text>
+  <line x1="47" y1="133" x2="83" y2="133" stroke="#93c5fd" stroke-width="0.5" opacity="0.6"/>
+  <text x="65" y="143" text-anchor="middle" font-family="monospace" font-size="8" fill="#93c5fd">PF</text>
+  <text x="176" y="120" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="13" font-weight="bold" fill="#93c5fd">pfSense-1</text>
+  <text x="176" y="139" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="10" fill="#6b7280">WAN: 10.10.200.11</text>
+  <text x="176" y="154" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="10" fill="#6b7280">LAN: 10.10.201.254/24</text>
+  <rect x="116" y="163" width="96" height="18" rx="9" fill="#1d4ed8"/>
+  <text x="164" y="175" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="9" font-weight="bold" fill="#bfdbfe">&#9733; CARP MASTER</text>
+
+  <!-- CARP HA connector -->
+  <line x1="156" y1="190" x2="156" y2="213" stroke="#374151" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <rect x="88" y="208" width="137" height="22" rx="5" fill="#1f2937" stroke="#374151" stroke-width="1"/>
+  <text x="156" y="223" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="9" fill="#9ca3af">&#8645;  CARP HA Failover</text>
+  <line x1="156" y1="230" x2="156" y2="250" stroke="#374151" stroke-width="1.5" stroke-dasharray="3,2"/>
+
+  <!-- pfSense-2 -->
+  <rect x="33" y="250" width="248" height="90" rx="7" fill="#0f1e35" stroke="#2563eb" stroke-width="1.5" stroke-dasharray="7,3"/>
+  <rect x="47" y="265" width="36" height="28" rx="4" fill="#1d4ed8" opacity="0.65"/>
+  <text x="65" y="278" text-anchor="middle" font-family="monospace" font-size="8" fill="#bfdbfe">&#9638; FW</text>
+  <line x1="47" y1="283" x2="83" y2="283" stroke="#93c5fd" stroke-width="0.5" opacity="0.6"/>
+  <text x="65" y="293" text-anchor="middle" font-family="monospace" font-size="8" fill="#93c5fd">PF</text>
+  <text x="176" y="270" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="13" font-weight="bold" fill="#93c5fd">pfSense-2</text>
+  <text x="176" y="289" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="10" fill="#6b7280">WAN: 10.10.200.12</text>
+  <text x="176" y="304" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="10" fill="#6b7280">LAN: 10.10.201.253/24</text>
+  <rect x="112" y="313" width="104" height="18" rx="9" fill="#374151"/>
+  <text x="164" y="325" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="9" fill="#9ca3af">&#9675; CARP BACKUP</text>
+
+  <!-- CARP VIP -->
+  <line x1="156" y1="353" x2="156" y2="370" stroke="#374151" stroke-width="1" stroke-dasharray="2,2"/>
+  <rect x="78" y="358" width="157" height="30" rx="7" fill="#1f2937" stroke="#374151" stroke-width="1" stroke-dasharray="4,2"/>
+  <text x="156" y="370" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="9" fill="#6b7280">VIP (LAN)</text>
+  <text x="156" y="383" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="11" font-weight="bold" fill="#9ca3af">10.10.201.50</text>
+  <line x1="156" y1="388" x2="156" y2="405" stroke="#374151" stroke-width="1" stroke-dasharray="2,2"/>
+
+  <!-- Zabbix Server -->
+  <rect x="38" y="405" width="242" height="92" rx="7" fill="#062814" stroke="#10b981" stroke-width="1.5"/>
+  <rect x="52" y="420" width="36" height="30" rx="3" fill="#065f46"/>
+  <rect x="55" y="424" width="30" height="3" rx="1" fill="#6ee7b7"/>
+  <rect x="55" y="430" width="30" height="3" rx="1" fill="#6ee7b7" opacity="0.7"/>
+  <rect x="55" y="436" width="30" height="3" rx="1" fill="#6ee7b7" opacity="0.4"/>
+  <text x="172" y="427" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="12" font-weight="bold" fill="#6ee7b7">zabbix-201-11</text>
+  <text x="172" y="445" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="10" fill="#6b7280">10.10.201.11/24</text>
+  <text x="172" y="460" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="10" fill="#6b7280">Zabbix 7.0 LTS (Docker)</text>
+  <rect x="128" y="466" width="88" height="18" rx="9" fill="#b91c1c" opacity="0.9"/>
+  <text x="172" y="478" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="9" font-weight="bold" fill="#fecaca">Z  ZABBIX</text>
+
+  <!-- ===== VLAN 200 ZONE ===== -->
+  <rect x="301" y="48" width="374" height="510" fill="#090d18"/>
+  <text x="488" y="69" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="10" font-weight="bold" fill="#374151">&#8212; &#8212;  VLAN 200 / WAN  &#8212; &#8212;</text>
+  <text x="488" y="84" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="9" fill="#1f2937">10.10.200.0/24</text>
+
+  <!-- Cloud (fill-only ellipses, no internal borders) -->
+  <ellipse cx="488" cy="295" rx="92" ry="44" fill="#161d2e"/>
+  <ellipse cx="425" cy="275" rx="56" ry="40" fill="#161d2e"/>
+  <ellipse cx="557" cy="272" rx="56" ry="38" fill="#161d2e"/>
+  <ellipse cx="488" cy="256" rx="65" ry="31" fill="#161d2e"/>
+  <rect x="372" y="294" width="232" height="44" fill="#161d2e"/>
+  <text x="488" y="288" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="12" fill="#4b5563">&#9729; Internet</text>
+  <text x="488" y="305" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="10" fill="#374151">VLAN 200</text>
+
+  <!-- ===== IPsec TUNNELS ===== -->
+
+  <!-- Tunnel 1: pfSense-1 WAN (301,147) → Check Point (675,167) -->
+  <path d="M 301,147 C 440,105 548,158 675,167"
+        fill="none" stroke="#10b981" stroke-width="3" stroke-dasharray="11,5"
+        marker-start="url(#m-green-r)" marker-end="url(#m-green)"/>
+  <!-- Tunnel 1 label box -->
+  <rect x="358" y="100" width="262" height="36" rx="6" fill="#062814" stroke="#10b981" stroke-width="0.8" opacity="0.95"/>
+  <text x="489" y="115" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="10" font-weight="bold" fill="#10b981">&#9654; Tunnel-1  IPsec IKEv2</text>
+  <text x="489" y="130" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="9" fill="#6ee7b7">AES-256 | SHA256 | DH Group 14 | PSK</text>
+
+  <!-- Tunnel 2: pfSense-2 WAN (301,297) → Check Point (675,197) -->
+  <path d="M 301,297 C 440,342 548,228 675,197"
+        fill="none" stroke="#f59e0b" stroke-width="3" stroke-dasharray="11,5"
+        marker-start="url(#m-amber-r)" marker-end="url(#m-amber)"/>
+  <!-- Tunnel 2 label box -->
+  <rect x="348" y="358" width="280" height="36" rx="6" fill="#1c1000" stroke="#f59e0b" stroke-width="0.8" opacity="0.95"/>
+  <text x="488" y="373" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="10" font-weight="bold" fill="#f59e0b">&#9654; Tunnel-2  IPsec IKEv2</text>
+  <text x="488" y="388" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="9" fill="#fcd34d">AES-256 | SHA256 | DH Group 14 | PSK</text>
+
+  <!-- SNMP poll arrow (Zabbix → ubuntu-202-11) -->
+  <path d="M 280,452 C 432,448 573,443 700,440"
+        fill="none" stroke="#60a5fa" stroke-width="1.5" stroke-dasharray="5,4"
+        marker-end="url(#m-blue)"/>
+  <text x="488" y="468" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="9" fill="#60a5fa">SNMP poll — UDP/161 — via IPsec tunnel</text>
+
+  <!-- ===== CUSTOMER SITE ===== -->
+  <rect x="675" y="48" width="290" height="510" rx="10" fill="#1a0505" stroke="#7f1d1d" stroke-width="1.5"/>
+  <rect x="675" y="48" width="290" height="28" rx="10" fill="#991b1b" opacity="0.45"/>
+  <text x="820" y="68" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="12" font-weight="bold" fill="#fca5a5">◉  CUSTOMER SITE</text>
+  <text x="820" y="87" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="10" fill="#4b5563">VLAN 202 — 10.10.202.0/24</text>
+
+  <!-- Check Point Gateway -->
+  <rect x="692" y="100" width="258" height="140" rx="7" fill="#1f0505" stroke="#dc2626" stroke-width="2"/>
+  <rect x="706" y="116" width="40" height="36" rx="5" fill="#991b1b"/>
+  <text x="726" y="132" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="11" font-weight="bold" fill="white">CP</text>
+  <line x1="708" y1="138" x2="744" y2="138" stroke="#fca5a5" stroke-width="0.5" opacity="0.5"/>
+  <text x="726" y="148" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="8" fill="#fca5a5">GW</text>
+  <text x="835" y="122" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="13" font-weight="bold" fill="#fca5a5">Check Point R81.20</text>
+  <text x="835" y="141" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="10" fill="#6b7280">WAN: 10.10.200.21</text>
+  <text x="835" y="156" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="10" fill="#6b7280">LAN: 10.10.202.254/24</text>
+  <rect x="778" y="162" width="62" height="18" rx="9" fill="#7f1d1d"/>
+  <text x="809" y="174" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="9" fill="#fca5a5">Gaia OS</text>
+  <!-- VPN Community info -->
+  <rect x="700" y="186" width="242" height="46" rx="5" fill="#0f0505" stroke="#3d1515" stroke-width="1"/>
+  <text x="821" y="200" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="9" font-weight="bold" fill="#9ca3af">&#9733; VPN Community: VPN-Monitoring</text>
+  <text x="821" y="214" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="9" fill="#6b7280">Center GW | Permanent Tunnels</text>
+  <text x="821" y="226" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="9" fill="#6b7280">Satellite: pfsense-1, pfsense-2</text>
+
+  <!-- VLAN 202 internal line -->
+  <line x1="821" y1="240" x2="821" y2="397" stroke="#374151" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="833" y="322" font-family="'Segoe UI',Arial,sans-serif" font-size="9" fill="#4b5563">VLAN 202</text>
+
+  <!-- ubuntu-202-11 -->
+  <rect x="700" y="397" width="240" height="92" rx="7" fill="#062814" stroke="#10b981" stroke-width="1.5"/>
+  <rect x="714" y="412" width="36" height="30" rx="3" fill="#065f46"/>
+  <rect x="717" y="416" width="30" height="3" rx="1" fill="#6ee7b7"/>
+  <rect x="717" y="422" width="30" height="3" rx="1" fill="#6ee7b7" opacity="0.7"/>
+  <rect x="717" y="428" width="30" height="3" rx="1" fill="#6ee7b7" opacity="0.4"/>
+  <text x="835" y="419" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="12" font-weight="bold" fill="#6ee7b7">ubuntu-202-11</text>
+  <text x="835" y="437" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="10" fill="#6b7280">10.10.202.11/24</text>
+  <text x="835" y="452" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="10" fill="#6b7280">SNMP Target</text>
+  <rect x="779" y="458" width="88" height="18" rx="9" fill="#1d4ed8" opacity="0.85"/>
+  <text x="823" y="470" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="9" font-weight="bold" fill="#bfdbfe">SNMPv2c : UDP/161</text>
+
+  <!-- ===== LEGEND ===== -->
+  <rect x="15" y="565" width="950" height="1" fill="#1f2937"/>
+  <line x1="88" y1="582" x2="128" y2="582" stroke="#10b981" stroke-width="3" stroke-dasharray="8,4"/>
+  <text x="133" y="586" font-family="'Segoe UI',Arial,sans-serif" font-size="9" fill="#9ca3af">Tunnel-1 (pfSense-1)</text>
+  <line x1="278" y1="582" x2="318" y2="582" stroke="#f59e0b" stroke-width="3" stroke-dasharray="8,4"/>
+  <text x="323" y="586" font-family="'Segoe UI',Arial,sans-serif" font-size="9" fill="#9ca3af">Tunnel-2 (pfSense-2)</text>
+  <line x1="468" y1="582" x2="508" y2="582" stroke="#60a5fa" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <text x="513" y="586" font-family="'Segoe UI',Arial,sans-serif" font-size="9" fill="#9ca3af">SNMP Monitoring</text>
+  <line x1="665" y1="582" x2="705" y2="582" stroke="#374151" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <text x="710" y="586" font-family="'Segoe UI',Arial,sans-serif" font-size="9" fill="#9ca3af">Internal LAN</text>
+  <text x="860" y="586" font-family="'Segoe UI',Arial,sans-serif" font-size="9" fill="#374151">&#8596; bidirectional</text>
+</svg>
