@@ -16,8 +16,6 @@ feature_text: |
   ### IPsec S2S VPN dual-tunnel giữa pfSense CARP HA và Check Point R81.20, Zabbix monitor qua SNMP
 ---
 
-![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/diagram.png)
-
 IPsec S2S VPN giữa pfSense và Check Point là bài toán phổ biến khi 2 site dùng thiết bị khác vendor. Lab này dựng thêm một lớp redundancy bằng CARP HA: 2 pfSense node, mỗi node tạo 1 IPsec tunnel riêng về Check Point gateway — tổng cộng 2 tunnel song song, đảm bảo kết nối không bị gián đoạn khi 1 node gặp sự cố. Trên đường tunnel này, mình triển khai Zabbix 7.0 LTS bằng Docker Compose để monitor Ubuntu VM phía Check Point qua SNMPv2c.
 
 | Component | Version |
@@ -26,6 +24,8 @@ IPsec S2S VPN giữa pfSense và Check Point là bài toán phổ biến khi 2 s
 | pfSense | 2.8.1 CE |
 | Zabbix | 7.0 LTS |
 | Ubuntu | 24.04 LTS |
+
+![](/assets/img/2026-06-23-checkpoint-pfsense-ipsec-dual-tunnel/diagram.png)
 
 - [1. Mô hình lab](#1-mô-hình-lab)
 - [2. Chuẩn bị Objects trên SmartConsole](#2-chuẩn-bị-objects-trên-smartconsole)
