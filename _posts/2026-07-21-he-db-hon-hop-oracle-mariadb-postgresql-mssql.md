@@ -29,6 +29,10 @@ Lab dựng trọn mạch đó trên 6 VM — **đồng bộ**, **đối soát**,
 
 <img src="/assets/img/2026-07-21-he-db-hon-hop-oracle-mariadb-postgresql-mssql/architecture.png"/>
 
+<img src="/assets/img/2026-07-21-he-db-hon-hop-oracle-mariadb-postgresql-mssql/43.png"/>
+
+<img src="/assets/img/2026-07-21-he-db-hon-hop-oracle-mariadb-postgresql-mssql/69.png"/>
+
 ## Mục lục
 
 - [Phần 1 — Dựng nền tảng 4 DB](#phần-1--dựng-nền-tảng-4-db)
