@@ -153,6 +153,31 @@ a:hover {
 }
 
 /* ================================
+   THU HỒI KHOẢNG TRỐNG BÊN PHẢI
+
+   Minimal Mistakes luôn chừa 200px (>=1024px) / 300px (>=1280px)
+   padding bên phải cho sidebar TOC. Bài viết ở đây không bật
+   `toc: true` nên chỗ đó bỏ trống -> trả lại cho nội dung.
+
+   `:not(:has(...))` giữ nguyên padding cho bài nào bật TOC sau này.
+   Trình duyệt cũ không hiểu :has() sẽ bỏ qua rule -> về lại mặc định.
+================================ */
+
+@media (min-width: 64em) {
+
+  .page:not(:has(.sidebar__right)) {
+    padding-right: 0;
+    padding-inline-end: 0;
+  }
+
+  .archive:not(:has(.sidebar__right)) {
+    padding-right: 0;
+    padding-inline-end: 0;
+  }
+
+}
+
+/* ================================
    SIDEBAR / AUTHOR
 ================================ */
 
