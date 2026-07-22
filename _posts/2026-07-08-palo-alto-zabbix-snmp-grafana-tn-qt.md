@@ -152,11 +152,11 @@ commit
 
 > Lưu ý: `interface ethernet ethernet1/1` — chữ `ethernet` **2 lần** (loại + tên). Bật HTTPS/SSH trên WAN ngoài production là rủi ro; lab này WAN là VLAN200 nội bộ nên chấp nhận được, có thể siết bằng `set network profiles interface-management-profile MGMT-WAN permitted-ip 172.16.10.0/24`.
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/01.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/01.png)
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/02.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/02.png)
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/03.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/03.png)
 
 ## Step 1: Hoàn tất cấu hình PA qua SSH
 
@@ -225,11 +225,11 @@ request system external-list show type ip name VN-Domestic-EDL
 
 > **Thêm range custom về sau:** tạo thêm `set address VN-Custom-N ip-netmask <cidr>` rồi thêm vào group `set address-group VN-Custom static [ ... ]`. QoS đã trỏ tới group nên tự áp dụng sau khi commit.
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/04.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/04.png)
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/05.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/05.png)
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/06.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/06.png)
 
 ## Step 3: QoS phân loại TN và QT
 
@@ -243,7 +243,7 @@ Phần **QoS** làm bằng **GUI** cho chắc (CLI QoS PAN-OS nhiều tầng, d�
 
   > **Egress Max chỉ tác dụng khi BÓP** (drop/queue lúc vượt trần). Để `0` = unlimited → không bóp gì, throughput đo ra vẫn **chính xác**. Đặt số cụ thể (vd `1000`) hay `0` đều cho kết quả đo **y hệt** — chỉ khác khi bạn thực sự muốn PA **giới hạn** băng thông (vd chặn QT vượt cước hợp đồng ISP thì đặt = tốc độ link WAN thật). Với mục tiêu **giám sát**, để `0` là gọn nhất.
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/07.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/07.png)
 
 **2. QoS Policy** — `Policies → QoS → Add` (5 rule, thứ tự như dưới):
 
@@ -270,7 +270,7 @@ Tab **Application** và **Service/URL Category** để `any` (mặc định). Ad
 >
 > **Rule `EXCLUDE-MGMT` (class 8) rất quan trọng:** PA có **default class = class 4** — mọi traffic **không khớp rule nào** sẽ rơi vào class 4 (= TN). Traffic **Zabbix poll PA** (SNMP + API) là **LAN → LAN** (Ubuntu ↔ IP LAN của PA), không khớp rule phân loại nào → nếu không có rule này sẽ **chui vào class 4 làm TN luôn hiện ~500 kb/s dù không có download**. Đưa nó vào class 8 (không đo) để TN sạch.
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/08.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/08.png)
 
 **3. Bật QoS trên interface `ethernet1/2`** (nơi download đi ra) — `Network → QoS → Add`:
 - Tab **Physical Interface**: **Interface Name** `ethernet1/2` · **Egress Max** `0` · tick **Turn on QoS feature** · **Default Profile → Clear Text** = `QOS-BW` · Tunnel Interface `None`.
@@ -284,11 +284,11 @@ Tab **Application** và **Service/URL Category** để `any` (mặc định). Ad
 
 **Kết quả mong đợi:** khi có traffic, `Network → QoS → Statistics` trên `ethernet1/2` thấy class 4 chạy khi tải site VN, class 5 khi tải quốc tế.
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/09.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/09.png)
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/10.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/10.png)
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/11.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/11.png)
 
 ## Step 4: API key và lệnh đọc throughput
 
@@ -319,7 +319,7 @@ exit
 
 > `keygen` không bị role chặn — mọi account đăng nhập được đều sinh key. Role chỉ giới hạn *key gọi được lệnh gì*: với config trên, key chỉ chạy op command (đọc), không sửa/commit được.
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/12.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/12.png)
 
 **2. Sinh API key** — dùng `-G --data-urlencode` để encode password đúng :
 
@@ -374,7 +374,7 @@ class 5:    15332 kbps
 > Response là CDATA text nên Zabbix parse bằng **Regular expression** (không phải XPath): `class 4:\s+(\d+)\s+kbps` cho TN, `class 5:\s+(\d+)\s+kbps` cho QT. Nếu node/Qid của bạn khác, dùng lệnh ở bước 3 để lấy đúng số. Muốn xem gọn ngay trên terminal, nối thêm `| grep -oE 'class [0-9]+:[[:space:]]*[0-9]+ kbps'`.
 >
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/13.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/13.png)
 
 ## Step 5: Cấu hình mạng Ubuntu và cài Docker
 
@@ -539,9 +539,9 @@ docker compose ps
 
 > **Cho host "Zabbix server" xanh:** container `zabbix-agent2` self-monitor server. Nhưng host mặc định "Zabbix server" trỏ agent tới `127.0.0.1` — từ trong container đó là chính nó, không phải agent. Vào **Data collection → Hosts → Zabbix server → Interfaces**, đổi Agent interface: **Connect to `DNS`**, DNS name = `zabbix-agent`, port `10050` → **Update**. Sau ~1 phút host chuyển **xanh (ZBX)**.
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/14.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/14.png)
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/15.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/15.png)
 
 ## Step 7: Thêm host PA vào Zabbix
 
@@ -558,9 +558,9 @@ Vào Zabbix web → **Data collection → Hosts → Create host**:
 | `{$PA_IP}` | `10.10.201.11` |
 | `{$PA_APIKEY}` | `<APIKEY>` (từ Step 4, đủ `==`) |
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/16.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/16.png)
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/17.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/17.png)
 
 ### 7a. Total WAN — 2 item SNMP thủ công
 
@@ -575,7 +575,7 @@ snmpwalk -v2c -c Public 10.10.201.11 | grep -i ethernet
 
 > Chỉ walk `ifDescr` (`.2.2.1.2`) để **lấy con số ifIndex**, KHÔNG lấy số liệu từ đây. Counter byte thật sẽ trỏ sang bảng mở rộng `ifXTable` (`.31`) — nơi có counter **64-bit `ifHCInOctets/OutOctets`** không bị tràn (bảng cũ `.2.2` chỉ có counter 32-bit, link tốc độ cao tràn vài giây/lần → số sai).
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/18.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/18.png)
 
 **Items → Create item** (2 item). Cột SNMP OID kết thúc bằng ifIndex `.2` (= ethernet1/1) tìm ở trên:
 
@@ -589,15 +589,15 @@ snmpwalk -v2c -c Public 10.10.201.11 | grep -i ethernet
 | Update | `30s` | `30s` |
 | Preprocessing<br>(**2 bước, đúng thứ tự**) | 1. `Change per second`<br>2. `Custom multiplier` = `8` | 1. `Change per second`<br>2. `Custom multiplier` = `8` |
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/19.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/19.png)
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/20.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/20.png)
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/21.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/21.png)
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/22.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/22.png)
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/23.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/23.png)
 
 **Hiểu cấu trúc OID** — nhìn dài nhưng chỉ ghép từ **3 phần**:
 
@@ -646,21 +646,21 @@ snmpget -v2c -c Public 10.10.201.11 .1.3.6.1.2.1.31.1.1.1.6.2
 | Type of information | `Text` |
 | Update interval | `30s` |
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/24.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/24.png)
 
 **Dependent item Domestic** (`Create dependent item`, Master = `QoS raw (download)`):
 - Name `QoS Domestic throughput` · Key `pa.qos.domestic` · Numeric (unsigned) · Units `bps`
 - Preprocessing: 1) `Regular expression` `class 4:\s+(\d+)\s+kbps` → `\1`, *Custom on fail* = **Set value `0`**  2) `Custom multiplier` `1000`
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/25.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/25.png)
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/26.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/26.png)
 
 **Dependent item International:** giống hệt, đổi Name `QoS International throughput`, Key `pa.qos.international`, regex `class 5:\s+(\d+)\s+kbps`.
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/27.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/27.png)
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/28.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/28.png)
 
 **Kết quả mong đợi:** **Monitoring → Latest data** host `Palo-Alto-FW01` (sinh traffic ở Step 10): `WAN In/Out` (Tổng), `QoS Domestic throughput`, `QoS International throughput` đều nhảy số.
 
@@ -673,7 +673,7 @@ sleep 60
 kill %1 %2
 ```
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/29.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/29.png)
 
 ## Step 8: Grafana dashboard
 
@@ -755,7 +755,7 @@ kill %1 %2
 }
 ```
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/30.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/30.png)
 
 > Import xong nếu panel trống: mở query của panel, xóa filter **Item tag** (item tự tạo không có tag), chọn lại **Item** đúng tên. `legend.calcs: [lastNotNull, max, mean]` chính là phần **hiện số Last/Max/Mean dưới đồ thị**.
 
@@ -863,7 +863,7 @@ cells:
 >
 > Panel có sẵn **time-slider + animation** (bật `Animations`/`Time Slider` trong options) để tua lại và xem dòng băng thông biến thiên theo thời gian — hữu ích khi review lúc sinh traffic ở Step 10.
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/38.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/38.png)
 
 
 ## Step 9: Zabbix Network Map
@@ -883,11 +883,11 @@ cells:
 
 > Macro map: `{?last(/<Host name>/<Item key>)}` — `<Host name>` phải **y hệt** tên host trong Zabbix, không phải tên icon trên map.
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/31.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/31.png)
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/32.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/32.png)
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/33.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/33.png)
 
 ## Step 10: Sinh traffic và kiểm chứng
 
@@ -920,21 +920,21 @@ show qos interface ethernet1/2 throughput 1
 # node download (Qid 1):  class 4: <kbps> TN | class 5: <kbps> QT
 ```
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/34.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/34.png)
 
 **Trên Zabbix** — Monitoring → Latest data → `WAN In/Out`, `QoS Domestic/International throughput` có số.
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/35.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/35.png)
 
 **Trên Zabbix Map:** link Internet ↔ PA hiện nhãn `TN/QT` real-time, đổi màu 🟢🟡🔴 theo băng thông QT.
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/36.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/36.png)
 
 **Trên Grafana:**
 - **Panel Tổng (WAN In)** ≈ **QT + TN** — vì cùng đo luồng download (WAN In vào eth1/1 = download ra eth1/2). Số Last/Max/Mean hiện ngay dưới đồ thị.
 - Tải từ **mirror trong nước** (IP VN) → **TN** tăng; tải `proof.ovh.net`/máy chủ nước ngoài → **QT** tăng.
 
-![](../assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/38.png)
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/38.png)
 
 > **So bằng cột Mean, KHÔNG so cột Last.** Last là 1 điểm tức thời — SNMP (WAN In) và API (TN/QT) poll ở thời điểm khác nhau + traffic bursty nên Last giữa 2 panel hay lệch. Trung bình (Mean) mới phản ánh đúng: `WAN In Mean ≈ (TN + QT) Mean`. WAN In thường **cao hơn TN+QT một chút** — đúng bản chất, vì WAN In gồm cả traffic **PA tự tải** (EDL, DNS, content) đi vào WAN nhưng không ra LAN nên không nằm trong TN/QT. Quan hệ `WAN In ≥ TN + QT` luôn đúng.
 >
