@@ -404,42 +404,70 @@ hr {
    PAGINATION
 ================================ */
 
+/* Theme dựng pagination thành MỘT dải nút liền nhau: `li` dùng
+   `float: left` + `margin-left: -1px` để chồng viền, và chỉ bo góc ở nút
+   đầu/cuối. Rule cũ thêm `margin: 4px` + bo góc cho từng nút nên hai kiểu
+   đánh nhau -> viền hở, nút "Next" rớt xuống dòng riêng lệch hẳn.
+   Chuyển hẳn sang flex: mỗi nút là một chip rời, tự xuống dòng cân giữa. */
+
 .pagination {
   text-align: center;
   margin-top: 40px;
 }
 
-.pagination a,
-.pagination span,
-.pagination li a {
-  padding: 10px 16px;
-  margin: 4px;
-  border-radius: 8px;
-  background: $jade-surface;
-  border: 1px solid $jade-border;
-  color: $jade-text;
-  font-weight: 600;
+.pagination ul {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  list-style: none;
 }
 
-.pagination a:hover,
+.pagination li {
+  display: block;
+  float: none;
+  margin: 0;
+}
+
+/* Kèm :first-child/:last-child để thắng rule bo góc đầu-cuối của theme
+   mà không phải dùng !important. */
+
+.pagination li a,
+.pagination li:first-child a,
+.pagination li:last-child a {
+  margin: 0;
+  padding: 8px 14px;
+  border: 1px solid $jade-border;
+  border-radius: 8px;
+  background: $jade-surface;
+  color: $jade-text;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
 .pagination li a:hover {
   background: rgba(47, 184, 168, 0.16);
   border-color: $jade-accent;
   color: $jade-accent;
 }
 
-.pagination .current,
 .pagination li a.current,
-.pagination .disabled {
+.pagination li a.current.disabled {
   background: $jade-accent;
   border-color: $jade-accent;
   color: #06181a;
 }
 
-.pagination .disabled {
-  background: $jade-surface-2;
+/* "Previous" ở trang 1 và dấu "..." — theme gắn class .disabled */
+
+.pagination li a.disabled,
+.pagination li a.disabled:hover {
+  background: transparent;
   border-color: $jade-border;
-  color: $jade-muted;
+  color: rgba(143, 165, 164, 0.45);
 }
 
 /* ================================
@@ -527,13 +555,39 @@ hr {
    AVATAR
 ================================ */
 
+/* Theme đặt `max-width: 110px` cho ảnh avatar. Rule cũ chỉ khai width/height
+   140px nên chiều ngang bị chặn ở 110px còn chiều cao vẫn 140px -> ra hình
+   oval. Phải khóa cả min-width/max-width thì mới tròn. */
+
 .author__avatar img {
   width: 140px;
   height: 140px;
+  min-width: 140px;
+  max-width: 140px;
   object-fit: cover;
   border-radius: 50%;
   border: 3px solid rgba(47, 184, 168, 0.45);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+}
+
+/* Dưới 1024px sidebar chuyển sang dạng table-cell nằm ngang,
+   140px quá to nên thu còn 104px — vẫn khóa đủ 4 thuộc tính để giữ tròn. */
+
+@media (max-width: 63.99em) {
+
+  .author__avatar {
+    width: 104px;
+    min-width: 104px;
+  }
+
+  .author__avatar img {
+    width: 104px;
+    height: 104px;
+    min-width: 104px;
+    max-width: 104px;
+    padding: 0;
+  }
+
 }
 
 /* Doi sang vuong bo goc: border-radius: 18px; */
@@ -545,12 +599,17 @@ hr {
   display: none;
 }
 
+/* Logo 758x242 -> tỉ lệ 3.132.
+   Khung PHẢI đúng tỉ lệ, không thì `overflow: hidden` cắt mất dòng email:
+   220 / 3.132 = 70px  |  165 / 3.132 = 53px
+   `background-size: contain` để ảnh luôn lọt khung, không bao giờ bị cắt. */
+
 .masthead .site-title,
 .greedy-nav .site-title {
   position: relative;
   display: inline-block;
   width: 220px;
-  height: 56px;
+  height: 70px;
   overflow: hidden;
   color: transparent !important;
   font-size: 0 !important;
@@ -570,19 +629,14 @@ hr {
   position: absolute;
   inset: 0;
   background: url("../img/anhle-logo-cropped.png") no-repeat left center;
-  background-size: 220px auto;
+  background-size: contain;
 }
 
 @media (max-width: 768px) {
   .masthead .site-title,
   .greedy-nav .site-title {
     width: 165px;
-    height: 42px;
-  }
-
-  .masthead .site-title::before,
-  .greedy-nav .site-title::before {
-    background-size: 165px auto;
+    height: 53px;
   }
 }
 
