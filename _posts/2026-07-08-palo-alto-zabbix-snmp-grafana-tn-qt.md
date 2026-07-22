@@ -12,22 +12,31 @@ feature_text: |
   ### SNMP đo tổng WAN, QoS + EDL + PA API tách riêng lưu lượng download TN/QT, Grafana & Zabbix Map trực quan hóa
 ---
 
-Lab dựng hệ giám sát firewall Palo Alto với 4 thành phần container: **Zabbix 7.4** thu thập số liệu, **PostgreSQL** làm database, **Grafana** vẽ dashboard, và **Palo Alto** là đối tượng sẽ giám sát. Luồng lab:
+Đồ thị băng thông WAN báo 500 Mbps. Trong đó bao nhiêu đi ra nước ngoài?
 
-1. Ubuntu định tuyến ra internet **xuyên qua PA** (LAN → WAN → NAT ra internet).
+SNMP không trả lời được câu đó. Counter `ifHCInOctets` trên interface WAN chỉ đếm tổng octet đi qua — nó không biết gói vừa về là từ `vnexpress.net` hay từ một server đặt ở Pháp. Nhưng đúng phần bị nó gộp chung mới là phần đắt tiền: với ISP lẫn doanh nghiệp thuê kênh, cước quốc tế và cước trong nước không cùng một giá.
+
+Lab tách con số đó ngay trên firewall Palo Alto rồi vẽ ra Grafana — 5 container trên một VM Ubuntu, cộng PA-VM làm đối tượng giám sát:
+
+1. Ubuntu định tuyến ra internet **xuyên qua PA** (LAN → WAN → NAT).
 2. Zabbix poll **SNMP** interface WAN của PA → panel **Tổng băng thông** (download + upload).
-3. PA phân loại lưu lượng **download** theo IP nguồn internet (dải IP Việt Nam = Trong nước, còn lại = Quốc tế) bằng **QoS + EDL**, Zabbix gọi **PA XML API** lấy throughput từng lớp → panel **TN/QT** riêng.
-4. Grafana ghép cả hai và Zabbix Network Map tái hiện topology dạng sơ đồ giám sát ISP.
+3. PA phân loại **download** theo IP nguồn (dải IP Việt Nam = Trong nước, còn lại = Quốc tế) bằng **QoS + EDL**; Zabbix gọi **PA XML API** đọc throughput từng lớp → panel **TN/QT** riêng.
+4. Grafana ghép hai nguồn số liệu, Zabbix Network Map tái hiện topology kiểu sơ đồ giám sát ISP.
 
-**Palo Alto PA-VM** — next-gen firewall, trong lab đóng vai gateway LAN→WAN và là nguồn số liệu (SNMP counter + QoS class throughput qua API).
-**Zabbix 7.4** — engine giám sát, vừa poll SNMP interface vừa dùng **HTTP agent** gọi PA API để lấy số liệu QoS.
-**Grafana** — trực quan hóa time-series, nối Zabbix qua plugin `alexanderzobnin-zabbix-app`.
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/38.png)
 
-> **Vì sao phải QoS + API mà không chỉ SNMP?** Một interface WAN qua SNMP (`ifHCInOctets/OutOctets`) chỉ đếm được **tổng octet** — không phân biệt gói tới máy chủ **nước ngoài** (`proof.ovh.net`) hay **trong nước** (`vnexpress.net`). Muốn tách phải **phân loại theo IP đích/nguồn**; cơ chế native để đo băng thông theo lớp phân loại trên PA là **QoS**, và số liệu từng QoS class chỉ lấy được qua **PA XML API**. Vì vậy: **SNMP cho Tổng, QoS+API cho TN/QT**.
+![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/36.png)
+
+- **Palo Alto PA-VM** — gateway LAN→WAN của lab, đồng thời là nguồn số liệu: SNMP counter cho phần Tổng, QoS class throughput qua API cho phần TN/QT.
+- **Zabbix 7.4** — vừa poll SNMP interface, vừa dùng **HTTP agent** gọi PA API lấy số liệu QoS.
+- **PostgreSQL** — database của Zabbix.
+- **Grafana** — vẽ time-series, nối Zabbix qua plugin `alexanderzobnin-zabbix-app`.
+
+> **Vì sao QoS + API chứ không thêm OID SNMP?** QoS là cơ chế native duy nhất trên PA đo được băng thông **theo lớp phân loại**, và số liệu từng class chỉ đọc được qua **XML API**. Nên chia việc: **SNMP cho Tổng, QoS + API cho TN/QT**.
 >
-> **Vì sao đo chiều download?** Băng thông thực tế bị chi phối bởi **download** (upload chỉ là ACK vài trăm kb/s). Download đi ra ở interface **LAN (eth1/2)**, nên QoS đo ở đó. Kết quả: **Tổng (WAN In) ≈ TN + QT** — khớp nhau vì cùng đo luồng download.
+> **Vì sao đo chiều download?** Băng thông thực tế bị chi phối bởi download (upload chỉ là ACK vài trăm kb/s). Download đi **ra** ở interface LAN (`eth1/2`) nên QoS đặt ở đó. Hệ quả: **Tổng (WAN In) ≈ TN + QT** — khớp nhau vì cùng đo một luồng.
 >
-> **Phân loại theo IP, không theo tên miền:** nhiều dịch vụ nước ngoài (Google, Facebook, YouTube, Netflix) đặt **cache node ngay trong ISP Việt Nam** (GGC, Open Connect) → IP là VN → PA xếp vào **Trong nước** — đúng góc nhìn ISP (traffic peering/cache nội địa, không tính vào cước quốc tế). Muốn traffic **Quốc tế** rõ ràng, chọn site **không có cache/PoP tại VN** (vd `proof.ovh.net` — OVH Pháp, `speedtest.tele2.net` — Thụy Điển). **Tránh `cloudflare`, Google, YouTube** — chúng có PoP tại VN nên IP hay bị EDL xếp vào dải VN → ra nhầm class 4 (TN).
+> **Phân loại theo IP, không theo tên miền.** Google, Facebook, YouTube, Netflix đều đặt **cache node trong ISP Việt Nam** (GGC, Open Connect) → IP là VN → PA xếp vào **Trong nước**. Đúng góc nhìn ISP: traffic peering nội địa không tính cước quốc tế. Muốn thấy **Quốc tế** rõ ràng, chọn site không có PoP tại VN (`proof.ovh.net` — OVH Pháp, `speedtest.tele2.net` — Thụy Điển) và **tránh Cloudflare/Google/YouTube**, chúng hay bị EDL xếp nhầm vào dải VN → ra nhầm class 4 (TN).
 
 - [Mục tiêu](#mục-tiêu)
 - [Môi trường](#môi-trường)
@@ -864,7 +873,6 @@ cells:
 > Panel có sẵn **time-slider + animation** (bật `Animations`/`Time Slider` trong options) để tua lại và xem dòng băng thông biến thiên theo thời gian — hữu ích khi review lúc sinh traffic ở Step 10.
 
 ![](/assets/img/2026-07-08-palo-alto-zabbix-snmp-grafana-tn-qt/38.png)
-
 
 ## Step 9: Zabbix Network Map
 

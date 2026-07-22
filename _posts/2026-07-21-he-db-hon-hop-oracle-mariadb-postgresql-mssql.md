@@ -1,7 +1,11 @@
 ---
-title: "Đồng bộ, Đối soát & Di trú: hệ hỗn hợp Database Oracle–MariaDB–PostgreSQL–MSSQL với Data Guard, GoldenGate & Veridata"
+title: "Đồng bộ, Đối soát & Di trú dữ liệu: hệ hỗn hợp Database Oracle–MariaDB–PostgreSQL–MSSQL với Data Guard, GoldenGate & Veridata"
 categories:
 - OracleDB
+- MariaDB
+- PostgreSQL
+- MSSQL
+- Database
 tags:
 - data-guard
 - goldengate
@@ -12,9 +16,9 @@ feature_text: |
   ### Oracle lõi + 3 DB vệ tinh (MariaDB, PostgreSQL, MSSQL): đồng bộ Data Guard & GoldenGate, đối soát Veridata, di trú toàn hệ sang bộ VM mới
 ---
 
-Một hệ tài chính lõi Oracle 19c. Đội ứng dụng mới viết trên PostgreSQL, hệ đối tác chỉ nhận SQL Server, mấy dịch vụ nội bộ thì quen MariaDB — không bên nào chịu đổi, và cũng chẳng bên nào nên cắm thẳng vào lõi: một câu query lỡ tay bên báo cáo là cả luồng giao dịch chậm theo.
+Một hệ tài chính lõi Oracle Database. Đội ứng dụng mới viết trên PostgreSQL, hệ đối tác chỉ nhận SQL Server, mấy dịch vụ nội bộ thì quen MariaDB — mỗi hệ DB có mặt vì mục đích khác nhau và phù hợp với từng loại nhu cầu khác nhau, ép tất cả về một thứ chỉ đổi lấy rắc rối khác. Nhưng cũng chẳng bên nào nên cắm thẳng vào lõi: một câu query lỡ tay bên báo cáo là cả luồng giao dịch chậm theo.
 
-Lối ra quen thuộc là mô hình lõi–vệ tinh. Oracle giữ nguồn sự thật duy nhất, dữ liệu chảy ra ba DB vệ tinh — MariaDB 10.6, PostgreSQL 13, SQL Server 2022 — mỗi đội đọc trên bản sao của mình. Dựng xong mô hình mới là nửa đầu câu chuyện. Nửa sau là ba việc đeo theo nó suốt vòng đời: dữ liệu chảy sang bằng đường nào và lõi chết thì lấy gì chạy tiếp, chảy rồi làm sao biết bản sao còn khớp từng row với bản gốc, tới ngày thay phần cứng thì bê cả cụm sang máy mới kiểu gì mà không phải đóng cửa hệ thống.
+Lối ra quen thuộc là mô hình lõi–vệ tinh (Hub/Spoke). Oracle giữ nguồn dữ liệu duy nhất, dữ liệu chảy ra ba DB vệ tinh — MariaDB 10.6, PostgreSQL 13, SQL Server 2022 — mỗi đội đọc trên bản sao của mình. Dựng xong mô hình mới là nửa đầu câu chuyện. Nửa sau là ba việc đeo theo nó suốt vòng đời: dữ liệu chảy sang bằng đường nào và lõi chết thì lấy gì chạy tiếp, chảy rồi làm sao biết bản sao còn khớp từng row với bản gốc, tới ngày thay phần cứng thì bê cả cụm sang máy mới kiểu gì mà không phải downtime hệ thống.
 
 Lab dựng trọn mạch đó trên 6 VM — **đồng bộ**, **đối soát**, **di trú**:
 
@@ -30,7 +34,7 @@ Lab dựng trọn mạch đó trên 6 VM — **đồng bộ**, **đối soát**,
 | **Veridata** | So dữ liệu ở mức row, chỉ dùng cho cặp nó hỗ trợ là Oracle↔MSSQL |
 | **MariaDB / PostgreSQL / MSSQL** | 3 vệ tinh, mỗi cái một họ DB để lộ rõ khác biệt lúc map kiểu dữ liệu |
 
-<img src="/assets/img/2026-07-21-he-db-hon-hop-oracle-mariadb-postgresql-mssql/architecture.svg"/>
+<img src="/assets/img/2026-07-21-he-db-hon-hop-oracle-mariadb-postgresql-mssql/architecture.png"/>
 
 ## Mục lục
 
@@ -227,7 +231,7 @@ Oracle_JDK_8-jdk-8u491-linux-x64.rpm
 
 **Mục tiêu:** dựng MS SQL Server 2022 trên Windows .23 làm DB vệ tinh, cấu hình để hub OGG (.21) và Veridata (.22) kết nối từ xa qua TCP/IP port 1433, mixed-mode auth, login `ggmssql`, database `FINACC` + 2 bảng đích rỗng.
 
-> **Ghi chú : phải dùng Developer/Standard/Enterprise, KHÔNG dùng Express.** Oracle GoldenGate for SQL Server **không hỗ trợ Express Edition** (EngineEdition 4) — khi Replicat/Veridata login sẽ báo `OGG-05311 Oracle GoldenGate does not support SQL Server 2022 Engine 4 edition`. **Developer Edition** miễn phí (non-prod), engine = Enterprise (EngineEdition 3) → OGG chấp nhận. Dùng Developer.
+> **Ghi chú: phải dùng Developer/Standard/Enterprise, KHÔNG dùng Express.** Oracle GoldenGate for SQL Server **không hỗ trợ Express Edition** (EngineEdition 4) — khi Replicat/Veridata login sẽ báo `OGG-05311 Oracle GoldenGate does not support SQL Server 2022 Engine 4 edition`. **Developer Edition** miễn phí (non-prod), engine = Enterprise (EngineEdition 3) → OGG chấp nhận. Dùng Developer.
 
 **Bước 1 — Cài SQL Server 2022 Developer.** Tải **SQL Server 2022 Developer** (miễn phí) từ microsoft.com/sql-server/sql-server-downloads → chạy installer:
 - **New SQL Server standalone installation** → Instance: đặt **default instance `MSSQLSERVER`** (nghe port 1433, khỏi named instance động).
@@ -578,8 +582,8 @@ cd $ORACLE_HOME
 Sau `Successfully Setup Software`, chạy 2 script bằng **root**:
 
 ```bash
-/u01/app/oraInventory/orainstRoot.sh
-/u01/app/oracle/product/19.3.0/dbhome_1/root.sh
+sudo /u01/app/oraInventory/orainstRoot.sh
+sudo /u01/app/oracle/product/19.3.0/dbhome_1/root.sh
 ```
 
 **Kết quả mong đợi:** `sqlplus -v` → `SQL*Plus: Release 19.0.0.0.0`; `echo $ORACLE_SID` ra `OPRI` trên .21 và `OSTBA` trên .22.
@@ -783,6 +787,8 @@ lsnrctl stop; lsnrctl start
 
 # Phần 2 — Đồng bộ dữ liệu
 
+Kết thúc phần này: dữ liệu chảy ra khỏi lõi theo **hai đường song song, giải hai bài toán khác nhau**. Data Guard nhân bản nguyên cả DB `OPRI` ở tầng block — dùng khi .21 chết, không ai đọc nó lúc bình thường. GoldenGate chỉ rót thay đổi của schema `FINACC` sang 3 vệ tinh — để các đội đọc hằng ngày mà không đụng vào lõi. Hai đường không thay thế nhau: mất Data Guard là mất dự phòng, mất GoldenGate là các đội mất bản sao để khai thác.
+
 ### 2.1 — Đồng bộ dự phòng: Oracle Data Guard OPRI→OSTBA
 
 **Mục tiêu:** nhân bản DB lõi từ primary qua network (`FROM ACTIVE DATABASE`), giao việc ship/apply redo cho DG Broker. Đây là lớp **dự phòng/HA** cho Oracle lõi — physical standby giống hệt ở tầng block.
@@ -930,7 +936,7 @@ CONNECT sys/"Zxcasd123!@#"@OPRI
 EOF
 ```
 
-**Kết quả mong đợi:** `SHOW CONFIGURATION` → `SUCCESS`, `Transport Lag: 0 seconds` + `Apply Lag: 0 seconds`. 
+**Kết quả mong đợi:** `SHOW CONFIGURATION` → `SUCCESS`, `Transport Lag: 0 seconds` + `Apply Lag: 0 seconds`.
 
 <img src="/assets/img/2026-07-21-he-db-hon-hop-oracle-mariadb-postgresql-mssql/22.png"/>
 
@@ -997,7 +1003,7 @@ sudo /u01/app/oracle/deployments/ServiceManager/bin/registerServiceManager.sh
 
 <img src="/assets/img/2026-07-21-he-db-hon-hop-oracle-mariadb-postgresql-mssql/23.png"/>
 
-OGG Microservices tách nhiều service, mỗi cái một port: **9001 ServiceManager** (tổng quan), **9010 adminsrvr** (nơi làm việc chính: Extract/Replicat/Credential/TRANDATA), 9011 distsrvr (đẩy trail cross-host — dùng ở Phần 4), 9012 recvsrvr, 9013 pmsrvr (metrics). Web GUI `http://10.10.200.21:9001` (oggadmin / Zxcasd123!@#), nhưng 26ai gọn nhất qua **adminclient** (CLI). 
+OGG Microservices tách nhiều service, mỗi cái một port: **9001 ServiceManager** (tổng quan), **9010 adminsrvr** (nơi làm việc chính: Extract/Replicat/Credential/TRANDATA), 9011 distsrvr (đẩy trail cross-host — dùng ở Phần 4), 9012 recvsrvr, 9013 pmsrvr (metrics). Web GUI `http://10.10.200.21:9001` (oggadmin / Zxcasd123!@#), nhưng 26ai gọn nhất qua **adminclient** (CLI).
 
 <img src="/assets/img/2026-07-21-he-db-hon-hop-oracle-mariadb-postgresql-mssql/24.png"/>
 
@@ -1007,7 +1013,7 @@ OGG Microservices tách nhiều service, mỗi cái một port: **9001 ServiceMa
 
 Trên .21, user `oracle`:
 
-Param file cho Extract :
+Param file cho Extract:
 
 ```bash
 cat > /u01/app/oracle/deployments/Dep_Hub/etc/conf/ogg/EXT_FIN.prm << 'EOF'
@@ -1156,9 +1162,9 @@ INFO REPLICAT RMAR
 
 <img src="/assets/img/2026-07-21-he-db-hon-hop-oracle-mariadb-postgresql-mssql/31.png"/>
 
-**Kết quả mong đợi:** `INFO DISTPATH p_ea_eb` + `INFO REPLICAT RMAR` đều `RUNNING`; insert bên Oracle tự xuất hiện trong `docker exec mariadb mariadb -uroot -p'Zxcasd123!@#' -e "SELECT * FROM finacc.transactions;"`.
+**Kết quả CDC:** `INFO DISTPATH p_ea_eb` + `INFO REPLICAT RMAR` đều `RUNNING`; insert bên Oracle tự xuất hiện trong `docker exec mariadb mariadb -uroot -p'Zxcasd123!@#' -e "SELECT * FROM finacc.transactions;"`. Nhưng bảng vẫn thiếu dữ liệu có từ trước — đó là việc của bước tiếp theo.
 
-**Initial Load — đồng bộ dữ liệu cũ.** Extract `EXT_FIN` tạo với `BEGIN NOW` nên dữ liệu trước CDC (2 account + txn id 1, 21) chưa sang. Dùng **initial-load Extract `SOURCEISTABLE`** (đọc thẳng snapshot bảng nguồn ra EXTFILE) + Replicat `HANDLECOLLISIONS`. Vì `Dep_Hub` và `Dep_Maria` cùng host .21 nên chỉ cần `cp` file:
+**Initial Load — đồng bộ dữ liệu cũ.** Extract `EXT_FIN` tạo với `BEGIN NOW` nên dữ liệu seed từ [1.6](#16--tạo-primary-opri--schema-finacc-21) (2 account + 1 transaction) chưa sang. Dùng **initial-load Extract `SOURCEISTABLE`** (đọc thẳng snapshot bảng nguồn ra EXTFILE) + Replicat `HANDLECOLLISIONS`. Vì `Dep_Hub` và `Dep_Maria` cùng host .21 nên chỉ cần `cp` file:
 
 ```bash
 # INITMA (SOURCEISTABLE) trên Dep_Hub
@@ -1208,11 +1214,13 @@ STATS REPLICAT RINIT
 INFO REPLICAT RINIT
 ```
 
-```bash 
+```bash
 docker exec mariadb mariadb -uroot -p'Zxcasd123!@#' -e \
   "SELECT '--- ACCOUNTS ---' AS ''; SELECT * FROM finacc.accounts;
    SELECT '--- TRANSACTIONS ---' AS ''; SELECT * FROM finacc.transactions;"
 ```
+
+**Kết quả sau initial load:** MariaDB có đủ 2 account + 1 transaction seed từ [1.6](#16--tạo-primary-opri--schema-finacc-21), cộng thêm mọi thay đổi CDC phát sinh sau đó — từ đây `RMAR` một mình gánh tiếp, `RINIT` không cần chạy lại.
 
 <img src="/assets/img/2026-07-21-he-db-hon-hop-oracle-mariadb-postgresql-mssql/32.png"/>
 
@@ -1412,7 +1420,7 @@ sqlcmd -S 10.10.200.23,1433 -U ggmssql -P 'Zxcasd123!@#' -d FINACC -C -Q "SELECT
 
 **B. Cài binary OGG for SQL Server** (`INSTALL_OPTION=MSSQL`, bằng oracle):
 ```bash
-su - oracle 
+su - oracle
 mkdir -p /u01/soft/ogg_mssql && cd /u01/soft/ogg_mssql
 unzip -q /u01/soft/*for_SQLServer*.zip
 chmod -R u+x /u01/soft/ogg_mssql/*shiphome/Disk1
@@ -1440,7 +1448,7 @@ EOF
 ```
 
 ```bash
-su - oracle 
+su - oracle
 # oggca tạo Dep_MSSQL (ports 9310-9313, join SM 9001).
 export OGG_HOME=/u01/app/oracle/product/ogg_mssql
 cat > /tmp/oggca_mssql.rsp << 'EOF'
@@ -1566,7 +1574,7 @@ INFO REPLICAT RINITMS
 
 <img src="/assets/img/2026-07-21-he-db-hon-hop-oracle-mariadb-postgresql-mssql/41.png"/>
 
-**Kết quả mong đợi:** insert bên Oracle `FINACC.TRANSACTIONS` → tự xuất hiện trong MSSQL `FINACC.dbo.transactions`; sau initial load, `STATS RINITMS` → accounts 2 inserts...
+**Kết quả mong đợi:** insert bên Oracle `FINACC.TRANSACTIONS` → tự xuất hiện trong MSSQL `FINACC.dbo.transactions`; sau initial load, `STATS RINITMS` báo `accounts: 2 inserts`, `transactions: 1 insert` — đúng bằng dữ liệu seed ở [1.6](#16--tạo-primary-opri--schema-finacc-21).
 
 ```sql
 USE FINACC;
@@ -1607,9 +1615,11 @@ Chỉ **một** Extract `EXT_FIN` capture redo của Oracle ra trail `ea`; Distr
 
 # Phần 3 — Đối soát dữ liệu
 
+Replicat báo `RUNNING` chỉ nói rằng tiến trình còn sống, không nói bản sao còn khớp. Một row bị apply lệch kiểu dữ liệu, một lần ai đó sửa tay bên vệ tinh, một transaction rơi giữa lúc restart — tất cả đều xảy ra mà `INFO REPLICAT` vẫn xanh. Kết thúc phần này: có **bằng chứng ở mức row** rằng lõi và bản sao khớp nhau, Veridata lo cặp Oracle↔MSSQL, MariaDB/PostgreSQL soi tay bằng SQL.
+
 ### 3.1 — Cài Veridata (.22) + 2 agent (Oracle, SQL Server)
 
-Veridata Server + agent đều trên **.22**. Agent đọc DB qua JDBC/OCI nên kết nối Oracle (.21) và MSSQL (.23) qua mạng.
+**Mục tiêu:** dựng Veridata Server + 2 agent, tất cả trên **.22**. Agent đọc DB qua JDBC/OCI nên kết nối Oracle (.21) và MSSQL (.23) qua mạng.
 
 **A. Cài nền tảng** (bằng root cài JDK, rồi **oracle** cho FMW/Veridata/RCU — OUI từ chối chạy bằng root):
 
@@ -1660,12 +1670,14 @@ java -jar /u01/soft/fmw_12.2.1.4.0_ogg.jar -silent -responseFile /tmp/veridata.r
   -component IAU_VIEWER -component VERIDATA -f
 ```
 
+> Dòng đầu là mật khẩu `sys` (`Zxcasd123!@#`), các dòng sau là mật khẩu đặt cho schema RCU — `seq 10` chỉ để dư, RCU đọc bao nhiêu schema thì lấy bấy nhiêu dòng. Schema **cố ý dùng `Zxcasd123#`, bỏ `!@`**: mật khẩu này sẽ nằm trong JDBC URL và connect string của WLST ở các bước sau, mà `@` ở đó bị hiểu là dấu ngăn giữa credential và host — đúng cái bẫy `ORA-12154` gặp lại ở [G.3](#g-veridata-mới-trên-32).
+
 <img src="/assets/img/2026-07-21-he-db-hon-hop-oracle-mariadb-postgresql-mssql/46.png"/>
 
 **B. Tạo domain WebLogic bằng WLST** (CLI, không cần GUI) + cấp quyền:
 
 ```bash
-su - oracle 
+su - oracle
 cat > /tmp/veridata_domain.py << 'EOF'
 oh = '/u01/app/oracle/product/fmw12c'
 readTemplate(oh + '/wlserver/common/templates/wls/wls.jar')
@@ -1721,7 +1733,7 @@ EOF
 
 **Cài binary Veridata Agent** (một Oracle Home `vdagent`, dùng chung cho cả 2 agent). Trên .22, user `oracle`:
 ```bash
-su - oracle 
+su - oracle
 cat > /tmp/vdagent.rsp << 'EOF'
 [ENGINE]
 Response File Version=1.0.0.0.0
@@ -1736,7 +1748,7 @@ java -jar /u01/soft/fmw_12.2.1.4.0_ogg.jar -silent -responseFile /tmp/vdagent.rs
 <img src="/assets/img/2026-07-21-he-db-hon-hop-oracle-mariadb-postgresql-mssql/49.png"/>
 
 **Agent Oracle (7850)** → OPRI .21, driver `ojdbc8.jar` (copy từ Oracle DB home 19.3). Tạo deployment `vdagent_ora` rồi start. Trên .22:
-```bash 
+```bash
 export JAVA_HOME=/usr/java/default
 A=/u01/app/oracle/product/vdagent/veridata/agent
 
@@ -1752,7 +1764,6 @@ server.useSsl=false
 EOF
 $ODEP/agent.sh start
 sudo ss -tlnp | grep 7850
-
 ```
 
 **Agent SQL Server (7852)** → MSSQL .23, driver DataDirect `wlsqlserver.jar` (bundle sẵn trong agent). Trên .22:
@@ -1784,9 +1795,9 @@ sudo ss -tlnp | grep 7852
 
 ### 3.2 — Veridata verify Oracle ↔ MSSQL
 
-Đăng nhập console `http://10.10.200.22:8830/veridata` (`weblogic` / `Zxcasd123!@#`), vào **Configuration**.
+**Mục tiêu:** khai 2 connection qua 2 agent, ghép cặp bảng Oracle↔MSSQL rồi chạy job so từng row. Toàn bộ làm trên console `http://10.10.200.22:8830/veridata` (`weblogic` / `Zxcasd123!@#`), vào **Configuration**.
 
-**D.1 — Connections** (Connection Configuration → New, wizard 3 bước):
+**A. Connections** (Connection Configuration → New, wizard 3 bước):
 
 | Connection | Agent host:port | Datasource Type | User / pass |
 |---|---|---|---|
@@ -1807,7 +1818,7 @@ Với `conn_mssql`: Task 2 chọn **`SQL Server`** → **Verify** ("Datasource t
 
 <img src="/assets/img/2026-07-21-he-db-hon-hop-oracle-mariadb-postgresql-mssql/56.png"/>
 
-**D.2 — Group + Compare Pair** (Group Configuration → New): Group `grp_ora_mssql`, Source `conn_ora`, Target `conn_mssql`.
+**B. Group + Compare Pair** (Group Configuration → New): Group `grp_ora_mssql`, Source `conn_ora`, Target `conn_mssql`.
 
 <img src="/assets/img/2026-07-21-he-db-hon-hop-oracle-mariadb-postgresql-mssql/57.png"/>
 
@@ -1826,7 +1837,7 @@ Vào **Compare Pair Configuration → Manual Mapping**: Source Schema `FINACC`; 
 
 <img src="/assets/img/2026-07-21-he-db-hon-hop-oracle-mariadb-postgresql-mssql/60.png"/>
 
-**D.3 — Job** (Job Configuration → New): tạo `job_ora_mssql` chứa group `grp_ora_mssql` → **Run / Execute Job**. Xem kết quả ở **Finished Jobs / Reports**.
+**C. Job** (Job Configuration → New): tạo `job_ora_mssql` chứa group `grp_ora_mssql` → **Run / Execute Job**. Xem kết quả ở **Finished Jobs / Reports**.
 
 <img src="/assets/img/2026-07-21-he-db-hon-hop-oracle-mariadb-postgresql-mssql/61.png"/>
 
@@ -1842,7 +1853,7 @@ Vào **Compare Pair Configuration → Manual Mapping**: Source Schema `FINACC`; 
 
 ### 3.3 — Kiểm chứng end-to-end (ghi 1 record → soi cả hệ)
 
-Một phép thử duy nhất chứng minh dữ liệu cả hệ đang chảy: ghi **1 record vào Oracle primary (.21)** rồi soi nó lan tới cả 4 đích.
+**Mục tiêu:** một phép thử duy nhất chứng minh cả hệ đang chảy — ghi **1 record vào Oracle primary (.21)** rồi soi nó lan tới cả 4 đích.
 
 ```bash
 # .21 — insert vào nguồn Oracle
@@ -1924,6 +1935,8 @@ Mục tiêu: chuyển toàn bộ hệ (Oracle lõi + 3 vệ tinh + OGG Hub + Ver
 
 ### 4.1 — Dựng bộ VM mới (.31/.32 Oracle, .33 MSSQL)
 
+**Mục tiêu:** dựng 3 VM đích tới trạng thái "sẵn sàng nhận dữ liệu" — OS, Oracle binary, listener, tnsnames 4 alias, SQL Server nghe 1433. Chưa tạo database nào ở bước này; data sẽ do Data Guard và backup/restore mang sang.
+
 **A. Chuẩn bị OS .31/.32.** Bằng **root** trên **cả .31 và .32** (đổi hostname tương ứng `Oracle-pri-02` / `Oracle-sby-02`):
 
 ```bash
@@ -1953,7 +1966,7 @@ setenforce 0
 dnf install -y oracle-database-preinstall-19c wget unzip tar nmap-ncat
 echo 'oracle:Zxcasd123!@#' | chpasswd
 
-# oracle sudo không cần password — các bước sau đổi qua lại oracle/root liên tục
+# oracle sudo không cần password — các bước sau đổi qua lại oracle/root liên tục (Lab only)
 echo 'oracle ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/oracle
 chmod 440 /etc/sudoers.d/oracle
 visudo -c
@@ -2179,7 +2192,7 @@ GO
 **A. Mở DG_CONFIG 4 node** — chạy trên **cả .21 (OPRI) lẫn .22 (OSTBA)** (động, không restart):
 
 ```sql
-su - oracle 
+su - oracle
 sqlplus / as sysdba
 ALTER SYSTEM SET log_archive_config='DG_CONFIG=(OPRI,OSTBA,NPRI,NSTB)' SCOPE=BOTH;
 EXIT;
@@ -2303,7 +2316,7 @@ ALTER SYSTEM SET dg_broker_start=TRUE SCOPE=BOTH;
 EXIT;
 ```
 
-Trên **.21**, add 2 DB mới vào configuration `labdg` có sẵn rồi đợi đồng bộ. 
+Trên **.21**, add 2 DB mới vào configuration `labdg` có sẵn rồi đợi đồng bộ.
 
 ```bash
 dgmgrl << 'EOF'
@@ -2320,7 +2333,7 @@ EOF
 <img src="/assets/img/2026-07-21-he-db-hon-hop-oracle-mariadb-postgresql-mssql/80.png"/>
 
 
-Đạt rồi mới switchover. **Từ lệnh `SWITCHOVER` là bắt đầu downtime — ngừng ghi vào `FINACC` trước đó**
+Đạt rồi mới switchover. **Từ lệnh `SWITCHOVER` là bắt đầu downtime — ngừng ghi vào `FINACC` trước đó.**
 
 `VALIDATE DATABASE NPRI` phải ghi `Ready for Switchover: Yes` — nếu `No` thì dừng, xử lý phần nó báo thiếu rồi chạy lại.
 
@@ -2357,7 +2370,7 @@ Ra `PHYSICAL STANDBY / OPRI / MOUNTED` là xong. Apply đứng (`ORA-16810`) th�
 
 ### 4.3 — Di trú vệ tinh: MariaDB→.31, PostgreSQL→.32, MSSQL→.33
 
-Bộ cũ đã đóng băng từ lúc switchover → dump/backup bây giờ là **bản final**, không sợ lệch.
+**Mục tiêu:** chuyển data 3 vệ tinh sang bộ mới, mỗi họ DB dùng đúng cơ chế native của nó. Bộ cũ đã đóng băng từ lúc switchover → dump/backup bây giờ là **bản final**, không sợ lệch.
 
 **A. MariaDB .21 → .31 (native replication).** Trên **.31** (root) dựng container như [1.3](#13--mariadb-106-docker-21), chỉ đổi `server_id`:
 
@@ -2490,8 +2503,8 @@ docker exec postgres psql -U postgres -c "SHOW transaction_read_only;"   # off =
 **C. MSSQL .23 → .33 (backup/restore).** Trên **.23** (SSMS hoặc sqlcmd):
 
 ```sql
-`BACKUP DATABASE FINACC TO DISK='C:\bak\finacc.bak' WITH INIT;
-````
+BACKUP DATABASE FINACC TO DISK='C:\bak\finacc.bak' WITH INIT;
+```
 
 <img src="/assets/img/2026-07-21-he-db-hon-hop-oracle-mariadb-postgresql-mssql/87.png"/>
 
@@ -2529,7 +2542,7 @@ GO
 
 ### 4.4 — Chuyển Hub + Veridata sang bộ mới, kích hoạt
 
-NPRI là bản physical của OPRI nên mọi thứ nằm **trong DB** đã sang sẵn — `enable_goldengate_replication=TRUE` (spfile duplicate mang theo), supplemental logging, user `oggadmin`, `SCHEMATRANDATA FINACC`, kể cả RCU schema `LABVD*` của Veridata. Phần phải làm lại là những gì nằm **ngoài DB**: binary OGG, deployment, credential, trail, agent.
+**Mục tiêu:** dựng lại tầng công cụ trên bộ mới rồi mở ghi lại — đây là bước kết thúc downtime. NPRI là bản physical của OPRI nên mọi thứ nằm **trong DB** đã sang sẵn — `enable_goldengate_replication=TRUE` (spfile duplicate mang theo), supplemental logging, user `oggadmin`, `SCHEMATRANDATA FINACC`, kể cả RCU schema `LABVD*` của Veridata. Phần phải làm lại là những gì nằm **ngoài DB**: binary OGG, deployment, credential, trail, agent.
 
 #### A. Cài 4 binary OGG + Service Manager + 4 deployment trên .31
 
@@ -2827,7 +2840,7 @@ Bảng `oggchkpt` **đi theo data lúc di trú** nhưng chứa checkpoint của 
 export PATH=$PATH:/opt/mssql-tools18/bin
 
 # MariaDB .31
-docker exec mariadb mariadb -uroot -p'Zxcasd123!@#' -e \
+sudo docker exec mariadb mariadb -uroot -p'Zxcasd123!@#' -e \
   "DROP TABLE IF EXISTS finacc.oggchkpt, finacc.oggchkpt_lox;"
 # PostgreSQL .32
 ssh root@10.10.200.32 "docker exec postgres psql -U postgres -d finacc -c \
@@ -2841,7 +2854,7 @@ Kiểm lại: mỗi vệ tinh chỉ còn đúng **2 bảng data**, không còn b
 
 ```bash
 # MariaDB .31
-docker exec mariadb mariadb -uroot -p'Zxcasd123!@#' -e "SHOW TABLES IN finacc;"
+sudo docker exec mariadb mariadb -uroot -p'Zxcasd123!@#' -e "SHOW TABLES IN finacc;"
 # PostgreSQL .32
 ssh root@10.10.200.32 "docker exec postgres psql -U postgres -d finacc -c '\dt'"
 # MSSQL .33
@@ -2860,7 +2873,7 @@ Cả 3 chỉ ra `accounts` và `transactions`. Còn sót `oggchkpt` thì Replica
 **E.1 — `RMAR` (Dep_Maria 9110, MariaDB cùng host .31):**
 
 ```bash
-su - oracle 
+su - oracle
 cat > /u01/app/oracle/deployments/Dep_Maria/etc/conf/ogg/RMAR.prm << 'EOF'
 REPLICAT RMAR
 USERIDALIAS cred_maria
@@ -2944,7 +2957,10 @@ COMMIT;
 EOF
 
 # soi 3 vệ tinh mới — cả 2 bảng
-sudo ssh root@10.10.200.32 "docker exec postgres psql -U postgres -d finacc \
+sudo docker exec mariadb mariadb -uroot -p'Zxcasd123!@#' -e \
+  "SELECT * FROM finacc.accounts; SELECT * FROM finacc.transactions;"
+
+ssh root@10.10.200.32 "docker exec postgres psql -U postgres -d finacc \
   -c 'SELECT * FROM accounts;' -c 'SELECT * FROM transactions;'"
 
 sqlcmd -S 10.10.200.33,1433 -U ggmssql -P 'Zxcasd123!@#' -d FINACC -C -Q \
@@ -2960,7 +2976,7 @@ sqlcmd -S 10.10.200.33,1433 -U ggmssql -P 'Zxcasd123!@#' -d FINACC -C -Q \
 ```bash
 # .22, user oracle
 su - oracle
-export JAVA_HOME=/usr/java/default      
+export JAVA_HOME=/usr/java/default
 DOMAIN=/u01/app/oracle/config/domains/veridata_domain
 $DOMAIN/bin/stopManagedWebLogic.sh VERIDATA_server1 t3://10.10.200.22:7001 weblogic 'Zxcasd123!@#'
 $DOMAIN/bin/stopWebLogic.sh weblogic 'Zxcasd123!@#' t3://10.10.200.22:7001
@@ -3149,7 +3165,7 @@ server.truststore.keyfactory.alg.name=SunX509
 server.ssl.algorithm.name=TLS
 EOF
 $SDEP/agent.sh start
-ss -tlnp | grep -E '785[02]'
+sudo ss -tlnp | grep -E '785[02]'
 ```
 
 <img src="/assets/img/2026-07-21-he-db-hon-hop-oracle-mariadb-postgresql-mssql/99.png"/>
@@ -3171,7 +3187,7 @@ Group `grp_ora_mssql` (source `conn_ora`, target `conn_mssql`) → Compare Pair 
 
 ### 4.5 — Bỏ .21/.22/.23
 
-Xác nhận bộ mới chạy đủ **trước** khi tắt bộ cũ — 4 kiểm tra, chỉ cần một cái trượt là dừng lại, đừng tắt gì cả.
+**Mục tiêu:** xác nhận bộ mới chạy đủ **trước** khi tắt bộ cũ, rồi mới gỡ. 4 kiểm tra — chỉ cần một cái trượt là dừng lại, đừng tắt gì cả. Bộ cũ còn sống là còn đường lùi; tắt rồi thì không.
 
 **1. Data Guard** — trên `.31`:
 
