@@ -1,13 +1,12 @@
 ---
 title: "Triển khai Hybrid Identity: AD on-premise đồng bộ lên Microsoft 365 với Entra Connect"
 categories:
-- System
-- Windows-Server
-- Active-Directory
-- Microsoft-365
+- Windows
 feature_image: "/assets/postbanner.jpg"
 feature_text: |
   ### Lab thực tế: Dựng 2 Domain Controller, đồng bộ AD lên Microsoft Entra ID, sử dụng Exchange Online (M365 Business Basic)
+redirect_from:
+- /system/windows-server/active-directory/microsoft-365/2026/04/30/m365-hybrid-identity-2dc-lab.html
 ---
 
 Bài lab hướng dẫn triển khai mô hình **Hybrid Identity** chuẩn production cho doanh nghiệp vừa và nhỏ (SME): 2 VM Windows Server 2022 làm Domain Controller, đồng bộ tài khoản AD lên **Microsoft Entra ID** bằng **Microsoft Entra Connect**, sau đó **đăng nhập Outlook Web / M365 bằng tài khoản AD đã sync**.

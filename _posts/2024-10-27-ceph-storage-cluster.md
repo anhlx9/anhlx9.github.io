@@ -1,13 +1,12 @@
 ---
 title: Ceph Storage Cluster
 categories:
-- System
 - Storage
-- Linux
-- Ceph
 feature_image: "/assets/postbanner.jpg"
 feature_text: |
   ### Xây dựng cụm server lưu trữ dữ liệu cho doanh nghiệp với Ceph
+redirect_from:
+- /system/storage/linux/ceph/2024/10/27/ceph-storage-cluster.html
 ---
 
 

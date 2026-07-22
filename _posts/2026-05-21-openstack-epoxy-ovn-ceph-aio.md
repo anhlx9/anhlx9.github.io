@@ -2,15 +2,11 @@
 title: " Private cloud với OpenStack 2025.1 + OVN + Ceph Squid — 3 Node All-in-One"
 categories:
 - OpenStack
-tags:
-- openstack
-- ovn
-- ceph
-- kolla-ansible
-- private-cloud
 feature_image: "/assets/postbanner.jpg"
 feature_text: |
   ### OpenStack 2025.1 Epoxy + OVN + Ceph Squid — 3 ctrl node all-in-one (Controller + Compute + OSD) + 1 Registry, deploy bằng kolla-ansible
+redirect_from:
+- /openstack/2026/05/21/openstack-epoxy-ovn-ceph-aio.html
 ---
 
 Lab này kết hợp 3 thành phần: **OpenStack 2025.1 (Epoxy)** làm cloud orchestration, **Ceph Squid** làm distributed storage backend (Cinder block + Glance image + Nova ephemeral qua RBD), và **OVN** xử lý toàn bộ virtual networking — distributed L2/L3, security groups, floating IP — mà không cần thêm agent hay process bên ngoài. Toàn bộ deploy qua `kolla-ansible` chính thức.

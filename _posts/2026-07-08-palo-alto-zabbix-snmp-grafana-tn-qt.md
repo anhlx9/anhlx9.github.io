@@ -2,14 +2,11 @@
 title: "Giám sát Palo Alto bằng Zabbix 7.4 + Grafana — tách băng thông Trong nước / Quốc tế"
 categories:
 - Monitoring
-- Zabbix
-- Grafana
-- Palo-Alto
-tags:
-- docker
 feature_image: "/assets/postbanner.jpg"
 feature_text: |
   ### SNMP đo tổng WAN, QoS + EDL + PA API tách riêng lưu lượng download TN/QT, Grafana & Zabbix Map trực quan hóa
+redirect_from:
+- /monitoring/zabbix/grafana/palo-alto/2026/07/08/palo-alto-zabbix-snmp-grafana-tn-qt.html
 ---
 
 Đồ thị băng thông WAN báo 500 Mbps. Trong đó bao nhiêu đi ra nước ngoài? SNMP không trả lời được câu đó. Counter `ifHCInOctets` trên interface WAN chỉ đếm tổng octet đi qua — nó không biết gói vừa về là từ `vnexpress.net` hay từ một server đặt ở Pháp. Nhưng đúng phần bị nó gộp chung mới là phần đắt tiền: với ISP lẫn doanh nghiệp thuê kênh, cước quốc tế và cước trong nước không cùng một giá.

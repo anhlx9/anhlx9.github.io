@@ -1,12 +1,13 @@
 ---
 title: RAG Chatbot với DeepSeek-R1 LLM
 categories:
-- System
-- LLM
+- AI
   
 feature_image: "/assets/postbanner.jpg"
 feature_text: |
   ### Chạy mô hình ngôn ngữ lớn DeepSeek-R1 cục bộ và tạo RAG chatbot tích hợp vào Website
+redirect_from:
+- /system/llm/2025/01/31/rag-chatbot-with-deepseek-llm.html
 ---
 
 

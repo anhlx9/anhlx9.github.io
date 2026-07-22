@@ -6,6 +6,9 @@ description: "System Engineer | Cloud | Kubernetes | Ceph"
 url: "https://anhlx9.github.io"
 baseurl: ""
 
+# URL bài viết KHÔNG chứa categories — sửa categories về sau không làm đổi URL.
+permalink: /:title/
+
 remote_theme: "mmistakes/minimal-mistakes"
 
 minimal_mistakes_skin: "dark"
@@ -13,6 +16,7 @@ minimal_mistakes_skin: "dark"
 plugins:
   - jekyll-include-cache
   - jekyll-paginate
+  - jekyll-redirect-from
 
 paginate: 3
 paginate_path: /page:num/

@@ -1,18 +1,12 @@
-﻿---
+---
 title: "Next-Gen GPU Cloud: Hội Tụ VM & Container Trên Kubernetes"
 categories:
 - Kubernetes
-- Ceph
-- Cloud
-tags:
-- rke2
-- kubevirt
-- ceph
-- capsule
-- kube-ovn
 feature_image: "/assets/postbanner.jpg"
 feature_text: |
   ### Kubernetes-native Next-Gen GPU Cloud: RKE2 HA, per-tenant VPC isolation, KubeVirt VM + Container, Rook-Ceph, multi-tenant GPU provisioning — 3 khách hàng, 3 loại workload trên một cluster
+redirect_from:
+- /kubernetes/ceph/cloud/2026/06/03/next-gen-gpu-cloud-rke2-kubevirt.html
 ---
 
 GPU Cloud thế hệ mới không chỉ bán GPU — mà bán **compute linh hoạt theo nhu cầu**: nguyên GPU cho AI training nặng, chia nhỏ GPU cho inference, không GPU cho workload thường. Tất cả trên một control plane, đồng thời phục vụ cả VM lẫn container với quota và mạng riêng từng tenant.

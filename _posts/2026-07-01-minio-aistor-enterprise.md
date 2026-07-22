@@ -2,17 +2,11 @@
 title: "MinIO AIStor Enterprise — Cluster HA, AD-IAM, Mã hóa riêng từng bucket & Immutable chống Ransomware"
 categories:
 - Storage
-- MinIO-AIStor-Subscription
-tags:
-- minio
-- aistor
-- object-storage
-- active-directory
-- ransomware
-- vault
 feature_image: "/assets/postbanner.jpg"
 feature_text: |
   ### Cluster 4-node EC:4, AD làm IAM, mã hóa riêng từng bucket & WORM Compliance
+redirect_from:
+- /storage/minio-aistor-subscription/2026/07/01/minio-aistor-enterprise.html
 ---
 
 **MinIO** là object storage mã nguồn mở, tương thích S3 API, kiến trúc distributed gọn nhẹ — chạy trên cụm node thường, dùng erasure coding để vừa chống lỗi vừa cho throughput cao. Khác với **Ceph** (nền tảng lưu trữ hợp nhất object/block/file qua RADOS — mạnh, linh hoạt nhưng nặng vận hành, nhiều thành phần MON/OSD/MGR), MinIO **chỉ tập trung object S3**: ít thành phần, triển khai nhanh, độ trễ thấp và dễ vận hành hơn — đổi lại không cung cấp block/file storage.

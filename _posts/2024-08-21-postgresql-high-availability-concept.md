@@ -2,11 +2,11 @@
 title: PostgreSQL - HA Concept
 categories:
 - Database
-- System
-- Linux
 feature_image: "/assets/postbanner.jpg"
 feature_text: |
   ### PostgreSQL - High Availability Database Concept
+redirect_from:
+- /database/system/linux/2024/08/21/postgresql-high-availability-concept.html
 ---
 
 ### 1. Giới thiệu 

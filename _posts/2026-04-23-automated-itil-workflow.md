@@ -2,12 +2,12 @@
 title: "Automated ITIL Workflow: Zabbix + ServiceDesk Plus + Grafana + AD DC"
 categories:
 - Monitoring
-- ITIL
-- Active-Directory
 
 feature_image: "/assets/postbanner.jpg"
 feature_text: |
   ### Lab Automated ITIL Workflow trên Ubuntu 22.04: Zabbix phát hiện sự cố → SDP ticket round-robin → Grafana, xác thực tập trung qua Active Directory
+redirect_from:
+- /monitoring/itil/active-directory/2026/04/23/automated-itil-workflow.html
 ---
 
 Bài viết xây dựng lab **Automated ITIL Workflow** trên **Ubuntu Server 22.04**, tích hợp **Active Directory Domain Controller** (Windows Server 2022) làm nguồn xác thực tập trung. Toàn bộ dịch vụ cài đặt **trực tiếp trên server**.

@@ -2,17 +2,11 @@
 title: "Nâng cấp Domain Controller Windows Server 2008 lên 2025 (qua trung gian 2019)"
 categories:
 - Windows
-tags:
-- active-directory
-- windows-server
-- domain-controller
-- migration
-- adcs
-- dns
-- dhcp
 feature_image: "/assets/postbanner.jpg"
 feature_text: |
   ### Migrate DC 2008 → 2019 → 2025, giữ nguyên DNS, DHCP, ADCS và FSMO
+redirect_from:
+- /windows/2026/06/29/nang-cap-domain-controller-2008-len-2025.html
 ---
 
 Lab nâng cấp một forest Active Directory đang chạy **Windows Server 2008 SP2 32 bit** lên **Windows Server 2025 64 bit**, kèm migrate toàn bộ role hạ tầng (DNS, DHCP, ADCS, Print Server). Vì WS 2025 yêu cầu Forest Functional Level ≥ 2016 nên không lên thẳng từ FFL 2008 được — lab đi qua một DC trung gian WS 2019 để nâng FFL trước. Flow gồm 9 bước:

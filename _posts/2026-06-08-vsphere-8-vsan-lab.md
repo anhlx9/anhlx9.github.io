@@ -1,16 +1,12 @@
 ---
 title: "VMware vSphere 8 + vSAN Lab — ESXi 8.0U3j & vCenter 8.0.3"
 categories:
-- VMware
-tags:
-- vsphere
-- vsan
-- esxi
-- vcenter
-- vmware
+- Virtualization
 feature_image: "/assets/postbanner.jpg"
 feature_text: |
   ### Triển khai cụm hypervisor vSphere 8 với vSAN — bản mới nhất ESXi 8.0U3j & vCenter 8.0.3
+redirect_from:
+- /vmware/2026/06/08/vsphere-8-vsan-lab.html
 ---
 
 Kể từ khi Broadcom hoàn tất việc mua lại VMware cuối năm 2023, vSphere đã trải qua nhiều thay đổi về mô hình cấp phép và subscription, nhưng về mặt kỹ thuật vẫn tiếp tục phát triển mạnh. vSphere 8 mang theo vSAN 8 với kiến trúc ESA mới, cải tiến vSphere Lifecycle Manager, và giao diện vCenter được làm mới đáng kể.

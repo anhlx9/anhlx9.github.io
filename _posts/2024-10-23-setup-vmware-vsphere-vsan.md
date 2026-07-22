@@ -1,11 +1,12 @@
 ---
 title: Setup VMware vSphere, vSan
 categories:
-- System
-- VMware
+- Virtualization
 feature_image: "/assets/postbanner.jpg"
 feature_text: |
   ### Ảo hóa hạ tầng máy chủ và lưu trữ cho Tổ chức, Doanh nghiệp với vSphere 7
+redirect_from:
+- /system/vmware/2024/10/23/setup-vmware-vsphere-vsan.html
 ---
 
 ### 1. Giới thiệu 

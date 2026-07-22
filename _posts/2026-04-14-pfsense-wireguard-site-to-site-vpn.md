@@ -2,11 +2,12 @@
 title: "pfSense WireGuard Site-to-Site VPN"
 categories:
 - Network
-- Security
 
 feature_image: "/assets/postbanner.jpg"
 feature_text: |
   ### Lab VPN Site-to-Site giữa 2 pfSense với WireGuard — On-Premise to Cloud
+redirect_from:
+- /network/security/2026/04/14/pfsense-wireguard-site-to-site-vpn.html
 ---
 
 ### Mục lục

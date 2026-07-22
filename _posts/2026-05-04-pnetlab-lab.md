@@ -6,6 +6,8 @@ categories:
 feature_image: "/assets/postbanner.jpg"
 feature_text: |
   ### Xây dựng môi trường lab mạng với PNetLab trên VMware ESXi / Proxmox
+redirect_from:
+- /network/2026/05/04/pnetlab-lab.html
 ---
 
 Bài viết hướng dẫn cài đặt và sử dụng **PNetLab** — nền tảng giả lập mạng mã nguồn mở cho phép chạy các thiết bị mạng ảo (Cisco IOS, Cisco XE, Cisco XR, Juniper, Palo Alto, MikroTik, v.v.) trực tiếp trên trình duyệt web mà không cần cài đặt thêm phần mềm.

@@ -1,12 +1,13 @@
 ---
 title: Guacamole Jump Host 
 categories:
-- System
 - Linux
   
 feature_image: "/assets/postbanner.jpg"
 feature_text: |
   ### Quản lý truy cập với Guacamole jump host trên nền web
+redirect_from:
+- /system/linux/2025/05/01/guacamole-jump-host.html
 ---
 
 

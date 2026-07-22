@@ -2,13 +2,11 @@
 title: "Exchange Server SE — DAG On-Premises"
 categories:
 - Windows
-- Mail-Exchange
-- System
-- Windows-Server
-- Active-Directory
 feature_image: "/assets/postbanner.jpg"
 feature_text: |
   ### Mail on-premises với Exchange Server SE, DAG 2 node, HAProxy + Keepalived HA
+redirect_from:
+- /windows/mail-exchange/system/windows-server/active-directory/2026/06/09/exchange-se-dag-lab.html
 ---
 
 Exchange Server vẫn là lựa chọn của nhiều tổ chức khi cần kiểm soát hoàn toàn data mail — dù xu hướng migrate lên Microsoft 365 ngày càng phổ biến. Lab này mình dựng Exchange Server SE on-premises với DAG 2 node trên domain `anhlx.lab`, HAProxy làm Layer 4 load balancer, để đi sâu vào các thành phần core: transport pipeline, Client Access Front End, DAG replication, và failover mailbox database. Kịch bản cuối bài: `user1` gửi mail cho `user2` qua OWA, trace từng hop qua Message Tracking, rồi shutdown EX01 để xem DAG tự failover.

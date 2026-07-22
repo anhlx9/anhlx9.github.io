@@ -1,20 +1,12 @@
 ---
 title: "Veeam VBR 13 — Linux Hardened Repository & Immutability"
 categories:
-- Windows
-- Linux
-- Veeam
 - Backup
-tags:
-- veeam
-- backup
-- immutability
-- hardened-repository
-- disaster-recovery
-- ubuntu
 feature_image: "/assets/postbanner.jpg"
 feature_text: |
   ### Veeam VBR 13, Linux Hardened Repository XFS, Immutability 7 ngày, backup VMware + Agent, test 3 kịch bản restore
+redirect_from:
+- /windows/linux/veeam/backup/2026/06/10/veeam-v13-hardened-repository-immutability-ha-lab.html
 ---
 
 Backup là layer cuối cùng của defense — và cũng là mục tiêu tấn công đầu tiên khi ransomware xâm nhập hệ thống. Nếu backup bị mã hóa hoặc xóa cùng với data production, khả năng phục hồi gần như bằng không. Immutability giải quyết đúng điểm này: bản backup được khóa trong một khoảng thời gian cố định. Lab này mình dựng Veeam VBR 13 với 2 Linux Hardened Repository (XFS + Immutability 7 ngày) trên Ubuntu 24.04, backup primary vào VHR-01 rồi nhân bản ngay sang VHR-02 qua Backup Copy Job Immediate, sau đó test 3 kịch bản thực tế: mất storage, mất VM production, và mất chính Veeam server.

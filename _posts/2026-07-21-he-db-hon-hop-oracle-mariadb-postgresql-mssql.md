@@ -1,19 +1,12 @@
 ---
 title: "Đồng bộ, Đối soát & Di trú dữ liệu: hệ hỗn hợp Database Oracle–MariaDB–PostgreSQL–MSSQL với Data Guard, GoldenGate & Veridata"
 categories:
-- OracleDB
-- MariaDB
-- PostgreSQL
-- MSSQL
 - Database
-tags:
-- data-guard
-- goldengate
-- veridata
-- mssql
 feature_image: "/assets/postbanner.jpg"
 feature_text: |
   ### Oracle lõi + 3 DB vệ tinh (MariaDB, PostgreSQL, MSSQL): đồng bộ Data Guard & GoldenGate, đối soát Veridata, di trú toàn hệ sang bộ VM mới
+redirect_from:
+- /oracledb/mariadb/postgresql/mssql/database/2026/07/21/he-db-hon-hop-oracle-mariadb-postgresql-mssql.html
 ---
 
 Một hệ tài chính lõi Oracle Database. Đội ứng dụng mới viết trên PostgreSQL, hệ đối tác chỉ nhận SQL Server, mấy dịch vụ nội bộ thì quen MariaDB — mỗi hệ DB có mặt vì mục đích khác nhau và phù hợp với từng loại nhu cầu khác nhau, ép tất cả về một thứ chỉ đổi lấy rắc rối khác. Nhưng cũng chẳng bên nào nên cắm thẳng vào lõi: một câu query lỡ tay bên báo cáo là cả luồng giao dịch chậm theo.

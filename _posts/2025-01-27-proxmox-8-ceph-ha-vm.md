@@ -1,13 +1,13 @@
 ---
 title: Proxmox 8.3 with Ceph Shared Storage, HA VM
 categories:
-- System
-- Proxmox
-- Linux
-- Ceph
+- Virtualization
+- Storage
 feature_image: "/assets/postbanner.jpg"
 feature_text: |
   ### Ảo hóa hạ tầng máy chủ với Proxmox-v8.3 + Ceph-v19.2.0
+redirect_from:
+- /system/proxmox/linux/ceph/2025/01/27/proxmox-8-ceph-ha-vm-copy.html
 ---
 
 ### 1. Giới thiệu 
