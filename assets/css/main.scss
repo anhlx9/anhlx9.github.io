@@ -1,6 +1,45 @@
-@import "minimal-mistakes";
-
 ---
+# Front matter bắt buộc phải ở dòng đầu tiên thì Jekyll mới compile file SCSS này.
+---
+
+@charset "utf-8";
+
+/* ================================================================
+   JADE DEEP — bảng màu
+   Đổi tông toàn site chỉ bằng cách sửa 9 biến dưới đây.
+================================================================ */
+
+$jade-bg:         #0d1618; // nền chính
+$jade-surface:    #142326; // card, sidebar
+$jade-surface-2:  #101d1f; // code block, form
+$jade-border:     #21383b; // viền mảnh
+$jade-accent:     #2fb8a8; // teal — khớp màu logo
+$jade-accent-lt:  #6fd3c6; // teal sáng
+$jade-amber:      #f0a868; // điểm nhấn phụ
+$jade-text:       #e6edec;
+$jade-muted:      #8fa5a4;
+
+/* Ánh xạ vào biến của Minimal Mistakes.
+   Bắt buộc đặt TRƯỚC 2 dòng @import — biến trong theme khai báo !default,
+   giá trị nào gán trước sẽ thắng. */
+
+$background-color:           $jade-bg;
+$text-color:                 $jade-text;
+$muted-text-color:           $jade-muted;
+$primary-color:              $jade-accent;
+$border-color:               $jade-border;
+$footer-background-color:    #0a1113;
+$link-color:                 $jade-accent;
+$link-color-hover:           $jade-amber;
+$link-color-visited:         $jade-accent-lt;
+$masthead-link-color:        $jade-text;
+$masthead-link-color-hover:  $jade-accent;
+$navicon-link-color-hover:   $jade-border;
+$code-background-color:      $jade-surface-2;
+$code-background-color-dark: #0a1416;
+$form-background-color:      $jade-surface;
+
+@import "minimal-mistakes/skins/{{ site.minimal_mistakes_skin | default: 'dark' }}";
 @import "minimal-mistakes";
 
 /* ================================
@@ -8,38 +47,140 @@
 ================================ */
 
 body {
-  background: #f3f4f6;
+  background: $jade-bg;
+  color: $jade-text;
+}
+
+.page__content {
+  color: $jade-text;
+}
+
+.page__content p,
+.page__content li {
+  color: $jade-text;
+  line-height: 1.75;
+}
+
+.page__content h1,
+.page__content h2,
+.page__content h3,
+.page__content h4 {
+  color: #f2f7f6;
+}
+
+/* gạch chân mảnh dưới h2 cho dễ quét mắt */
+
+.page__content h2 {
+  border-bottom: 1px solid $jade-border;
+  padding-bottom: 0.35rem;
+}
+
+a {
+  color: $jade-accent;
+}
+
+a:hover {
+  color: $jade-amber;
 }
 
 /* ================================
-  body {
-    background: #f3f4f6;
+   MASTHEAD
+================================ */
+
+.masthead {
+  background: rgba(20, 35, 38, 0.92);
+  border-bottom: 1px solid $jade-border;
+}
+
+.greedy-nav {
+  background: transparent;
+}
+
+.greedy-nav a {
+  color: $jade-text;
+}
+
+.greedy-nav a:hover {
+  color: $jade-accent;
+}
+
+.greedy-nav .visible-links a::before {
+  background: $jade-accent;
+}
+
+.greedy-nav__toggle:hover {
+  color: $jade-accent;
+}
+
+.greedy-nav .hidden-links {
+  background: $jade-surface;
+  border: 1px solid $jade-border;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
+}
+
+.greedy-nav .hidden-links a {
+  color: $jade-text;
+}
+
+.greedy-nav .hidden-links a:hover {
+  color: $jade-accent;
+  background: rgba(47, 184, 168, 0.1);
+}
+
+.greedy-nav .hidden-links::before {
+  border-bottom-color: $jade-border;
+}
+
+/* ================================
+   HERO / INTRO TRANG CHỦ
+================================ */
+
+.home-intro__lead {
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: #f2f7f6;
+  margin-bottom: 0.6rem;
+  line-height: 1.4;
+}
+
+.home-intro__body {
+  font-size: 1.02rem;
+  color: $jade-muted;
+  max-width: 46rem;
+  line-height: 1.8;
+  padding-left: 14px;
+  border-left: 3px solid $jade-accent;
+}
+
+/* ================================
+   SIDEBAR / AUTHOR
+================================ */
 
 .sidebar {
-  background: #1f2937;
-
-.sidebar {
-  background: #f9fafb;
+  background: $jade-surface;
   padding: 22px;
+  border: 1px solid $jade-border;
   border-radius: 14px;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.10);
-  color: #1f2937;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  color: $jade-text;
 }
 
 .author__name {
-  color: #1f2937;
+  color: $jade-text;
   font-size: 18px;
   font-weight: 600;
 }
 
 .author__bio {
-  color: #64748b;
+  color: $jade-muted;
   font-size: 14px;
 }
 
 /* Thẻ location, github, youtube, email */
+
 .author__urls li {
-  background: #e5e7eb;
+  background: rgba(47, 184, 168, 0.08);
+  border: 1px solid $jade-border;
   border-radius: 8px;
   padding: 6px 10px;
   display: flex;
@@ -48,28 +189,30 @@ body {
 }
 
 .author__urls li a {
-  color: #1f2937;
+  color: $jade-text;
   font-size: 15px;
   font-weight: 500;
   margin-left: 8px;
 }
 
 .author__urls li a:hover {
-  color: #2563eb;
+  color: $jade-amber;
 }
 
-.author__urls i {
-  color: #2563eb;
+.author__urls i,
+.author__urls .svg-inline--fa {
+  color: $jade-accent;
   width: 22px;
 }
-  width: 22px;
-  color: #38bdf8;
+
+.fa-location-dot,
+.fa-map-marker-alt {
+  color: $jade-amber;
 }
 
-/* location icon */
-
-.fa-location-dot {
-  color: #f87171;
+.author__urls.social-icons .fa-envelope,
+.author__urls.social-icons .fa-envelope-square {
+  color: $jade-accent;
 }
 
 /* ================================
@@ -77,51 +220,159 @@ body {
 ================================ */
 
 .archive__item {
-  background: #1e293b;
+  background: $jade-surface;
   padding: 22px;
   border-radius: 14px;
-  border: 1px solid #334155;
+  border: 1px solid $jade-border;
   margin-bottom: 22px;
-  transition: all 0.25s ease;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
 }
 
 .archive__item:hover {
   transform: translateY(-5px);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.35);
+  border-color: rgba(47, 184, 168, 0.55);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
 }
 
 /* title */
 
+.archive__item-title {
+  margin-top: 0;
+}
+
 .archive__item-title a {
-  color: #38bdf8;
+  color: $jade-accent;
   font-size: 20px;
   font-weight: 600;
+  border-bottom: 0;
 }
 
 .archive__item-title a:hover {
-  color: #7dd3fc;
+  color: $jade-amber;
 }
 
 /* excerpt */
 
 .archive__item-excerpt {
-  color: #cbd5e1;
+  color: $jade-muted;
 }
 
 /* meta */
 
-.page__meta {
-  color: #94a3b8;
+.page__meta,
+.page__meta a,
+.archive__item .page__meta {
+  color: $jade-muted;
+}
+
+.page__meta-readtime,
+.page__date {
+  color: $jade-muted;
 }
 
 /* ================================
-   HERO TEXT
+   CODE / QUOTE / TABLE
 ================================ */
 
-.page__content p {
-  font-size: 17px;
-  color: #374151;
-  line-height: 1.7;
+div.highlighter-rouge,
+figure.highlight,
+pre.highlight {
+  background: $jade-surface-2;
+  border: 1px solid $jade-border;
+  border-radius: 10px;
+}
+
+code.highlighter-rouge,
+p > code,
+li > code,
+td > code {
+  background: rgba(47, 184, 168, 0.12);
+  color: $jade-accent-lt;
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+blockquote {
+  border-left: 4px solid $jade-accent;
+  background: rgba(47, 184, 168, 0.06);
+  border-radius: 0 8px 8px 0;
+  padding: 2px 16px;
+  color: $jade-muted;
+}
+
+table {
+  border-collapse: collapse;
+  border: 1px solid $jade-border;
+}
+
+table th {
+  background: rgba(47, 184, 168, 0.14);
+  color: #f2f7f6;
+  border-bottom: 1px solid $jade-border;
+}
+
+table td {
+  border-bottom: 1px solid $jade-border;
+  color: $jade-text;
+}
+
+table tbody tr:hover {
+  background: rgba(47, 184, 168, 0.06);
+}
+
+hr {
+  border-color: $jade-border;
+}
+
+/* ================================
+   TOC / SIDEBAR NAV
+================================ */
+
+.toc {
+  background: $jade-surface;
+  border: 1px solid $jade-border;
+  box-shadow: none;
+}
+
+.toc .nav__title {
+  background: $jade-accent;
+  color: #06181a;
+  font-weight: 700;
+}
+
+.toc .nav__items a {
+  color: $jade-muted;
+}
+
+.toc .nav__items a:hover {
+  color: $jade-accent;
+  background: rgba(47, 184, 168, 0.08);
+}
+
+.nav__list .nav__items a {
+  color: $jade-text;
+}
+
+.nav__list .nav__items a:hover {
+  color: $jade-accent;
+}
+
+/* ================================
+   TAG / CATEGORY PILL
+================================ */
+
+.page__taxonomy .page__taxonomy-item,
+.taxonomy__index a {
+  color: $jade-accent;
+  background: rgba(47, 184, 168, 0.1);
+  border: 1px solid $jade-border;
+  border-radius: 999px;
+}
+
+.page__taxonomy .page__taxonomy-item:hover,
+.taxonomy__index a:hover {
+  color: $jade-amber;
+  border-color: rgba(240, 168, 104, 0.55);
 }
 
 /* ================================
@@ -134,23 +385,76 @@ body {
 }
 
 .pagination a,
-.pagination span {
+.pagination span,
+.pagination li a {
   padding: 10px 16px;
   margin: 4px;
-  border-radius: 6px;
-  background: #e5e7eb;
-  color: #111827;
+  border-radius: 8px;
+  background: $jade-surface;
+  border: 1px solid $jade-border;
+  color: $jade-text;
   font-weight: 600;
 }
 
-.pagination a:hover {
-  background: #3b82f6;
-  color: white;
+.pagination a:hover,
+.pagination li a:hover {
+  background: rgba(47, 184, 168, 0.16);
+  border-color: $jade-accent;
+  color: $jade-accent;
 }
 
-.pagination .current {
-  background: #2563eb;
-  color: white;
+.pagination .current,
+.pagination li a.current,
+.pagination .disabled {
+  background: $jade-accent;
+  border-color: $jade-accent;
+  color: #06181a;
+}
+
+.pagination .disabled {
+  background: $jade-surface-2;
+  border-color: $jade-border;
+  color: $jade-muted;
+}
+
+/* ================================
+   SEARCH
+================================ */
+
+.search-content {
+  background: $jade-bg;
+}
+
+.search-input {
+  background: transparent;
+  color: $jade-text;
+  border-bottom: 1px solid $jade-border;
+}
+
+.search-content .archive__item-title a {
+  color: $jade-accent;
+}
+
+/* ================================
+   FOOTER
+================================ */
+
+.page__footer {
+  background: #0a1113;
+  border-top: 1px solid $jade-border;
+  color: $jade-muted;
+}
+
+.page__footer a {
+  color: $jade-muted;
+}
+
+.page__footer a:hover {
+  color: $jade-accent;
+}
+
+.page__footer-copyright {
+  color: $jade-muted;
 }
 
 /* ===== MOBILE FIX FOLLOW BUTTON ===== */
@@ -167,10 +471,11 @@ body {
 
   .author__urls-wrapper.open .author__urls {
     display: block;
-    background: #ffffff;
+    background: $jade-surface;
+    border: 1px solid $jade-border;
     padding: 14px;
     border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
   }
 
   .author__urls li {
@@ -181,14 +486,14 @@ body {
   }
 
   .author__urls li a {
-    color: #111827;
+    color: $jade-text;
     font-size: 15px;
     font-weight: 500;
   }
 
   .author__urls li i {
     width: 20px;
-    color: #3b82f6;
+    color: $jade-accent;
   }
 
 }
@@ -202,11 +507,18 @@ body {
   height: 140px;
   object-fit: cover;
   border-radius: 50%;
-  border: 3px solid #e5e7eb;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.15);
+  border: 3px solid rgba(47, 184, 168, 0.45);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
 }
 
 /* Doi sang vuong bo goc: border-radius: 18px; */
+
+/* site-title đã được thay bằng ảnh logo ở ::before bên dưới,
+   nên ẩn thẻ img logo mặc định của theme để không bị lặp 2 logo. */
+
+.masthead .site-logo {
+  display: none;
+}
 
 .masthead .site-title,
 .greedy-nav .site-title {
@@ -261,8 +573,8 @@ body {
 
 .xinchao-page .page__content {
   max-width: 760px;
-  background: rgba(15, 23, 42, 0.26);
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: $jade-surface;
+  border: 1px solid $jade-border;
   border-radius: 14px;
   padding: 24px;
 }
@@ -270,13 +582,13 @@ body {
 .xinchao-page .page__content p {
   font-size: 1.08rem;
   line-height: 1.9;
-  color: #d7dee9;
+  color: $jade-muted;
   margin-bottom: 1rem;
 }
 
 .xinchao-page .page__content p:first-of-type {
   font-size: 1.2rem;
-  color: #f3f4f6;
+  color: $jade-text;
 }
 
 .xinchao-page .page__content p:last-of-type {

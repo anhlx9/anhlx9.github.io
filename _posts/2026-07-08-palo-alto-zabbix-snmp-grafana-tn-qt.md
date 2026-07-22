@@ -12,9 +12,7 @@ feature_text: |
   ### SNMP đo tổng WAN, QoS + EDL + PA API tách riêng lưu lượng download TN/QT, Grafana & Zabbix Map trực quan hóa
 ---
 
-Đồ thị băng thông WAN báo 500 Mbps. Trong đó bao nhiêu đi ra nước ngoài?
-
-SNMP không trả lời được câu đó. Counter `ifHCInOctets` trên interface WAN chỉ đếm tổng octet đi qua — nó không biết gói vừa về là từ `vnexpress.net` hay từ một server đặt ở Pháp. Nhưng đúng phần bị nó gộp chung mới là phần đắt tiền: với ISP lẫn doanh nghiệp thuê kênh, cước quốc tế và cước trong nước không cùng một giá.
+Đồ thị băng thông WAN báo 500 Mbps. Trong đó bao nhiêu đi ra nước ngoài? SNMP không trả lời được câu đó. Counter `ifHCInOctets` trên interface WAN chỉ đếm tổng octet đi qua — nó không biết gói vừa về là từ `vnexpress.net` hay từ một server đặt ở Pháp. Nhưng đúng phần bị nó gộp chung mới là phần đắt tiền: với ISP lẫn doanh nghiệp thuê kênh, cước quốc tế và cước trong nước không cùng một giá.
 
 Lab tách con số đó ngay trên firewall Palo Alto rồi vẽ ra Grafana — 5 container trên một VM Ubuntu, cộng PA-VM làm đối tượng giám sát:
 

@@ -7,22 +7,29 @@ author_profile: true
 
 ## Overview
 
-Hi, I am **Anh Le**, a **System Engineer** based in **Ho Chi Minh City, Vietnam**.
+Hi, I'm **Anh Le** — an infrastructure and systems engineer based in **Ho Chi Minh City, Vietnam**.
 
-I specialize in designing, operating, and improving reliable IT systems, with hands-on experience across infrastructure and modern cloud-native environments.
+I work on the layer most people never see: the networks, hypervisors, storage, and control planes everything else depends on. My focus is reliability — systems that behave predictably under load, under failure, and at 3 a.m.
+
+## How I Work
+
+- **Design for failure first** — redundancy, blast radius, and recovery paths before feature count.
+- **Prove it in a lab** — every design I write about has been stood up, stressed, and broken on purpose.
+- **Automate what repeats** — manual steps are documentation debt.
+- **Write it down** — if it isn't documented, it didn't happen.
 
 ## Focus Areas
 
-My current technical focus includes:
+- Network infrastructure — routing, segmentation, perimeter security
+- Virtualization and private cloud platforms
+- Distributed storage and data services
+- Container platforms and cloud-native operations
+- Observability, backup, and disaster recovery
 
-- Network Infrastructure
-- Enterprise IT Services
-- Virtualization and Cloud Computing
-- Web Application Development
-- Linux, Kubernetes, Openstack and Ceph
+Tools change; the problems don't. I pick whatever fits the constraint in front of me rather than defending a stack.
 
-## Purpose Of This Blog
+## About This Blog
 
-This blog is a curated space where I share practical technical notes, implementation guides, and personal reflections from real-world projects.
+Working notes, published openly. Each post is a real lab or a real project — the environment, the exact commands, the expected output, and where things went sideways.
 
-My goal is to keep each article concise, useful, and actionable for engineers who are building and operating production systems.
+Most articles are written in Vietnamese, for engineers who'd rather read a reproducible walkthrough than a product page.
