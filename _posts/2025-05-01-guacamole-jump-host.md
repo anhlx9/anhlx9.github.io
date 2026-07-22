@@ -10,6 +10,9 @@ redirect_from:
 - /system/linux/2025/05/01/guacamole-jump-host.html
 ---
 
+Mở RDP và SSH thẳng ra Internet là mở luôn cửa cho dò quét. Lab dựng Apache Guacamole làm jump host truy cập từ xa qua trình duyệt — build từ source, MariaDB lưu tài khoản và phân quyền, bật extension ghi hình lại toàn bộ phiên làm việc để phục vụ truy vết.
+
+
 
 ### 1. Giới thiệu 
 

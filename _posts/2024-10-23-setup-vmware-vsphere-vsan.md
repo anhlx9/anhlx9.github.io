@@ -9,6 +9,9 @@ redirect_from:
 - /system/vmware/2024/10/23/setup-vmware-vsphere-vsan.html
 ---
 
+Hàng trăm dịch vụ không thể mỗi thứ một máy chủ vật lý. Lab ảo hóa hạ tầng bằng VMware vSphere 7.0: cài ESXi lên máy chủ vật lý, gom thành cluster quản lý tập trung, rồi dựng vSAN gộp ổ đĩa local của các host thành kho lưu trữ dùng chung — nền tảng để bật tiếp HA và vMotion.
+
+
 ### 1. Giới thiệu 
 
 - Các ứng dụng dịch vụ đòi hỏi môi trường triển khai để hoạt động, thường là các máy chủ (server). Trong hệ thống một doanh nghiệp có hàng trăm, hàng ngàn dịch vụ khác nhau, do đó đòi hỏi một lượng lớn máy chủ. Ảo hóa hạ tầng các máy chủ vật lý cung cấp ra thành các máy chủ ảo đem đến lợi ích lớn về việc tận dụng hiệu quả, tối đa tài nguyên phần cứng máy chủ vật lý, từ đó giảm chi phí đầu tư hạ tầng cho doanh nghiệp.

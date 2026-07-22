@@ -9,7 +9,7 @@ redirect_from:
 - /system/windows-server/active-directory/2026/04/09/active-directory-windows-server-2022.html
 ---
 
-Bài viết hướng dẫn triển khai lab Active Directory Domain Services (AD DS) với 2 Domain Controller chạy Windows Server 2022 và 1 máy Windows client join domain.
+Một Domain Controller duy nhất là một điểm chết duy nhất cho toàn bộ hệ thống xác thực. Lab dựng Active Directory Domain Services với hai Domain Controller Windows Server 2022 nhân bản cho nhau, cộng một máy Windows client join domain để kiểm chứng đăng nhập vẫn chạy khi một DC ngừng hoạt động.
 
 - [1. Giới thiệu](#1-giới-thiệu)
 - [2. Thiết kế lab](#2-thiết-kế-lab)

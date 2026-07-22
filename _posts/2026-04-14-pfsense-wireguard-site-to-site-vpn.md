@@ -10,6 +10,9 @@ redirect_from:
 - /network/security/2026/04/14/pfsense-wireguard-site-to-site-vpn.html
 ---
 
+Nối hai site về cùng một mạng nội bộ mà không thuê kênh riêng. Lab dựng VPN site-to-site giữa hai firewall pfSense — FW01 on-premise và FW02 trên cloud — bằng WireGuard: cấu hình tunnel, peer, route và firewall rule để hai lớp mạng LAN nhìn thấy nhau qua Internet.
+
+
 ### Mục lục
 
 - [Mục lục](#mục-lục)

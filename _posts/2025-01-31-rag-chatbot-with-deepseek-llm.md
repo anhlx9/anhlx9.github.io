@@ -10,6 +10,9 @@ redirect_from:
 - /system/llm/2025/01/31/rag-chatbot-with-deepseek-llm.html
 ---
 
+LLM công cộng không được phép đọc tài liệu nội bộ. Lab dựng chatbot RAG chạy hoàn toàn on-premise trên Ubuntu 22.04: Ollama phục vụ model DeepSeek-R1, AnythingLLM làm giao diện và lớp RAG nạp tài liệu riêng, tất cả đóng gói bằng Docker Compose — dữ liệu không rời khỏi máy chủ.
+
+
 
 ### 1. Giới thiệu 
 

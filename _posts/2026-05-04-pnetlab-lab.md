@@ -10,7 +10,7 @@ redirect_from:
 - /network/2026/05/04/pnetlab-lab.html
 ---
 
-Bài viết hướng dẫn cài đặt và sử dụng **PNetLab** — nền tảng giả lập mạng mã nguồn mở cho phép chạy các thiết bị mạng ảo (Cisco IOS, Cisco XE, Cisco XR, Juniper, Palo Alto, MikroTik, v.v.) trực tiếp trên trình duyệt web mà không cần cài đặt thêm phần mềm.
+Học định tuyến mà không có thiết bị Cisco thật trong tay. Lab dựng **PNetLab** — nền tảng giả lập mạng mã nguồn mở chạy được image thật của Cisco IOS/XE/XR, Juniper, Palo Alto, MikroTik — từ khâu import OVA, cấp phát tài nguyên, nạp image tới dựng topology đầu tiên.
 
 <img src="/assets/img/2026-05-04-pnetlab-lab/00.png"/>
 

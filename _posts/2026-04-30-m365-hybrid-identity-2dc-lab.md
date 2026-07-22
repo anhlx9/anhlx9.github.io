@@ -9,7 +9,7 @@ redirect_from:
 - /system/windows-server/active-directory/microsoft-365/2026/04/30/m365-hybrid-identity-2dc-lab.html
 ---
 
-Bài lab hướng dẫn triển khai mô hình **Hybrid Identity** chuẩn production cho doanh nghiệp vừa và nhỏ (SME): 2 VM Windows Server 2022 làm Domain Controller, đồng bộ tài khoản AD lên **Microsoft Entra ID** bằng **Microsoft Entra Connect**, sau đó **đăng nhập Outlook Web / M365 bằng tài khoản AD đã sync**.
+Doanh nghiệp lên Microsoft 365 nhưng vẫn giữ AD on-premise — user không thể nhớ hai bộ mật khẩu. Lab dựng mô hình **Hybrid Identity** chuẩn production cho SME: hai VM Windows Server 2022 làm Domain Controller, đồng bộ tài khoản lên **Microsoft Entra ID** bằng Entra Connect, để một tài khoản duy nhất đăng nhập được cả trong mạng nội bộ lẫn trên cloud.
 
 > **Mục tiêu lab**: Tạo user trong AD on-premise → sync lên Entra ID → login `user1@anhle.com.vn` vào Outlook Web thành công. Lab này **không cấu hình mail flow** (không thêm MX record), chỉ tập trung vào phần **Identity Sync** và **xác thực cloud**.
 

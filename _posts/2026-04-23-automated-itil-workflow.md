@@ -10,7 +10,7 @@ redirect_from:
 - /monitoring/itil/active-directory/2026/04/23/automated-itil-workflow.html
 ---
 
-Bài viết xây dựng lab **Automated ITIL Workflow** trên **Ubuntu Server 22.04**, tích hợp **Active Directory Domain Controller** (Windows Server 2022) làm nguồn xác thực tập trung. Toàn bộ dịch vụ cài đặt **trực tiếp trên server**.
+Alert nổ lúc 2 giờ sáng mà không ai mở dashboard thì cũng như không. Lab dựng vòng tự động hóa ITIL trên **Ubuntu Server 22.04**, xác thực tập trung qua **Active Directory Domain Controller** (Windows Server 2022), toàn bộ dịch vụ chạy **trực tiếp trên host**:
 
 **Luồng tự động hóa:**
 

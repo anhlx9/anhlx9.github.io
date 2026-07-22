@@ -9,6 +9,9 @@ redirect_from:
 - /database/system/linux/2024/08/21/postgresql-high-availability-concept.html
 ---
 
+Một database đơn lẻ chết là cả ứng dụng chết theo. Lab dựng PostgreSQL replicate Master/Slave bằng Docker Compose, thêm Keepalived giữ một VIP luôn trỏ về node đang sống — master hỏng thì slave lên thay, ứng dụng vẫn kết nối vào đúng một địa chỉ IP không đổi.
+
+
 ### 1. Giới thiệu 
 
 - Trong các bài viết khác, mình sử dụng PostgreSQL làm database do đó để giảm bớt nội dung kiến thức trong các bài viết, mình sẽ tách riêng bài viết xây dựng hệ thống database với PostgreSQL có tính sẵn sàng cao để khi tích hợp các hệ thống với nhau chúng ta có 1 mô hình lớn tổng thể các dịch vụ có độ ổn định và tính sẵn sàng cao phục vụ cho hoạt động của doanh nghiệp.

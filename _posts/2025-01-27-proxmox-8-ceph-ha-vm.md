@@ -10,6 +10,9 @@ redirect_from:
 - /system/proxmox/linux/ceph/2025/01/27/proxmox-8-ceph-ha-vm-copy.html
 ---
 
+vSphere mạnh nhưng license không rẻ. Lab dựng hạ tầng ảo hóa thay thế bằng Proxmox VE 8.3 với Ceph Squid 19.2.0 làm shared storage nội bộ — cluster mở rộng bằng cách thêm node, VM bật High Availability tự migrate sang node khác khi node đang chạy nó gặp sự cố, toàn bộ không tốn phí license.
+
+
 ### 1. Giới thiệu 
 
 - Khi triển khai hạ tầng ảo hóa cho doanh nghiệp, mình luôn ưu tiên sử dụng VMware vSphere do hiệu năng, độ ổn định và các tính năng nâng cao của VMware vSphere luôn vượt trội hơn các giải pháp ảo hóa khác. Chi phí licenses cho ESXi, vCenter, vSan là khá lớn, và hiện nay việc thay đổi các chính sách khi Broadcom mua lại VMware khiến cho xu hướng công nghệ chuyển dịch sang các giải pháp ảo hóa open source khác càng trở nên phổ biến hơn. 

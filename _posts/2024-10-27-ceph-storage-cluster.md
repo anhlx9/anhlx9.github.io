@@ -9,6 +9,9 @@ redirect_from:
 - /system/storage/linux/ceph/2024/10/27/ceph-storage-cluster.html
 ---
 
+Mọi thiết bị lưu trữ đóng hộp đều đụng trần: hết slot cắm disk là hết đường mở rộng. Lab dựng Ceph Squid 19.2.0 trên 6 server Ubuntu 22.04 — 3 node monitor, 3 node OSD — gom disk rời của nhiều máy thành một pool chung, mở rộng tới mức Petabyte bằng cách thêm node và chịu được lỗi ở mức nguyên máy.
+
+
 
 ### 1. Giới thiệu 
 
