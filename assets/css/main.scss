@@ -228,6 +228,13 @@ a:hover {
   margin-bottom: 0;
 }
 
+/* card nổi bật chỉ giữ tiêu đề + trích đoạn — ẩn ngày, read time, category */
+
+.featured-grid .page__meta,
+.featured-grid .archive__item .page__taxonomy {
+  display: none;
+}
+
 /* ================================
    ALL POSTS
 ================================ */

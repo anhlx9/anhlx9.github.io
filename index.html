@@ -14,7 +14,7 @@ operational details you only learn the hard way.
 
 {% comment %} ===== NỔI BẬT — grid cố định, lấy từ _data/featured.yml ===== {% endcomment %}
 {% if site.data.featured and site.data.featured.size > 0 %}
-<h2 class="home-section__title">Nổi bật</h2>
+<h2 class="home-section__title">Featured</h2>
 
 <div class="featured-grid">
   {% for slug in site.data.featured %}
@@ -28,8 +28,8 @@ operational details you only learn the hard way.
 
 {% comment %} ===== MỚI NHẤT — 4 bài mới, tự loại bài đã nằm trong featured ===== {% endcomment %}
 <div class="home-section__head">
-  <h2 class="home-section__title">Mới nhất</h2>
-  <a class="home-viewall" href="{{ '/all-posts/' | relative_url }}">Xem tất cả bài viết →</a>
+  <h2 class="home-section__title">Latest</h2>
+  <a class="home-viewall" href="{{ '/all-posts/' | relative_url }}">View all posts →</a>
 </div>
 
 {% assign feat = site.data.featured | join: "|" %}
