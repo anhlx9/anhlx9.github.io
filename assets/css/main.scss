@@ -607,16 +607,24 @@ hr {
 
 @media (max-width: 768px) {
 
-  /* giữ popup ẩn mặc định */
+  /* nút FOLLOW luôn hiện trên mobile — chặn theme JS fadeOut ẩn mất nút */
 
-  .author__urls-wrapper .author__urls {
-    display: none;
+  .author__urls-wrapper > button {
+    display: inline-block !important;
   }
 
-  /* khi bấm FOLLOW thì mới hiện */
+  /* giữ popup ẩn mặc định.
+     `!important` để thắng inline-style `display:block` mà theme JS (fadeToggle)
+     có thể gán — nhờ vậy hiện/ẩn do MÌNH kiểm soát hoàn toàn qua class .open. */
+
+  .author__urls-wrapper .author__urls {
+    display: none !important;
+  }
+
+  /* khi bấm FOLLOW (JS gắn .open) thì mới hiện */
 
   .author__urls-wrapper.open .author__urls {
-    display: block;
+    display: block !important;
     background: $jade-surface;
     border: 1px solid $jade-border;
     padding: 14px;

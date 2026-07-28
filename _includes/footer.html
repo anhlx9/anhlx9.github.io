@@ -2,6 +2,18 @@
   © {{ site.time | date: "%Y" }} Anh Le • Built with ❤️
 </div>
 
+{% comment %} Nút FOLLOW trên mobile: bật/tắt danh sách liên kết tác giả bằng class .open {% endcomment %}
+<script>
+  (function () {
+    document.addEventListener("click", function (e) {
+      var btn = e.target.closest(".author__urls-wrapper > button");
+      if (!btn) return;
+      e.preventDefault();
+      btn.closest(".author__urls-wrapper").classList.toggle("open");
+    });
+  })();
+</script>
+
 {% if page.collection == "posts" %}
 <button id="back-to-top" class="back-to-top" aria-label="Back to top" title="Back to top">
   <span class="back-to-top__ring" aria-hidden="true"></span>
