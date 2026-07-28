@@ -1,0 +1,18 @@
+# ================================================================
+#  BÀI NỔI BẬT — hiển thị ở khối "Nổi bật" trên trang chủ.
+#
+#  • Mỗi dòng = tên file bài trong _posts/, BỎ đuôi .md.
+#  • Thứ tự các dòng = thứ tự hiển thị (trên xuống, trái sang phải).
+#  • Thêm / bớt / sắp xếp lại thoải mái — trang chủ đổi theo ngay,
+#    KHÔNG bị bài mới đăng đẩy trôi như danh sách phân trang.
+# ================================================================
+
+- 2026-06-03-next-gen-gpu-cloud-rke2-kubevirt
+- 2026-05-21-openstack-epoxy-ovn-ceph-aio
+- 2025-01-27-proxmox-8-ceph-ha-vm
+- 2026-06-08-vsphere-8-vsan-lab
+- 2024-10-27-ceph-storage-cluster
+- 2026-07-21-he-db-hon-hop-oracle-mariadb-postgresql-mssql
+- 2026-04-30-m365-hybrid-identity-2dc-lab
+- 2026-06-10-veeam-v13-hardened-repository-immutability-ha-lab
+- 2026-07-01-minio-aistor-enterprise

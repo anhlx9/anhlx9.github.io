@@ -153,6 +153,133 @@ a:hover {
 }
 
 /* ================================
+   HOME — SECTION HEADING + VIEW ALL
+================================ */
+
+.home-section__title {
+  margin-top: 2.4rem;
+  margin-bottom: 1.1rem;
+  font-size: 1.5rem;
+  color: #f2f7f6;
+  border-bottom: 1px solid $jade-border;
+  padding-bottom: 0.4rem;
+}
+
+/* hàng tiêu đề "Mới nhất" + nút "Xem tất cả" nằm cùng dòng, dạt hai bên */
+
+.home-section__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 2.4rem;
+  margin-bottom: 1.1rem;
+  border-bottom: 1px solid $jade-border;
+  padding-bottom: 0.4rem;
+}
+
+.home-section__head .home-section__title {
+  margin: 0;
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.home-viewall {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: $jade-accent;
+  white-space: nowrap;
+}
+
+.home-viewall:hover {
+  color: $jade-amber;
+}
+
+/* ================================
+   HOME — FEATURED GRID
+================================ */
+
+.featured-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  margin-bottom: 0.5rem;
+}
+
+@media (max-width: 47.99em) {
+  .featured-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.featured-card {
+  display: flex;
+  flex-direction: column;
+  background: $jade-surface;
+  border: 1px solid $jade-border;
+  border-radius: 14px;
+  padding: 20px;
+  text-decoration: none;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.featured-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(47, 184, 168, 0.55);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
+}
+
+.featured-card__cat {
+  align-self: flex-start;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: $jade-accent;
+  background: rgba(47, 184, 168, 0.1);
+  border: 1px solid $jade-border;
+  border-radius: 999px;
+  padding: 3px 10px;
+  margin-bottom: 12px;
+}
+
+.featured-card__title {
+  margin: 0 0 10px;
+  font-size: 1.12rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: $jade-accent;
+}
+
+.featured-card:hover .featured-card__title {
+  color: $jade-amber;
+}
+
+.featured-card__excerpt {
+  margin: 0 0 14px;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: $jade-muted;
+}
+
+.featured-card__meta {
+  margin-top: auto;
+  font-size: 0.82rem;
+  color: $jade-muted;
+}
+
+/* ================================
+   ALL POSTS
+================================ */
+
+.allposts-count {
+  color: $jade-muted;
+  font-size: 0.95rem;
+  margin-bottom: 1.4rem;
+}
+
+/* ================================
    THU HỒI KHOẢNG TRỐNG BÊN PHẢI
 
    Minimal Mistakes luôn chừa 200px (>=1024px) / 300px (>=1280px)

@@ -1,8 +1,6 @@
 ---
-layout: home
+layout: archive
 author_profile: true
-paginate: true
-title: "Anh Le Blog"
 ---
 
 <p class="home-intro__lead">Systems, from the rack to the control plane.</p>
@@ -13,3 +11,41 @@ I build systems in the lab, break them on purpose, and write down what
 actually happens — architecture notes, hands-on walkthroughs, and the
 operational details you only learn the hard way.
 </p>
+
+{% comment %} ===== NỔI BẬT — grid cố định, lấy từ _data/featured.yml ===== {% endcomment %}
+{% if site.data.featured and site.data.featured.size > 0 %}
+<h2 class="home-section__title">Nổi bật</h2>
+
+<div class="featured-grid">
+  {% for slug in site.data.featured %}
+    {% assign post = site.posts | where_exp: "p", "p.path contains slug" | first %}
+    {% if post %}
+    <a class="featured-card" href="{{ post.url | relative_url }}">
+      {% if post.categories and post.categories.size > 0 %}
+      <span class="featured-card__cat">{{ post.categories | first }}</span>
+      {% endif %}
+      <h3 class="featured-card__title">{{ post.title }}</h3>
+      <p class="featured-card__excerpt">{{ post.excerpt | markdownify | strip_html | strip_newlines | truncate: 150 }}</p>
+      <span class="featured-card__meta">{{ post.date | date: "%d %b %Y" }}</span>
+    </a>
+    {% endif %}
+  {% endfor %}
+</div>
+{% endif %}
+
+{% comment %} ===== MỚI NHẤT — 4 bài mới, tự loại bài đã nằm trong featured ===== {% endcomment %}
+<div class="home-section__head">
+  <h2 class="home-section__title">Mới nhất</h2>
+  <a class="home-viewall" href="{{ '/all-posts/' | relative_url }}">Xem tất cả bài viết →</a>
+</div>
+
+{% assign feat = site.data.featured | join: "|" %}
+{% assign shown = 0 %}
+{% for post in site.posts %}
+  {% if shown >= 4 %}{% break %}{% endif %}
+  {% assign fname = post.path | split: "/" | last | replace: ".md", "" %}
+  {% unless feat contains fname %}
+    {% include archive-single.html %}
+    {% assign shown = shown | plus: 1 %}
+  {% endunless %}
+{% endfor %}
