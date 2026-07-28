@@ -18,7 +18,7 @@ author_profile: true
 <script>
 (function () {
   // Số bài mỗi trang — đổi con số này nếu muốn.
-  var PER_PAGE = 3;
+  var PER_PAGE = 6;
 
   var list = document.getElementById('allposts-list');
   var nav  = document.getElementById('allposts-pagination');
