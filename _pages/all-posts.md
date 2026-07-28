@@ -5,7 +5,7 @@ permalink: /all-posts/
 author_profile: true
 ---
 
-<p class="allposts-count">{{ site.posts | size }} bài viết</p>
+<p class="allposts-count">{{ site.posts | size }} posts</p>
 
 <div id="allposts-list">
 {% for post in site.posts %}
