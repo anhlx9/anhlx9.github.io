@@ -20,14 +20,7 @@ operational details you only learn the hard way.
   {% for slug in site.data.featured %}
     {% assign post = site.posts | where_exp: "p", "p.path contains slug" | first %}
     {% if post %}
-    <a class="featured-card" href="{{ post.url | relative_url }}">
-      {% if post.categories and post.categories.size > 0 %}
-      <span class="featured-card__cat">{{ post.categories | first }}</span>
-      {% endif %}
-      <h3 class="featured-card__title">{{ post.title }}</h3>
-      <p class="featured-card__excerpt">{{ post.excerpt | markdownify | strip_html | strip_newlines | truncate: 150 }}</p>
-      <span class="featured-card__meta">{{ post.date | date: "%d %b %Y" }}</span>
-    </a>
+      {% include archive-single.html %}
     {% endif %}
   {% endfor %}
 </div>

@@ -198,6 +198,10 @@ a:hover {
 
 /* ================================
    HOME — FEATURED GRID
+
+   Dùng lại card `archive-single` của theme (giống hệt khu "Mới nhất"),
+   chỉ xếp thành lưới 2 cột. Không hiển thị category — archive-single
+   vốn chỉ show ngày + read time + trích đoạn.
 ================================ */
 
 .featured-grid {
@@ -213,60 +217,15 @@ a:hover {
   }
 }
 
-.featured-card {
-  display: flex;
-  flex-direction: column;
-  background: $jade-surface;
-  border: 1px solid $jade-border;
-  border-radius: 14px;
-  padding: 20px;
-  text-decoration: none;
-  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+/* mỗi ô lưới là 1 card, cao bằng nhau, bỏ margin-bottom mặc định của theme */
+
+.featured-grid .list__item {
+  margin: 0;
 }
 
-.featured-card:hover {
-  transform: translateY(-5px);
-  border-color: rgba(47, 184, 168, 0.55);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
-}
-
-.featured-card__cat {
-  align-self: flex-start;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-  color: $jade-accent;
-  background: rgba(47, 184, 168, 0.1);
-  border: 1px solid $jade-border;
-  border-radius: 999px;
-  padding: 3px 10px;
-  margin-bottom: 12px;
-}
-
-.featured-card__title {
-  margin: 0 0 10px;
-  font-size: 1.12rem;
-  font-weight: 600;
-  line-height: 1.4;
-  color: $jade-accent;
-}
-
-.featured-card:hover .featured-card__title {
-  color: $jade-amber;
-}
-
-.featured-card__excerpt {
-  margin: 0 0 14px;
-  font-size: 0.92rem;
-  line-height: 1.6;
-  color: $jade-muted;
-}
-
-.featured-card__meta {
-  margin-top: auto;
-  font-size: 0.82rem;
-  color: $jade-muted;
+.featured-grid .archive__item {
+  height: 100%;
+  margin-bottom: 0;
 }
 
 /* ================================
