@@ -1,0 +1,245 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1586 968" width="1586" height="968" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <style>
+    :root {
+      --bg:#ffffff; --ink:#0f172a; --sub:#475569; --faint:#64748b;
+      --blue:#2563eb;   --blue-fill:#dbeafe;
+      --green:#15803d;  --green-fill:#dcfce7;
+      --lb:#22c55e;     --lb-fill:#d9f9e3;
+      --purple:#7c3aed;
+      --amber:#d97706;  --amber-fill:#fef3c7;
+      --red:#dc2626;    --red-fill:#fee2e2;
+      --slate:#64748b;  --slate-fill:#f1f5f9;
+      --line:#334155;   --dash:#94a3b8;
+      --card:#ffffff;   --card-str:#cbd5e1;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:#0f141a; --ink:#e8edf3; --sub:#9fadbd; --faint:#7c8b9c;
+        --blue:#60a5fa;   --blue-fill:#16243a;
+        --green:#4ade80;  --green-fill:#122a1c;
+        --lb:#4ade80;     --lb-fill:#132a1d;
+        --purple:#a78bfa;
+        --amber:#fbbf24;  --amber-fill:#2b220e;
+        --red:#f87171;    --red-fill:#2c1416;
+        --slate:#94a3b8;  --slate-fill:#171f28;
+        --line:#8296ab;   --dash:#5a6b7e;
+        --card:#151d26;   --card-str:#33404f;
+      }
+    }
+    .bg{fill:var(--bg)}
+    .h1{fill:var(--ink);font-size:22px;font-weight:700}
+    .h2{fill:var(--sub);font-size:12.5px}
+    .zh{font-size:13px;font-weight:700}
+    .zh2{font-size:11.5px;font-weight:600}
+    .snlbl{fill:var(--faint);font-size:10px}
+    .bt{fill:var(--ink);font-size:14px;font-weight:700}
+    .bs{fill:var(--sub);font-size:10.5px}
+    .bx{fill:var(--sub);font-size:9.5px;font-style:italic}
+    .ll{font-size:10.5px;font-weight:600}
+    .sn-b{fill:none;stroke:var(--blue);stroke-width:1.6;stroke-dasharray:7 5}
+    .sn-g{fill:none;stroke:var(--green);stroke-width:1.6;stroke-dasharray:7 5}
+    .sn-n{fill:none;stroke:var(--dash);stroke-width:1.4;stroke-dasharray:6 5}
+    .b-blue{fill:var(--blue-fill);stroke:var(--blue);stroke-width:1.6}
+    .b-green{fill:var(--green-fill);stroke:var(--green);stroke-width:1.6}
+    .b-lb{fill:var(--lb-fill);stroke:var(--lb);stroke-width:1.6}
+    .b-amber{fill:var(--amber-fill);stroke:var(--amber);stroke-width:1.6}
+    .b-red{fill:var(--red-fill);stroke:var(--red);stroke-width:1.6}
+    .b-slate{fill:var(--slate-fill);stroke:var(--slate);stroke-width:1.6}
+    .b-card{fill:var(--card);stroke:var(--card-str);stroke-width:1.4}
+    .flow{stroke:var(--line);stroke-width:2.2;fill:none;marker-end:url(#a)}
+    .flow2{stroke:var(--line);stroke-width:2;fill:none;marker-start:url(#a);marker-end:url(#a)}
+    .sync{stroke:var(--purple);stroke-width:2.2;fill:none;stroke-dasharray:8 5;marker-start:url(#ap);marker-end:url(#ap)}
+    .red-l{stroke:var(--red);stroke-width:2;fill:none;stroke-dasharray:7 4;marker-end:url(#ar)}
+    .amb-l{stroke:var(--amber);stroke-width:2;fill:none;marker-end:url(#aa)}
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--line)"/></marker>
+    <marker id="ap" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--purple)"/></marker>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--red)"/></marker>
+    <marker id="aa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--amber)"/></marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1586" height="968"/>
+
+  <text class="h1" x="793" y="38" text-anchor="middle">Kong Gateway Enterprise — Hybrid Mode (kiến trúc production)</text>
+  <text class="h2" x="793" y="60" text-anchor="middle">2 HAProxy biên · 2 Data Plane · 2 Control Plane · PostgreSQL HA 3 node (Patroni) · Redis HA 3 node (Sentinel)</text>
+
+  <text class="zh"  x="372" y="100" text-anchor="middle" fill="var(--lb)">EDGE ( DMZ )</text>
+  <text class="zh2" x="372" y="119" text-anchor="middle" fill="var(--lb)">VIP public + 2 HAProxy</text>
+  <text class="zh"  x="675" y="100" text-anchor="middle" fill="var(--blue)">DATA PLANE ( chỉ xử lý traffic )</text>
+  <text class="zh2" x="675" y="119" text-anchor="middle" fill="var(--blue)">KHÔNG kết nối Database</text>
+  <text class="zh"  x="1165" y="100" text-anchor="middle" fill="var(--green)">CONTROL PLANE ( quản lý &amp; đồng bộ cấu hình )</text>
+  <text class="zh2" x="1165" y="119" text-anchor="middle" fill="var(--green)">CHỈ control plane kết nối Database</text>
+
+  <!-- CLIENT -->
+  <circle cx="62" cy="272" r="9" fill="none" stroke="var(--green)" stroke-width="2"/>
+  <path d="M46,300 a16,16 0 0 1 32,0" fill="none" stroke="var(--green)" stroke-width="2"/>
+  <circle cx="88" cy="280" r="7" fill="none" stroke="var(--green)" stroke-width="2"/>
+  <path d="M76,302 a12,12 0 0 1 24,0" fill="none" stroke="var(--green)" stroke-width="2"/>
+  <text class="bt" x="70" y="330" text-anchor="middle">Client</text>
+
+  <!-- INTERNET -->
+  <g fill="var(--slate)" opacity="0.5">
+    <rect x="166" y="284" width="82" height="21" rx="10.5"/>
+    <circle cx="184" cy="284" r="16"/>
+    <circle cx="207" cy="274" r="21"/>
+    <circle cx="231" cy="285" r="16"/>
+  </g>
+  <text class="bs" x="207" y="322" text-anchor="middle">Internet</text>
+
+  <!-- EDGE SUBNET -->
+  <text class="snlbl" x="282" y="146">Subnet — DMZ</text>
+  <rect class="sn-n" x="278" y="152" width="192" height="306" rx="8"/>
+  <rect class="b-lb" x="292" y="172" width="164" height="44" rx="22"/>
+  <text class="bt" x="374" y="190" text-anchor="middle" font-size="12">VIP public</text>
+  <text class="bs" x="374" y="206" text-anchor="middle">keepalived · :80 :443</text>
+  <rect class="b-lb" x="292" y="240" width="164" height="76" rx="8"/>
+  <text class="bt" x="374" y="263" text-anchor="middle">HAProxy-01</text>
+  <text class="bs" x="374" y="280" text-anchor="middle">MASTER · L4/L7</text>
+  <text class="bs" x="374" y="295" text-anchor="middle">→ cả 2 Data Plane</text>
+  <path class="flow2" d="M374,320 L374,346"/>
+  <text class="ll" x="384" y="337" fill="var(--line)">(HA)</text>
+  <rect class="b-lb" x="292" y="370" width="164" height="76" rx="8"/>
+  <text class="bt" x="374" y="393" text-anchor="middle">HAProxy-02</text>
+  <text class="bs" x="374" y="410" text-anchor="middle">BACKUP · L4/L7</text>
+  <text class="bs" x="374" y="425" text-anchor="middle">→ cả 2 Data Plane</text>
+
+  <!-- DATA PLANE SUBNET -->
+  <text class="snlbl" x="524" y="146">Subnet — Data Plane</text>
+  <rect class="sn-b" x="520" y="152" width="310" height="306" rx="8"/>
+  <rect class="b-blue" x="545" y="174" width="260" height="104" rx="8"/>
+  <text class="bt" x="675" y="198" text-anchor="middle">Data Plane 1</text>
+  <text class="bs" x="675" y="215" text-anchor="middle">Kong Gateway · role = data_plane</text>
+  <text class="bs" x="675" y="230" text-anchor="middle">database = off · proxy :8000 :8443</text>
+  <text class="bx" x="675" y="250" text-anchor="middle">+ HAProxy local 127.0.0.1:6379</text>
+  <text class="bx" x="675" y="264" text-anchor="middle">check role:master → Redis master</text>
+  <path class="flow2" d="M675,282 L675,326"/>
+  <text class="ll" x="686" y="308" fill="var(--line)">(HA)</text>
+  <rect class="b-blue" x="545" y="330" width="260" height="104" rx="8"/>
+  <text class="bt" x="675" y="354" text-anchor="middle">Data Plane 2</text>
+  <text class="bs" x="675" y="371" text-anchor="middle">Kong Gateway · role = data_plane</text>
+  <text class="bs" x="675" y="386" text-anchor="middle">database = off · proxy :8000 :8443</text>
+  <text class="bx" x="675" y="406" text-anchor="middle">+ HAProxy local 127.0.0.1:6379</text>
+  <text class="bx" x="675" y="420" text-anchor="middle">check role:master → Redis master</text>
+
+  <!-- CONTROL PLANE SUBNET -->
+  <text class="snlbl" x="1014" y="146">Subnet — Control Plane</text>
+  <rect class="sn-g" x="1010" y="152" width="310" height="306" rx="8"/>
+  <rect class="b-green" x="1035" y="174" width="260" height="104" rx="8"/>
+  <text class="bt" x="1165" y="198" text-anchor="middle">Control Plane 1</text>
+  <text class="bs" x="1165" y="215" text-anchor="middle">Kong Enterprise · role = control_plane</text>
+  <text class="bs" x="1165" y="230" text-anchor="middle">Admin API · Manager · RBAC · Dev Portal</text>
+  <text class="bx" x="1165" y="250" text-anchor="middle">+ HAProxy local 127.0.0.1:5000</text>
+  <text class="bx" x="1165" y="264" text-anchor="middle">httpchk /primary → PostgreSQL leader</text>
+  <path class="flow2" d="M1165,282 L1165,326"/>
+  <text class="ll" x="1176" y="308" fill="var(--line)">(HA)</text>
+  <rect class="b-green" x="1035" y="330" width="260" height="104" rx="8"/>
+  <text class="bt" x="1165" y="354" text-anchor="middle">Control Plane 2</text>
+  <text class="bs" x="1165" y="371" text-anchor="middle">Kong Enterprise · role = control_plane</text>
+  <text class="bs" x="1165" y="386" text-anchor="middle">Admin API · Manager · RBAC · Dev Portal</text>
+  <text class="bx" x="1165" y="406" text-anchor="middle">+ HAProxy local 127.0.0.1:5000</text>
+  <text class="bx" x="1165" y="420" text-anchor="middle">httpchk /primary → PostgreSQL leader</text>
+
+  <!-- POSTGRESQL -->
+  <rect class="b-slate" x="1372" y="152" width="180" height="252" rx="8"/>
+  <text class="bt" x="1462" y="176" text-anchor="middle">PostgreSQL 16</text>
+  <text class="bs" x="1462" y="192" text-anchor="middle">Patroni + etcd · quorum 3</text>
+  <rect class="b-card" x="1386" y="204" width="152" height="56" rx="6"/>
+  <text class="bs" x="1462" y="222" text-anchor="middle" font-weight="700">pg01 — Leader</text>
+  <text class="bs" x="1462" y="237" text-anchor="middle">:5432 · REST :8008</text>
+  <text class="bs" x="1462" y="251" text-anchor="middle">etcd :2379 :2380</text>
+  <rect class="b-card" x="1386" y="268" width="152" height="56" rx="6"/>
+  <text class="bs" x="1462" y="286" text-anchor="middle" font-weight="700">pg02 — Replica</text>
+  <text class="bs" x="1462" y="301" text-anchor="middle">streaming replication</text>
+  <text class="bs" x="1462" y="315" text-anchor="middle">etcd :2379 :2380</text>
+  <rect class="b-card" x="1386" y="332" width="152" height="56" rx="6"/>
+  <text class="bs" x="1462" y="350" text-anchor="middle" font-weight="700">pg03 — Replica</text>
+  <text class="bs" x="1462" y="365" text-anchor="middle">streaming replication</text>
+  <text class="bs" x="1462" y="379" text-anchor="middle">etcd :2379 :2380</text>
+
+  <!-- REDIS -->
+  <rect class="b-red" x="1372" y="430" width="180" height="252" rx="8"/>
+  <text class="bt" x="1462" y="454" text-anchor="middle">Redis</text>
+  <text class="bs" x="1462" y="470" text-anchor="middle">Sentinel · quorum 2</text>
+  <rect class="b-card" x="1386" y="482" width="152" height="56" rx="6"/>
+  <text class="bs" x="1462" y="500" text-anchor="middle" font-weight="700">redis01 — master</text>
+  <text class="bs" x="1462" y="515" text-anchor="middle">:6379 · Sentinel :26379</text>
+  <text class="bs" x="1462" y="529" text-anchor="middle">counter rate-limit</text>
+  <rect class="b-card" x="1386" y="546" width="152" height="56" rx="6"/>
+  <text class="bs" x="1462" y="564" text-anchor="middle" font-weight="700">redis02 — replica</text>
+  <text class="bs" x="1462" y="579" text-anchor="middle">:6379 · Sentinel :26379</text>
+  <text class="bs" x="1462" y="593" text-anchor="middle">ứng viên promote</text>
+  <rect class="b-card" x="1386" y="610" width="152" height="56" rx="6"/>
+  <text class="bs" x="1462" y="628" text-anchor="middle" font-weight="700">redis03 — replica</text>
+  <text class="bs" x="1462" y="643" text-anchor="middle">:6379 · Sentinel :26379</text>
+  <text class="bs" x="1462" y="657" text-anchor="middle">ứng viên promote</text>
+
+  <!-- BACKEND SERVICES -->
+  <rect class="b-amber" x="430" y="548" width="360" height="132" rx="8"/>
+  <text class="bt" x="610" y="576" text-anchor="middle">Backend Services / Upstream APIs</text>
+  <rect class="b-card" x="448" y="600" width="100" height="52" rx="6"/>
+  <text class="bs" x="498" y="631" text-anchor="middle" font-weight="700">Service 1</text>
+  <rect class="b-card" x="558" y="600" width="100" height="52" rx="6"/>
+  <text class="bs" x="608" y="631" text-anchor="middle" font-weight="700">Service 2</text>
+  <text class="bs" x="674" y="631" text-anchor="middle">⋯</text>
+  <rect class="b-card" x="690" y="600" width="82" height="52" rx="6"/>
+  <text class="bs" x="731" y="631" text-anchor="middle" font-weight="700">Service N</text>
+
+  <!-- ADMIN -->
+  <rect class="b-green" x="1035" y="548" width="260" height="76" rx="8"/>
+  <text class="bt" x="1165" y="572" text-anchor="middle">Admin / decK / CI</text>
+  <text class="bs" x="1165" y="589" text-anchor="middle">Change Request → GitOps</text>
+  <text class="bs" x="1165" y="604" text-anchor="middle">:8001 Admin API · :8002 Manager</text>
+
+  <!-- FLOWS -->
+  <path class="flow" d="M112,292 L162,292"/>
+  <path class="flow" d="M252,292 L274,292"/>
+  <path class="flow" d="M470,292 L516,292"/>
+  <text class="ll" x="493" y="283" text-anchor="middle" fill="var(--line)">:443</text>
+
+  <path class="sync" d="M834,292 L1006,292"/>
+  <rect x="906" y="248" width="28" height="24" rx="5" fill="none" stroke="var(--purple)" stroke-width="2"/>
+  <path d="M912,248 v-7 a8,8 0 0 1 16,0 v7" fill="none" stroke="var(--purple)" stroke-width="2"/>
+  <text class="ll" x="920" y="322" text-anchor="middle" fill="var(--purple)">Config Sync</text>
+  <text class="ll" x="920" y="337" text-anchor="middle" fill="var(--purple)">(mTLS : 8005)</text>
+
+  <path class="amb-l" d="M1324,292 L1368,292"/>
+  <text class="ll" x="1346" y="283" text-anchor="middle" fill="var(--amber)">:5432</text>
+
+  <path class="flow" d="M610,462 L610,544"/>
+  <text class="ll" x="622" y="510" fill="var(--line)">upstream</text>
+
+  <path class="red-l" d="M812,462 L812,700 L1330,700 L1330,614 L1368,614"/>
+  <text class="ll" x="1071" y="692" text-anchor="middle" fill="var(--red)">:6379 — counter rate-limit dùng chung cho cả 2 Data Plane</text>
+
+  <path class="flow" d="M1165,544 L1165,462"/>
+
+  <!-- LEGEND -->
+  <rect class="b-card" x="40" y="736" width="1512" height="200" rx="8"/>
+  <text x="64" y="762" fill="var(--red)" font-size="12" font-weight="700">GHI CHÚ:</text>
+
+  <circle cx="71" cy="781" r="4" fill="var(--blue)"/>
+  <text class="bs" x="85" y="785" font-size="10"><tspan font-weight="700">Data Plane</tspan> — chỉ proxy traffic. Không mở kết nối tới database, không có Admin API. Cấu hình lấy từ cache lmdb trên đĩa, nên database chết vẫn phục vụ bình thường.</text>
+
+  <circle cx="71" cy="803" r="4" fill="var(--green)"/>
+  <text class="bs" x="85" y="807" font-size="10"><tspan font-weight="700">Control Plane</tspan> — nơi duy nhất ghi được cấu hình: Admin API, Kong Manager, RBAC, Dev Portal. Không nằm trên đường traffic của người dùng.</text>
+
+  <circle cx="71" cy="825" r="4" fill="var(--purple)"/>
+  <text class="bs" x="85" y="829" font-size="10"><tspan font-weight="700">Config Sync</tspan> — CP đẩy cấu hình xuống DP qua kênh mTLS :8005. Một chiều, DP không ghi ngược lên được.</text>
+
+  <circle cx="71" cy="847" r="4" fill="var(--amber)"/>
+  <text class="bs" x="85" y="851" font-size="10"><tspan font-weight="700">PostgreSQL</tspan> — chỉ CP kết nối. HAProxy local trên mỗi CP hỏi Patroni REST :8008 (/primary) để luôn trỏ đúng leader hiện tại, không cần VIP cho database.</text>
+
+  <circle cx="71" cy="869" r="4" fill="var(--red)"/>
+  <text class="bs" x="85" y="873" font-size="10"><tspan font-weight="700">Redis Sentinel</tspan> — chỉ DP kết nối. HAProxy local trên mỗi DP check role:master để bám master hiện tại. Bắt buộc nếu cần rate limit chính xác toàn cụm; policy local cho counter riêng từng DP.</text>
+
+  <circle cx="71" cy="891" r="4" fill="var(--lb)"/>
+  <text class="bs" x="85" y="895" font-size="10"><tspan font-weight="700">HAProxy biên</tspan> — cặp keepalived giữ VIP public, mỗi node đều chia tải sang nhiều DP.</text>
+
+  <circle cx="71" cy="913" r="4" fill="var(--slate)"/>
+  <text class="bs" x="85" y="917" font-size="10">Mọi đường đứt nét là kết nối có health check tự động chuyển hướng khi backend hỏng — không thao tác tay khi failover</text>
+</svg>
