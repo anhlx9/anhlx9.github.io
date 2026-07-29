@@ -2,7 +2,6 @@
 title: "Kong Gateway hybrid mode — 2 Control Plane, 2 Data Plane, PostgreSQL HA bằng Patroni"
 categories:
 - Linux
-- Devops
 - Database
 feature_image: "/assets/postbanner.jpg"
 feature_text: |
@@ -49,7 +48,6 @@ Các thành phần trong lab:
   - [Bảng node](#bảng-node)
   - [Bảng VIP](#bảng-vip)
   - [Port matrix](#port-matrix)
-- [Chuẩn bị](#chuẩn-bị)
 - [Các bước thực hiện](#các-bước-thực-hiện)
   - [Step 1: Chuẩn hóa OS trên cả 4 node](#step-1-chuẩn-hóa-os-trên-cả-4-node)
   - [Step 2: HAProxy trên cả 4 node](#step-2-haproxy-trên-cả-4-node)
@@ -205,14 +203,6 @@ Năm quyết định thiết kế đáng nói:
 
 Backend `demo-api` cố tình đặt trên hai node CP: CP không proxy traffic nên còn dư tài nguyên, và cách này cho ta hai upstream target thật ở hai IP khác nhau mà không cần thêm VM.
 
-## Chuẩn bị
-
-- 4 VM Ubuntu 24.04.4 đã cài xong, IP tĩnh theo bảng trên, NIC `ens160`.
-- DNS `8.8.8.8`, NTP `vn.pool.ntp.org` — Patroni và cert mTLS đều rất nhạy với lệch giờ.
-- SSH `root` được vào cả 4 node — toàn bộ lệnh trong bài chạy dưới quyền root.
-- Ra được internet cổng `443` để tải package Kong, etcd và `80`/`443` cho `apt`.
-- Password dùng chung trong bài: `Zxcasd123!@#`. Đổi thành `<password của bạn>` khi làm thật.
-
 ## Các bước thực hiện
 
 Lab đi theo 5 giai đoạn, mỗi giai đoạn làm dứt điểm trên đúng nhóm node của nó rồi mới sang giai đoạn sau. Thứ tự này quan trọng: lớp dưới luôn có mặt trước khi lớp trên cần đến nó, nên không có bước nào phải quay lại sửa.
@@ -261,18 +251,6 @@ EOF
 sysctl --system
 ```
 
-**Kết quả mong đợi:**
-
-```
-net.ipv4.ip_nonlocal_bind = 1
-net.ipv4.ip_forward = 1
-net.core.somaxconn = 65535
-```
-
-`ip_nonlocal_bind` cho phép bind một địa chỉ chưa tồn tại trên interface. Bài này để HAProxy bind `0.0.0.0` nên về lý thuyết không cần, nhưng giữ lại vì hai lý do: nó vô hại, và rất nhiều cấu hình HAProxy ngoài đời bind thẳng VIP — thiếu dòng này thì node BACKUP không start nổi với lỗi `cannot bind socket 10.10.200.50:80`.
-
-Giới hạn file descriptor. Mặc định `1024` là quá thấp cho một gateway — mỗi kết nối từ client cộng mỗi kết nối ra upstream đều ăn một fd — và Kong sẽ nhắc bằng `[warn] ulimit is currently set to "1024"` ở mọi lệnh CLI:
-
 ```bash
 tee /etc/security/limits.d/99-kong.conf << 'EOF'
 *     soft nofile 65535
@@ -281,60 +259,6 @@ root  soft nofile 65535
 root  hard nofile 65535
 EOF
 ```
-
-Hai dòng `root` phải khai riêng vì wildcard `*` **không** áp cho `root`, mà cả bài chạy dưới root.
-
-`pam_limits` chỉ đọc `limits.d/` một lần lúc đăng nhập, nên phải thoát SSH rồi vào lại. Gõ `ulimit -n` ngay sau khi ghi file vẫn thấy `1024` — đó không phải lỗi.
-
-```bash
-exit
-```
-
-```bash
-ulimit -n
-ulimit -Hn
-```
-
-```
-65535
-65535
-```
-
-Con số này chỉ chi phối shell đăng nhập. Service dưới systemd lấy limit từ `LimitNOFILE` trong unit của nó, soi bằng `systemctl show kong -p LimitNOFILE`.
-
-Kiểm tra hostname giữ nguyên chữ hoa — tên node được dùng làm member name của etcd và Patroni ở Step 4, Step 5, và xuất hiện trong header `X-Upstream-Node` ở Step 12, nên lệch một ký tự là lệch cả bài:
-
-```bash
-hostnamectl hostname
-getent hosts Kong-CP01 Kong-CP02 Kong-DP01 Kong-DP02
-```
-
-```
-Kong-CP01
-10.10.200.11    Kong-CP01
-10.10.200.12    Kong-CP02
-10.10.200.21    Kong-DP01
-10.10.200.22    Kong-DP02
-```
-
-Cuối cùng, tạo SSH key trên **Kong-CP01** và đẩy sang 3 node còn lại. Step 8 sẽ copy cert qua đường này:
-
-```bash
-ssh-keygen -t ed25519 -N '' -f /root/.ssh/id_ed25519
-for h in Kong-CP02 Kong-DP01 Kong-DP02; do
-  ssh-copy-id -o StrictHostKeyChecking=accept-new $h
-done
-
-for h in Kong-CP02 Kong-DP01 Kong-DP02; do ssh $h hostname; done
-```
-
-```
-Kong-CP02
-Kong-DP01
-Kong-DP02
-```
-
-Ba node trả về tên của mình mà không hỏi password là đạt.
 
 ### Step 2: HAProxy trên cả 4 node
 
@@ -1448,112 +1372,65 @@ mkdir -p /opt/demo-api
 
 tee /opt/demo-api/app.py << 'PYEOF'
 #!/usr/bin/env python3
-"""demo-api - upstream CRUD gia lap cho lab Kong hybrid mode."""
-import itertools
-import json
-import os
-import socket
-import threading
-import time
+import itertools, json, os, socket, threading, time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 
 NODE = os.environ.get("NODE_NAME", socket.gethostname())
 PORT = int(os.environ.get("PORT", "9001"))
 STARTED = time.time()
-
-# Cong tac de bat/tat health, phuc vu test active healthcheck cua Kong
 HEALTHY = {"ok": True}
-
-# Kho hang nam trong RAM. Server chay da luong nen moi thao tac ghi
-# deu phai vao trong LOCK.
+FIELDS = ("sku", "name", "price")
 LOCK = threading.Lock()
+SEQ = itertools.count(4)
 PRODUCTS = {
     1: {"id": 1, "sku": "SRV-R650", "name": "Dell PowerEdge R650", "price": 4200},
     2: {"id": 2, "sku": "SW-C9300", "name": "Cisco Catalyst 9300", "price": 3100},
     3: {"id": 3, "sku": "FW-PA440", "name": "Palo Alto PA-440", "price": 1800},
 }
-SEQ = itertools.count(4)
-FIELDS = ("sku", "name", "price")
-
-
-def sku_taken(sku, skip=None):
-    return any(p["sku"] == sku and p["id"] != skip for p in PRODUCTS.values())
 
 
 class Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
     server_version = "demo-api/2.0"
 
-    # ---------- helper ----------
-
-    def _send(self, code, payload=None, extra=None):
-        body = b"" if payload is None else json.dumps(
-            payload, ensure_ascii=False, indent=2).encode()
+    def _send(self, code, payload=None):
+        body = b"" if payload is None else json.dumps(payload, ensure_ascii=False).encode()
         self.send_response(code)
         if body:
             self.send_header("Content-Type", "application/json; charset=utf-8")
+        if body or code != 204:
             self.send_header("Content-Length", str(len(body)))
-        elif code != 204:
-            # 204 khong duoc mang Content-Length theo RFC 7230
-            self.send_header("Content-Length", "0")
         self.send_header("X-Upstream-Node", NODE)
-        for key, value in (extra or {}).items():
-            self.send_header(key, value)
         self.end_headers()
-        if body:
-            self.wfile.write(body)
+        self.wfile.write(body)
 
-    def _read_json(self):
-        """Tra (payload, None) khi hop le, (None, thong_bao_loi) khi hong."""
-        length = int(self.headers.get("Content-Length") or 0)
-        raw = self.rfile.read(length) if length else b""
-        if not raw:
-            return {}, None
+    def _body(self):
+        n = int(self.headers.get("Content-Length") or 0)
         try:
-            payload = json.loads(raw)
+            return json.loads(self.rfile.read(n)) if n else {}
         except json.JSONDecodeError:
-            return None, "invalid JSON"
-        if not isinstance(payload, dict):
-            return None, "body phai la JSON object"
-        return payload, None
+            return None
 
-    def _validate(self, payload, partial):
-        unknown = [k for k in payload if k not in FIELDS]
-        if unknown:
-            return "truong khong hop le: %s" % ", ".join(unknown)
-        if not partial:
-            missing = [f for f in FIELDS if f not in payload]
-            if missing:
-                return "thieu truong: %s" % ", ".join(missing)
-        if "price" in payload and not isinstance(payload["price"], (int, float)):
-            return "price phai la so"
-        return None
-
-    def _product_id(self, path):
-        """Tach id tu /api/v1/products/<id>. Tra None neu khong phai so."""
-        tail = path.rsplit("/", 1)[-1]
+    def _pid(self):
+        tail = urlparse(self.path).path.rstrip("/").rsplit("/", 1)[-1]
         return int(tail) if tail.isdigit() else None
 
-    def _not_found(self, pid):
-        return self._send(404, {"node": NODE, "error": "product not found",
-                                "id": pid})
+    def _err(self, code, msg):
+        return self._send(code, {"node": NODE, "error": msg})
 
     def log_message(self, fmt, *args):
         print("%s %s" % (self.address_string(), fmt % args), flush=True)
 
-    # ---------- READ ----------
-
     def do_GET(self):
         u = urlparse(self.path)
-        q = parse_qs(u.query)
         path = u.path.rstrip("/") or "/"
 
         if path == "/healthz":
-            if HEALTHY["ok"]:
-                return self._send(200, {"status": "ok", "node": NODE,
-                                        "uptime_s": round(time.time() - STARTED, 1)})
-            return self._send(503, {"status": "unhealthy", "node": NODE})
+            if not HEALTHY["ok"]:
+                return self._send(503, {"status": "unhealthy", "node": NODE})
+            return self._send(200, {"status": "ok", "node": NODE,
+                                    "uptime_s": round(time.time() - STARTED, 1)})
 
         if path == "/whoami":
             return self._send(200, {"node": NODE, "port": PORT,
@@ -1563,111 +1440,74 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/v1/products":
             with LOCK:
                 items = sorted(PRODUCTS.values(), key=lambda p: p["id"])
-            return self._send(200, {"node": NODE, "count": len(items),
-                                    "data": items})
+            return self._send(200, {"node": NODE, "count": len(items), "data": items})
 
         if path.startswith("/api/v1/products/"):
-            pid = self._product_id(path)
             with LOCK:
-                item = PRODUCTS.get(pid)
-            if item is None:
-                return self._not_found(path.rsplit("/", 1)[-1])
+                item = PRODUCTS.get(self._pid())
+            if not item:
+                return self._err(404, "product not found")
             return self._send(200, {"node": NODE, "data": item})
 
         if path == "/slow":
-            ms = min(int(q.get("ms", ["3000"])[0]), 30000)
+            ms = min(int(parse_qs(u.query).get("ms", ["3000"])[0]), 30000)
             time.sleep(ms / 1000)
             return self._send(200, {"node": NODE, "slept_ms": ms})
 
         if path == "/boom":
-            return self._send(500, {"node": NODE, "error": "simulated failure"})
+            return self._err(500, "simulated failure")
 
-        return self._send(404, {"node": NODE, "error": "no route", "path": u.path})
-
-    # ---------- CREATE ----------
+        return self._err(404, "no route")
 
     def do_POST(self):
         path = urlparse(self.path).path.rstrip("/") or "/"
 
-        if path == "/admin/unhealthy":
-            HEALTHY["ok"] = False
-            return self._send(200, {"node": NODE, "healthy": False})
-
-        if path == "/admin/healthy":
-            HEALTHY["ok"] = True
-            return self._send(200, {"node": NODE, "healthy": True})
+        if path in ("/admin/healthy", "/admin/unhealthy"):
+            HEALTHY["ok"] = path.endswith("/healthy")
+            return self._send(200, {"node": NODE, "healthy": HEALTHY["ok"]})
 
         if path != "/api/v1/products":
-            return self._send(404, {"node": NODE, "error": "no route", "path": path})
+            return self._err(404, "no route")
 
-        payload, err = self._read_json()
-        if err is None:
-            err = self._validate(payload, partial=False)
-        if err:
-            return self._send(400, {"node": NODE, "error": err})
+        p = self._body()
+        if p is None or any(f not in p for f in FIELDS):
+            return self._err(400, "can du sku, name, price")
 
         with LOCK:
-            if sku_taken(payload["sku"]):
-                return self._send(409, {"node": NODE, "error": "sku da ton tai",
-                                        "sku": payload["sku"]})
-            pid = next(SEQ)
-            item = {"id": pid}
-            item.update({f: payload[f] for f in FIELDS})
-            PRODUCTS[pid] = item
-            snapshot = dict(item)
+            item = {"id": next(SEQ)}
+            item.update({f: p[f] for f in FIELDS})
+            PRODUCTS[item["id"]] = item
+            snap = dict(item)
+        return self._send(201, {"node": NODE, "data": snap})
 
-        return self._send(201, {"node": NODE, "data": snapshot},
-                          {"Location": "/api/v1/products/%d" % pid})
+    def _update(self, full):
+        if not urlparse(self.path).path.rstrip("/").startswith("/api/v1/products/"):
+            return self._err(404, "no route")
 
-    # ---------- UPDATE ----------
-
-    def _update(self, partial):
-        u = urlparse(self.path)
-        path = u.path.rstrip("/")
-        if not path.startswith("/api/v1/products/"):
-            return self._send(404, {"node": NODE, "error": "no route",
-                                    "path": u.path})
-
-        pid = self._product_id(path)
-        payload, err = self._read_json()
-        if err is None:
-            err = self._validate(payload, partial)
-        if err:
-            return self._send(400, {"node": NODE, "error": err})
+        p = self._body()
+        if p is None or (full and any(f not in p for f in FIELDS)):
+            return self._err(400, "body khong hop le")
 
         with LOCK:
-            item = PRODUCTS.get(pid)
-            if item is None:
-                return self._not_found(path.rsplit("/", 1)[-1])
-            if "sku" in payload and sku_taken(payload["sku"], skip=pid):
-                return self._send(409, {"node": NODE, "error": "sku da ton tai",
-                                        "sku": payload["sku"]})
-            item.update({f: payload[f] for f in FIELDS if f in payload})
-            snapshot = dict(item)
-
-        return self._send(200, {"node": NODE, "data": snapshot})
+            item = PRODUCTS.get(self._pid())
+            if not item:
+                return self._err(404, "product not found")
+            item.update({f: p[f] for f in FIELDS if f in p})
+            snap = dict(item)
+        return self._send(200, {"node": NODE, "data": snap})
 
     def do_PUT(self):
-        self._update(partial=False)
+        self._update(True)
 
     def do_PATCH(self):
-        self._update(partial=True)
-
-    # ---------- DELETE ----------
+        self._update(False)
 
     def do_DELETE(self):
-        u = urlparse(self.path)
-        path = u.path.rstrip("/")
-        if not path.startswith("/api/v1/products/"):
-            return self._send(404, {"node": NODE, "error": "no route",
-                                    "path": u.path})
-
-        pid = self._product_id(path)
+        if not urlparse(self.path).path.rstrip("/").startswith("/api/v1/products/"):
+            return self._err(404, "no route")
         with LOCK:
-            gone = PRODUCTS.pop(pid, None)
-        if gone is None:
-            return self._not_found(path.rsplit("/", 1)[-1])
-        return self._send(204)
+            gone = PRODUCTS.pop(self._pid(), None)
+        return self._send(204) if gone else self._err(404, "product not found")
 
 
 if __name__ == "__main__":
@@ -1683,7 +1523,7 @@ CRUD trên tài nguyên `products`, mỗi bản ghi gồm `sku`, `name`, `price`
 | Method | Path | Trả về | Ghi chú |
 |--------|------|--------|---------|
 | GET | `/api/v1/products` | `200` | Danh sách, sắp theo `id` |
-| POST | `/api/v1/products` | `201` | Kèm header `Location`. `400` thiếu trường, `409` trùng `sku` |
+| POST | `/api/v1/products` | `201` | `400` nếu thiếu trường |
 | GET | `/api/v1/products/{id}` | `200` / `404` | |
 | PUT | `/api/v1/products/{id}` | `200` / `404` | Thay toàn bộ, bắt buộc đủ 3 trường |
 | PATCH | `/api/v1/products/{id}` | `200` / `404` | Sửa một phần |
@@ -2121,8 +1961,6 @@ Kong-DP02 normal 1785307451
 ```
 
 Đọc theo thứ tự: VIP `.51` đã sang CP02, ba dịch vụ đều sống, `FRONTEND 2` nghĩa là **cả hai DP đã nối lại** vào CP02, và `last_seen` cách `date +%s` chưa tới 10 giây. `Kong-CP01 0 DOWN` là đúng — Kong trên CP01 đã stop nên health check `8100` fail. Vòng lặp curl ở test 3 suốt quãng này vẫn toàn `200`.
-
-**Đừng đi tìm log `[clustering]` trên DP.** Ở `log_level = notice`, Kong 3.9.1 không ghi dòng nào chứa chữ `clustering` vào `error.log` kể cả khi kênh vừa đứt và nối lại thành công. Hai lệnh `curl` ở trên mới là cách xác minh chắc chắn.
 
 Khởi động lại node vừa stop, VIP sẽ về lại vì priority cao hơn. Nhớ thứ tự: `haproxy` trước, `kong` sau — drop-in `After=haproxy.service` ở Step 10 lo việc này khi boot, nhưng khi start tay thì tự giữ đúng thứ tự.
 
