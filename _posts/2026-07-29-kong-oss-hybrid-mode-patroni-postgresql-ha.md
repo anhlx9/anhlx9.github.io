@@ -1,14 +1,15 @@
 ---
-title: "Kong Gateway OSS hybrid mode — 2 Control Plane, 2 Data Plane, PostgreSQL HA bằng Patroni"
+title: "Kong Gateway hybrid mode — 2 Control Plane, 2 Data Plane, PostgreSQL HA bằng Patroni"
 categories:
-- Network
+- Linux
+- Devops
 - Database
 feature_image: "/assets/postbanner.jpg"
 feature_text: |
   ### Tách control plane khỏi data plane trên 4 node, chuẩn bị nền cho Kong Enterprise
 ---
 
-Kong Gateway là lớp đứng chắn trước toàn bộ API của một tổ chức. Mọi request từ client đi vào nó trước, và nó quyết định request đó thuộc về service nào, có được phép đi tiếp không, đi với tốc độ bao nhiêu — rồi mới chuyển xuống backend. Nhân của Kong là nginx với OpenResty, còn phần làm nên giá trị là hệ plugin: xác thực (`key-auth`, JWT, OIDC), giới hạn tần suất, biến đổi request/response, ghi log, xuất metric. Thứ trước đây mỗi service phải tự cài đặt lấy — và cài mỗi nơi một kiểu — được kéo ra một chỗ duy nhất.
+Kong Gateway là lớp đứng chắn trước toàn bộ API của một tổ chức. Mọi request đi vào nó trước, và nó quyết định request thuộc service nào, có được đi tiếp không, đi với tốc độ bao nhiêu — rồi mới chuyển xuống backend. Nhân là nginx với OpenResty, còn giá trị nằm ở hệ plugin: xác thực (`key-auth`, JWT, OIDC), giới hạn tần suất, biến đổi request/response, ghi log, xuất metric. Thứ trước đây mỗi service tự cài đặt lấy, mỗi nơi một kiểu, được kéo về một chỗ.
 
 ![](/assets/img/2026-07-29-kong-oss-hybrid-mode-patroni-postgresql-ha/kong-production-architecture.png)
 
@@ -22,11 +23,11 @@ Hybrid chia cụm thành **Control Plane** và **Data Plane**. CP giữ toàn b�
 
 Cách chia này giải quyết đúng hai vấn đề của mô hình truyền thống. Node hứng traffic là node tiếp xúc nhiều rủi ro nhất, mà ở mô hình cũ nó lại vừa cầm credential database vừa mở sẵn Admin API — thứ mà Kong OSS **không hề có authentication**. Và khi database chết, mô hình cũ sập cả cụm, còn hybrid thì DP vẫn phục vụ bình thường từ cache. Bài test số 5 của lab này chứng minh đúng điều đó.
 
-Về phiên bản, có một chuyện cần biết trước khi bắt đầu. Kong Gateway từng có nhánh OSS miễn phí song song với Enterprise, nhưng **OSS đã dừng ở 3.9.1**: từ 3.10 Kong không còn publish package và Docker image community, không còn release mới, và cũng không còn bản vá bảo mật cho nhánh OSS. Ai đang chạy OSS trong production thì đây là điểm cần cân nhắc nghiêm túc, không chỉ là chuyện thiếu tính năng.
+Còn một chuyện về phiên bản. Kong từng có nhánh OSS miễn phí song song với Enterprise, nhưng **OSS đã dừng ở 3.9.1**: từ 3.10 không còn package, không còn release mới, và không còn bản vá bảo mật. Ai chạy OSS trong production thì đây mới là điểm đáng cân nhắc, không phải chuyện thiếu tính năng.
 
-Những gì bản OSS không có, và phải mua Enterprise mới đụng tới được: RBAC và workspace để phân quyền nhiều nhóm dùng chung một cụm, Dev Portal, Vitals, nhóm plugin `openid-connect` / `mtls-auth` / `rate-limiting-advanced`, và secrets management với vault backend. Kong Manager bản OSS ở cổng `8002` vẫn dùng được nhưng ai vào cũng là admin.
+Những gì phải mua Enterprise mới có: RBAC và workspace, Dev Portal, Vitals, nhóm plugin `openid-connect` / `mtls-auth` / `rate-limiting-advanced`, secrets management với vault backend. Kong Manager bản OSS ở cổng `8002` vẫn dùng được nhưng ai vào cũng là admin.
 
-Lab này cố tình chọn **3.9.1 — bản OSS cuối cùng** — vì mục tiêu là nắm chắc phần kiến trúc: kênh mTLS `8005` hoạt động ra sao, cấu hình đi từ CP xuống DP bằng đường nào, DP xoay xở thế nào khi database biến mất, và HA của cả ba tầng ghép lại thành hình gì. Toàn bộ những thứ đó giống hệt nhau giữa OSS và Enterprise. Có license rồi thì đây chính là nền để thêm RBAC, Dev Portal và nhóm plugin Enterprise vào.
+Lab này chọn **3.9.1 — bản OSS cuối cùng** vì mục tiêu là phần kiến trúc: kênh mTLS `8005` hoạt động ra sao, cấu hình đi từ CP xuống DP bằng đường nào, DP xoay xở thế nào khi database biến mất. Toàn bộ những thứ đó giống hệt nhau giữa OSS và Enterprise, nên đây chính là nền để thêm RBAC, Dev Portal và plugin Enterprise vào sau.
 
 ![](/assets/img/2026-07-29-kong-oss-hybrid-mode-patroni-postgresql-ha/00.png)
 
@@ -148,7 +149,7 @@ Năm quyết định thiết kế đáng nói:
 
 **keepalived là endpoint, HAProxy là load balancer.** VIP chỉ đảm bảo *luôn có một địa chỉ sống* để gọi vào; quyết định request đi về Kong nào là của HAProxy ngay sau nó. Kết quả là bốn node Kong đều active — cặp CP chia nhau kết nối cluster của DP và request Admin API, cặp DP chia nhau traffic client. Không có node nào chỉ standby lãng phí tài nguyên.
 
-**Kênh CP–DP đi qua L4 passthrough, không phải L7.** keepalived giữ VIP còn HAProxy chia tải ở `mode tcp` — cả hai đều không đụng vào TLS, byte nào vào byte đó ra. Nhờ vậy `cluster_mtls = shared` (mặc định) hoạt động nguyên vẹn: hai bên dùng chung một cặp cert với `CN=kong_clustering`, DP bắt tay TLS thẳng với Kong ở CP và verify đúng CN đó bất kể nó dial vào IP nào. Chỉ cần thêm `ssl` vào dòng `bind` để HAProxy terminate TLS là phải chuyển sang `cluster_mtls = pki` và set `cluster_server_name` — trường hợp đó ngoài phạm vi bài này.
+**Kênh CP–DP đi qua L4 passthrough, không phải L7.** HAProxy chia tải ở `mode tcp`, không đụng vào TLS, byte nào vào byte đó ra. Nhờ vậy `cluster_mtls = shared` (mặc định) hoạt động nguyên vẹn: hai bên dùng chung cặp cert `CN=kong_clustering`, DP bắt tay TLS thẳng với Kong ở CP bất kể dial vào IP nào. Chỉ cần thêm `ssl` vào dòng `bind` để HAProxy terminate TLS là phải chuyển sang `cluster_mtls = pki` — ngoài phạm vi bài này.
 
 **Patroni đặt ở Kong-CP01, Kong-CP02 và Kong-DP01.** etcd cần 3 member mới có quorum. Hai CP là bên thật sự dùng database nên giữ vai trò leader và sync standby; Kong-DP01 gắn tag `nofailover: true` — chỉ làm replica và etcd voter, không bao giờ được lên leader, để tải write không rơi vào node đang gánh traffic.
 
@@ -281,15 +282,13 @@ root  hard nofile 65535
 EOF
 ```
 
-Hai dòng `root` phải khai riêng: wildcard `*` trong `limits.conf` **không** áp cho `root`, mà cả bài này chạy dưới root. Thiếu chúng thì `ulimit -n` vẫn trả `1024`.
+Hai dòng `root` phải khai riêng vì wildcard `*` **không** áp cho `root`, mà cả bài chạy dưới root.
 
-Giới hạn **không** áp vào phiên SSH đang mở. Gõ `ulimit -n` ngay sau khi ghi file vẫn thấy `1024` — đó không phải lỗi, `pam_limits` chỉ đọc `limits.d/` đúng một lần lúc đăng nhập. Phải thoát hẳn rồi vào lại:
+`pam_limits` chỉ đọc `limits.d/` một lần lúc đăng nhập, nên phải thoát SSH rồi vào lại. Gõ `ulimit -n` ngay sau khi ghi file vẫn thấy `1024` — đó không phải lỗi.
 
 ```bash
 exit
 ```
-
-Đăng nhập lại và kiểm tra cả soft lẫn hard:
 
 ```bash
 ulimit -n
@@ -301,9 +300,7 @@ ulimit -Hn
 65535
 ```
 
-Nếu bạn SSH bằng user thường rồi mới `sudo -i` lên root thì chuỗi đăng nhập qua `pam_limits` hai chặng — dòng `*` lo chặng user, dòng `root` lo chặng `sudo`. Thiếu dòng `root` thì shell root vẫn `1024` dù user thường đã `65535`.
-
-Con số này chi phối shell đăng nhập. Service chạy dưới systemd không lấy limit từ đây mà từ `LimitNOFILE` trong unit của chính nó — sau Step 10 có thể soi riêng bằng `systemctl show kong -p LimitNOFILE`.
+Con số này chỉ chi phối shell đăng nhập. Service dưới systemd lấy limit từ `LimitNOFILE` trong unit của nó, soi bằng `systemctl show kong -p LimitNOFILE`.
 
 Kiểm tra hostname giữ nguyên chữ hoa — tên node được dùng làm member name của etcd và Patroni ở Step 4, Step 5, và xuất hiện trong header `X-Upstream-Node` ở Step 12, nên lệch một ký tự là lệch cả bài:
 
@@ -924,7 +921,7 @@ Cụm etcd dựng ở Step 4 giờ đã có dữ liệu — xác nhận Patroni 
 etcdctl --endpoints=10.10.200.11:2379 get /service/kong-pg/ --prefix --keys-only
 ```
 
-Phải thấy `/service/kong-pg/leader`, `/service/kong-pg/config` và ba key `/service/kong-pg/members/Kong-CP01`, `.../Kong-CP02`, `.../Kong-DP01`. Đây là cách xác nhận Patroni đang dùng đúng **etcd v3 API** — `etcd.conf.yml` ở Step 4 đặt `enable-v2: false`, khớp với section `etcd3:` trong `patroni.yml` phía trên. Dùng nhầm section `etcd:` (v2) thì Patroni không bootstrap được và báo lỗi kết nối DCS.
+Phải thấy `leader`, `config` và ba key `members/Kong-CP01`, `.../Kong-CP02`, `.../Kong-DP01`. Đây là cách xác nhận Patroni dùng đúng **etcd v3 API**: `etcd.conf.yml` đặt `enable-v2: false`, khớp với section `etcd3:` trong `patroni.yml`. Dùng nhầm section `etcd:` (v2) thì Patroni không bootstrap được.
 
 Giờ nhìn sang HAProxy — backend database đã tự chuyển sang `UP` mà không phải sửa gì:
 
@@ -1336,7 +1333,7 @@ DP **không** cần drop-in `KONG_PG_PASSWORD` và cũng không chạy migration
 netstat -nlpt | grep nginx
 ```
 
-8000 và 8443 xuất hiện **4 dòng mỗi cổng** — đó là `reuseport` đang làm việc: mỗi nginx worker giữ một socket riêng trên cùng cổng, kernel tự chia kết nối đến cho từng socket thay vì để bốn worker giành nhau một hàng đợi accept. `nginx_worker_processes` để mặc định `auto` nên Kong sinh đúng một worker mỗi core — VM lab 4 vCPU ra 4 worker, số dòng bằng số worker. Cổng 8100 không có `reuseport` nên chỉ một dòng.
+8000 và 8443 xuất hiện **4 dòng mỗi cổng** — đó là `reuseport` đang làm việc: mỗi nginx worker giữ một socket riêng trên cùng cổng, kernel tự chia kết nối thay vì để các worker giành nhau một hàng đợi accept. `nginx_worker_processes` mặc định `auto` nên số worker bằng số core — VM lab 4 vCPU ra 4 dòng. Cổng 8100 không có `reuseport` nên chỉ một dòng.
 
 ![](/assets/img/2026-07-29-kong-oss-hybrid-mode-patroni-postgresql-ha/13.png)
 
@@ -1367,9 +1364,7 @@ curl -s http://10.10.200.51:8001/clustering/data-planes | jq '.data[] | {hostnam
 
 Hai DP phải có **cùng một `config_hash`** — bằng nhau nghĩa là cả hai đang chạy đúng một phiên bản cấu hình. Cùng với `sync_status: normal` và đủ hai `hostname`, đó là ba trường cần soi ở đây.
 
-Trường `ip` thì đừng trông đợi thấy `.21` và `.22`: **cả hai DP đều báo `10.10.200.11`**, và đó là kết quả đúng. `kong_cluster` chạy `mode tcp` không kèm `send-proxy`, nên HAProxy nhận kết nối từ DP ở VIP `.51` rồi mở một kết nối TCP mới tới `18005` của CP — source IP của kết nối mới là IP node đang giữ VIP, tức Kong-CP01. Kong CP chỉ đọc được peer address của socket nên ghi đúng con số đó cho mọi DP. `hostname` vẫn phân biệt được vì DP tự khai tên mình ở tầng ứng dụng, không dính tầng TCP.
-
-Đây là metadata hiển thị, không phải cơ chế định danh — Kong nhận diện DP bằng client cert ở Step 8. Muốn `ip` hiện đúng thì phải trỏ `cluster_control_plane` thẳng vào một CP và bỏ HAProxy khỏi kênh cluster, đánh đổi bằng HA của chính kênh điều khiển.
+Trường `ip` thì đừng trông đợi thấy `.21` và `.22`: **cả hai DP đều báo `10.10.200.11`**, và đó là kết quả đúng. `kong_cluster` chạy `mode tcp` không kèm `send-proxy`, nên HAProxy mở một kết nối TCP mới tới `18005` của CP với source IP của chính node đang giữ VIP. CP chỉ đọc được peer address của socket. Đây là metadata hiển thị chứ không phải cơ chế định danh — Kong nhận diện DP bằng client cert ở Step 8, và `hostname` vẫn phân biệt được vì DP tự khai tên ở tầng ứng dụng.
 
 Kênh cluster cũng phải chia đôi, mỗi DP nối vào một CP khác nhau:
 
@@ -1384,9 +1379,9 @@ kong_cluster Kong-CP02 1
 kong_cluster BACKEND 2
 ```
 
-Cột thứ ba là số kết nối đang mở (`scur`). Tổng ở `BACKEND` bằng số DP đang kết nối.
+Cột thứ ba là số kết nối đang mở (`scur`), tổng ở `BACKEND` bằng số DP đang kết nối.
 
-Đừng trông đợi hai kênh chia đều mỗi CP một cái. Rất thường gặp cảnh cả hai dồn vào cùng một CP, CP kia bằng `0`. Đó không phải lỗi: `leastconn` chỉ cân nhắc **tại thời điểm mở kết nối mới**, mà kênh cluster lại là kết nối sống rất lâu. Hai DP khởi động cách nhau vài giây, DP thứ hai thấy CP nào cũng đang giữ ít kết nối như nhau và có thể chọn lại đúng CP đó — rồi cả hai nằm im ở đấy cho tới lần đứt kết nối tiếp theo. Cụm vẫn HA đầy đủ, vì mất CP đang giữ kênh thì cả hai DP tự nối lại sang CP còn lại, đúng như bài test 4b chứng minh.
+Đừng trông đợi hai kênh chia đều mỗi CP một cái — rất thường gặp cảnh cả hai dồn vào cùng một CP, CP kia bằng `0`. `leastconn` chỉ cân nhắc **tại thời điểm mở kết nối mới**, mà kênh cluster lại sống rất lâu, nên chúng nằm im ở đó tới lần đứt tiếp theo. Cụm vẫn HA đầy đủ: mất CP đang giữ kênh thì cả hai DP tự nối sang CP còn lại, đúng như test 4b chứng minh.
 
 
 #### 11.3 — Kiểm tra từ phía DP
@@ -1406,9 +1401,7 @@ done
 10.10.200.12 → {"database":{"reachable":true},"configuration_hash":null}
 ```
 
-Hai node DP trả `database: null` — với `database = off` thì Kong không có khái niệm kết nối database để mà báo cáo, nên bỏ trống hẳn khối này chứ không phải báo `reachable: false`. Đổi lại, DP có `configuration_hash` vì cấu hình của chúng là một bản snapshot nhận từ CP.
-
-Hai node CP thì ngược hẳn: `reachable: true` vì chúng nối vào PostgreSQL qua HAProxy local, còn `configuration_hash` là `null` — CP đọc thẳng từ database nên không giữ snapshot nào để băm. Chỉ cần một lệnh `/status` là biết node đang đóng vai gì.
+Hai vai trò đối xứng nhau hoàn hảo. DP trả `database: null` — không có khái niệm kết nối database để mà báo cáo — nhưng có `configuration_hash` vì cấu hình của nó là snapshot nhận từ CP. CP thì ngược lại: `reachable: true`, còn `configuration_hash` là `null` vì nó đọc thẳng từ database, không giữ snapshot nào để băm. Một lệnh `/status` là biết node đóng vai gì.
 
 Cuối cùng là bài test thật: tạo route trên CP rồi xem DP có nhận không.
 
@@ -1778,9 +1771,9 @@ curl -s -o /dev/null -w 'doc lai: HTTP %{http_code}\n' $API/4
 
 ![](/assets/img/2026-07-29-kong-oss-hybrid-mode-patroni-postgresql-ha/14.png)
 
-Kho hàng nằm trong RAM của tiến trình, nên **hai instance có dữ liệu riêng và không đồng bộ với nhau**. Tạo một sản phẩm ở `.11` rồi đọc ở `.12` sẽ nhận `404`, và `systemctl restart demo-api` là mất sạch, quay về 3 bản ghi mặc định.
+Kho hàng nằm trong RAM của tiến trình, nên **hai instance có dữ liệu riêng và không đồng bộ**. Tạo một sản phẩm ở `.11` rồi đọc ở `.12` sẽ nhận `404`, và `systemctl restart demo-api` là mất sạch.
 
-Đây là chủ ý, không phải thiếu sót. Lab này cần một upstream để soi hành vi của gateway — cân bằng tải, health check, retry, rate limit — chứ không cần một database thứ hai. Nhưng nó cũng là minh hoạ sống cho một luật chung: **backend giữ state cục bộ thì không đặt sau load balancer được**. Sau Step 13, gọi CRUD qua VIP `.50` sẽ thấy kết quả nhảy loạn tuỳ request rơi vào node nào — muốn nhất quán thì state phải nằm ngoài tiến trình, ví dụ chính cụm PostgreSQL HA đã dựng ở Step 5.
+Đây là chủ ý: lab cần một upstream để soi hành vi của gateway, không cần một database thứ hai. Nó cũng là minh hoạ cho một luật chung — **backend giữ state cục bộ thì không đặt sau load balancer được**. Sau Step 13, gọi CRUD qua VIP `.50` sẽ thấy kết quả nhảy loạn tuỳ request rơi vào node nào.
 
 ### Step 13: Khai báo Service và Route
 
@@ -1882,9 +1875,9 @@ curl -sX POST $CP/plugins --data name=prometheus \
   --data config.upstream_health_metrics=true | jq -r .name
 ```
 
-Ba cờ của `prometheus` là bắt buộc phải khai. Từ Kong 3.0, plugin này mặc định **tắt** gần hết metric để giảm cardinality — tạo plugin trống như bản mặc định thì `/metrics` chỉ trả về mấy metric mức node (bộ nhớ, số connection nginx), không có status code, không có latency, và không có health của upstream.
+Ba cờ của `prometheus` bắt buộc phải khai: từ Kong 3.0 plugin này mặc định **tắt** gần hết metric để giảm cardinality. Tạo plugin trống thì `/metrics` chỉ có metric mức node, không status code, không latency, không health của upstream.
 
-`config.policy=cluster` là mặc định của plugin `rate-limiting` nhưng **không dùng được ở đây**: policy đó ghi counter vào database, còn DP thì `database = off`. Trong hybrid mode chỉ có `local` (counter riêng từng DP — với 2 DP thì giới hạn thực tế là 40/phút chứ không phải 20) hoặc `redis` (counter dùng chung, chính xác). Muốn đúng con số 20/phút thì phải có Redis; `rate-limiting-advanced` với sync counter là plugin Enterprise.
+`config.policy=cluster` là mặc định của `rate-limiting` nhưng **không dùng được ở đây**: nó ghi counter vào database, còn DP thì `database = off`. Hybrid mode chỉ còn `local` (counter riêng từng DP — 2 DP thành 40/phút chứ không phải 20) hoặc `redis` (dùng chung, chính xác). Muốn đúng con số thì phải có Redis; `rate-limiting-advanced` là plugin Enterprise.
 
 **Kết quả mong đợi:**
 
@@ -1948,7 +1941,7 @@ done
 10.10.200.22: e3887ffdca587b7e8b00071582eb4bf5
 ```
 
-Bước đối chiếu này mới là bước quan trọng. `/clustering/data-planes` chỉ là CP đọc lại bản ghi trong PostgreSQL — DP chết thì bản ghi cũ vẫn nằm đó với `config_hash` đẹp đẽ. Còn `:8100/status` hỏi thẳng tiến trình Kong đang chạy trên DP, trả về hash của cấu hình **đang nằm trong bộ nhớ nó**. Hai nguồn độc lập cho cùng một giá trị mới chứng minh được sync thật.
+Bước đối chiếu này mới quan trọng. `/clustering/data-planes` chỉ là CP đọc lại bản ghi trong PostgreSQL — DP chết thì bản ghi cũ vẫn nằm đó với `config_hash` đẹp đẽ. Còn `:8100/status` hỏi thẳng tiến trình Kong trên DP, trả về hash của cấu hình **đang nằm trong bộ nhớ nó**. Hai nguồn độc lập cho cùng một giá trị mới chứng minh được sync thật.
 
 ![](/assets/img/2026-07-29-kong-oss-hybrid-mode-patroni-postgresql-ha/18.png)
 
@@ -1984,9 +1977,9 @@ admin_listen = off
 khong co socket quan tri nao
 ```
 
-Cấu hình khai `off` và thực tế không có socket nào mở — hai vế khớp nhau. `database = off` đóng nốt hướng còn lại: DP không những không có API để ghi, nó còn không giữ kết nối nào tới PostgreSQL để mà ghi. Cộng với HAProxy trên DP chỉ bind `80`, `443` và `7000` (Step 2.2), trên node hứng traffic không còn đường nào chạm tới mặt phẳng ghi.
+Cấu hình khai `off` và thực tế không có socket nào mở — hai vế khớp nhau. `database = off` đóng nốt hướng còn lại: DP không có API để ghi, cũng không giữ kết nối nào tới PostgreSQL. Cộng với HAProxy trên DP chỉ bind `80`, `443` và `7000` (Step 2.2), node hứng traffic không còn đường nào chạm tới mặt phẳng ghi.
 
-Đây là lý do bảo mật lớn nhất của hybrid mode. Admin API của Kong OSS **không có authentication** — ai gọi được `8001` là toàn quyền đổi route, gỡ plugin `key-auth`, trỏ upstream sang chỗ khác. Với mô hình truyền thống, node hứng traffic cũng chính là node mang Admin API, nên bảo vệ nó phải trông cậy hoàn toàn vào firewall và bind address. Hybrid mode bỏ hẳn mặt phẳng ghi khỏi node tiếp xúc: DP chỉ nhận cấu hình được đẩy xuống qua kênh mTLS, không có API nào để mà gọi.
+Đây là lý do bảo mật lớn nhất của hybrid mode. Admin API của Kong OSS **không có authentication** — ai gọi được `8001` là toàn quyền đổi route, gỡ `key-auth`, trỏ upstream sang chỗ khác. Mô hình truyền thống đặt Admin API ngay trên node hứng traffic nên chỉ còn trông cậy vào firewall; hybrid mode bỏ hẳn mặt phẳng ghi khỏi node tiếp xúc.
 
 ### 3. Failover PostgreSQL
 
@@ -2056,9 +2049,9 @@ probe
 204
 ```
 
-`pg_primary` giờ chỉ còn Kong-CP02 `UP` — HAProxy tự phát hiện qua `option httpchk GET /primary` mà không cần ai sửa cấu hình. `DOWN` ở đây nghĩa là node trả `503` cho `/primary`, tức không phải leader, chứ không phải node chết.
+`pg_primary` giờ chỉ còn Kong-CP02 `UP` — HAProxy tự phát hiện qua `option httpchk GET /primary`, không ai phải sửa cấu hình. `DOWN` nghĩa là node trả `503` cho `/primary`, tức không phải leader, chứ không phải node chết.
 
-Hai lệnh cuối là phần quan trọng nhất của bài test: tạo được service `probe` rồi xóa được nó (`204`) chứng minh Admin API vẫn ghi xuống database bình thường sau khi leader đã đổi chỗ. Nếu chuỗi `Kong → HAProxy 127.0.0.1:5000 → Patroni leader` đứt ở đâu đó, lệnh `POST` sẽ treo hoặc trả `500` chứ không ra tên service.
+Hai lệnh cuối mới là phần quan trọng nhất: tạo rồi xóa được service `probe` (`204`) chứng minh Admin API vẫn ghi xuống database sau khi leader đổi chỗ. Chuỗi `Kong → HAProxy 127.0.0.1:5000 → Patroni leader` đứt ở đâu đó thì `POST` sẽ treo hoặc trả `500`.
 
 ### 4. Failover Control Plane
 
@@ -2127,9 +2120,9 @@ Kong-DP02 normal 1785307451
 1785307460
 ```
 
-Đọc theo thứ tự: VIP `.51` đã sang CP02; ba dịch vụ trên CP02 đều sống; `FRONTEND 2` nghĩa là **cả hai DP đã nối lại**, lần này vào CP02; `Kong-CP01 0 DOWN` là đúng chứ không phải lỗi — Kong trên CP01 đã stop nên health check `8100` fail và HAProxy loại nó khỏi vòng; `last_seen` của hai DP cách `date +%s` chưa tới 10 giây. Vòng lặp curl ở test 3 trong suốt quãng này vẫn toàn `200` — client không chạm vào CP nên không hề biết chuyện gì vừa xảy ra.
+Đọc theo thứ tự: VIP `.51` đã sang CP02, ba dịch vụ đều sống, `FRONTEND 2` nghĩa là **cả hai DP đã nối lại** vào CP02, và `last_seen` cách `date +%s` chưa tới 10 giây. `Kong-CP01 0 DOWN` là đúng — Kong trên CP01 đã stop nên health check `8100` fail. Vòng lặp curl ở test 3 suốt quãng này vẫn toàn `200`.
 
-**Đừng đi tìm log `[clustering]` trên DP.** Ở `log_level = notice` mà bài đang dùng, Kong 3.9.1 không ghi dòng nào chứa chữ `clustering` vào `error.log` — `grep -i clustering /usr/local/kong/logs/error.log` trả về `0` kể cả khi kênh vừa đứt và nối lại thành công. Thứ duy nhất xuất hiện quanh thời điểm đó là `[DB cache] purging (local) cache`, và nó cũng nổi lên mỗi lần cấu hình thay đổi bình thường nên không dùng làm bằng chứng được. Hai lệnh `curl` ở trên mới là cách xác minh chắc chắn: `scur` của `kong_cluster` và độ tươi của `last_seen`.
+**Đừng đi tìm log `[clustering]` trên DP.** Ở `log_level = notice`, Kong 3.9.1 không ghi dòng nào chứa chữ `clustering` vào `error.log` kể cả khi kênh vừa đứt và nối lại thành công. Hai lệnh `curl` ở trên mới là cách xác minh chắc chắn.
 
 Khởi động lại node vừa stop, VIP sẽ về lại vì priority cao hơn. Nhớ thứ tự: `haproxy` trước, `kong` sau — drop-in `After=haproxy.service` ở Step 10 lo việc này khi boot, nhưng khi start tay thì tự giữ đúng thứ tự.
 
@@ -2160,11 +2153,11 @@ proxy: HTTP 200
 admin: HTTP 500
 ```
 
-`node` ra `Kong-CP01` hay `Kong-CP02` đều được — đó chỉ là target nào của upstream nhận request lần này.
+`node` ra CP01 hay CP02 đều được — đó chỉ là target nào của upstream nhận request lần này.
 
-Hai con số phải xuất hiện **cùng lúc** thì bài test mới có giá trị. `admin: HTTP 500` chứng minh CP thật sự mất database, nhờ đó `proxy: HTTP 200` mới không thể bị giải thích bằng việc database còn sống lén lút ở đâu đó. Chỉ thấy `200` mà không kiểm `500` thì chưa chứng minh được gì.
+Hai con số phải xuất hiện **cùng lúc** thì bài test mới có giá trị: `admin: HTTP 500` chứng minh CP thật sự mất database, nhờ đó `proxy: HTTP 200` mới không thể giải thích bằng việc database còn sống lén lút ở đâu đó.
 
-Traffic vẫn chạy, kể cả `key-auth` và `rate-limiting` — DP đọc consumer và credential từ `lmdb` cache trên disk, không truy vấn database. Chỉ mặt phẳng quản trị chết. Restart DP trong lúc database vẫn down cũng vẫn lên được, vì nó load lại từ `lmdb`:
+Traffic vẫn chạy, kể cả `key-auth` và `rate-limiting` — DP đọc consumer và credential từ `lmdb` trên disk, không truy vấn database. Chỉ mặt phẳng quản trị chết. Restart DP trong lúc database vẫn down cũng vẫn lên được, vì nó load lại từ `lmdb`:
 
 ```bash
 systemctl restart kong    # trên Kong-DP02
@@ -2217,7 +2210,7 @@ Lab này là bản nháp của kiến trúc Enterprise, nhưng đường nâng c
 
 **OSS đã đóng băng ở 3.9.1.** Từ 3.10 Kong ngừng publish Docker image prebuilt cho OSS và không còn release community mới. Enterprise thì vẫn chạy đều 4 minor/năm, hiện ở 3.15.
 
-**Không cài Enterprise trước rồi chờ license.** `free mode` đã bị bỏ từ 3.10 — chạy Enterprise không license giờ hành xử y như license hết hạn: toàn bộ entity thành **read-only**, node DB-less mới không start được. Traffic đang chạy thì vẫn proxy bằng cấu hình cũ, và DP trong hybrid mode vẫn nhận được config từ CP có license hết hạn, nhưng CP read-only nghĩa là bạn không tạo nổi một service nào. Cài trước là công cốc.
+**Không cài Enterprise trước rồi chờ license.** `free mode` đã bị bỏ từ 3.10 — chạy Enterprise không license giờ hành xử y như license hết hạn: toàn bộ entity thành **read-only**, node DB-less mới không start được. Traffic đang chạy thì vẫn proxy bằng cấu hình cũ, và DP trong hybrid mode vẫn nhận được config từ CP có license hết hạn, nhưng CP read-only nghĩa là bạn không tạo nổi một service nào.
 
 **Đừng migrate in-place.** Kong chỉ cho migrate sang bản Enterprise dựa trên **đúng OSS version đang chạy**, tức 3.9.1 → Enterprise 3.9.x.x, bằng `kong migrations up` + `kong migrations -f finish`, và thao tác này **không thể đảo lại**. Nhưng Enterprise 3.9 đã EOL từ 01/2026, nên bạn còn phải leo tiếp 3.9 → 3.10 LTS → ... → 3.15.
 
@@ -2232,7 +2225,7 @@ deck gateway diff --kong-addr http://<cp-ee-vip>:8001 -s kong-oss-state.yaml
 deck gateway sync --kong-addr http://<cp-ee-vip>:8001 -s kong-oss-state.yaml
 ```
 
-Khi license về, cách nạp **rất quan trọng**:
+Khi license có, cách nạp **rất quan trọng**:
 
 | Cách nạp | Có tự đẩy xuống DP? |
 |----------|---------------------|
@@ -2250,17 +2243,7 @@ Những gì lab OSS này **không** kiểm chứng được, phải chờ licens
 - **Plugin Enterprise** — `openid-connect`, `mtls-auth`, `rate-limiting-advanced` (cái này mới cho rate limit chính xác trong hybrid mà không cần dựng Redis riêng).
 - **Secrets management** với vault backend.
 
-Một điểm nữa cần xác nhận khi xin trial: bạn cần **license file self-managed** (`license.json`), không phải **Konnect trial**. Konnect đặt Control Plane trên cloud của Kong — DP kết nối cổng `443` ra ngoài, không có PostgreSQL, không có hai CP node. Toàn bộ giai đoạn B, C và phần lớn giai đoạn D của bài này sẽ không còn ý nghĩa, và Konnect còn ép DP phải **đúng y hệt** version của CP, trong khi self-managed chỉ cần cùng major version.
 
 ## Kết luận
 
 4 VM, 3 tầng HA, và một kiến trúc trong đó mặt phẳng ghi cấu hình tách hoàn toàn khỏi mặt phẳng xử lý traffic. Điều đáng nhớ nhất từ lab là bài test số 5: tắt sạch cụm PostgreSQL mà client không thấy một mã lỗi nào — vì Data Plane chưa từng biết database tồn tại.
-
-Bốn chi tiết dễ mất thời gian nhất khi làm lại:
-
-- **Một cổng chỉ có một chủ.** HAProxy giữ cổng công khai (`8005`/`8001`/`8002` ở CP, `80`/`443` ở DP), Kong lùi về cổng nội bộ (`18005`/`18001`/`18002`, `8000`/`8443`). Để Kong bind `0.0.0.0` trên cổng mà HAProxy cần là HAProxy không start được, và vì Kong phụ thuộc HAProxy để tới database nên hỏng luôn cả hai.
-- **Dựng lớp tiếp nhận trước.** HAProxy và keepalived lên trước khi có backend, sau đó mọi thứ mọc vào phía sau và tự chuyển `UP`. Ngược lại thì phải quay lại sửa cấu hình đã viết.
-- **Password chứa `#`** phải nạp qua biến môi trường, đặt trong `kong.conf` sẽ bị cắt thành comment.
-- **`tls.crt` và `tls.key` phải giống hệt trên cả 4 node** vì `cluster_mtls = shared` — nên cài Kong lên cả 4 node trước rồi mới copy cert.
-
-Khi có license Enterprise, đừng migrate cụm này — export bằng `deck gateway dump`, dựng cụm Enterprise 3.15 mới với đúng topology trên, rồi `deck gateway sync` sang. Bước tiếp theo tự nhiên là thêm Redis cho `rate-limiting` chính xác toàn cụm, và cắm plugin `prometheus` vào Grafana để có dashboard latency theo route.
