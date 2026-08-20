@@ -707,16 +707,19 @@ hr {
   to { --angle: 360deg; }
 }
 
-.sidebar__sticky {
-  overflow: visible !important;
-}
+/* Vòng sáng phải bám theo ẢNH, không bám theo div `.author__avatar` —
+   div này rộng bằng cả cột sidebar (~232px) nên `inset` đặt trên nó sinh ra
+   hình elip 244x152 lệch hẳn sang phải. Trên mobile div bị ép còn 104px nên
+   mới tình cờ ra hình tròn. Thẻ <a> bọc ảnh shrink-wrap đúng 140px, dùng nó
+   làm mốc định vị thì vòng sáng luôn tròn và luôn khớp ảnh ở mọi breakpoint. */
 
-.author__avatar {
+.author__avatar a {
   position: relative;
-  overflow: visible !important;
+  display: inline-block;
+  line-height: 0;
 }
 
-.author__avatar::before {
+.author__avatar a::before {
   content: "";
   position: absolute;
   inset: -6px;
@@ -734,6 +737,7 @@ hr {
 
 .author__avatar img {
   position: relative;
+  display: block;
   z-index: 1;
 }
 
@@ -855,11 +859,16 @@ hr {
    INTRO SECTION — animated border
 ================================ */
 
-.home-intro_body {
-  display: block;
+/* Class trong index.html là `home-intro__body` — HAI gạch dưới theo lối BEM.
+   Rule gốc ở phần HERO (dòng ~146) chỉ có `border-left` làm vạch teal;
+   ở đây ghi đè thành khung đủ 4 cạnh để viền chạy được vòng quanh. */
+
+.home-intro__body {
+  padding: 18px 22px;
   border: 1.5px solid transparent;
+  border-radius: 10px;
   background:
-    linear-gradient(#142326, #142326) padding-box,
+    linear-gradient($jade-bg, $jade-bg) padding-box,
     conic-gradient(
       from var(--angle),
       transparent 0 55%,
@@ -871,9 +880,9 @@ hr {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .author__avatar::before,
+  .author__avatar a::before,
   .layout--single .page__title,
-  .home-intro_body {
+  .home-intro__body {
     animation: none;
   }
 }
