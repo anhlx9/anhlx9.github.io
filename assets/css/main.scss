@@ -709,6 +709,7 @@ hr {
 
 .author__avatar {
   position: relative;
+  overflow: visible !important;
 }
 
 .author__avatar::before {
@@ -846,9 +847,28 @@ hr {
   animation: mm-spin 5.5s linear infinite;
 }
 
+/* ================================
+   INTRO SECTION — animated border
+================================ */
+
+.p-home-intro_body {
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(#142326, #142326) padding-box,
+    conic-gradient(
+      from var(--angle),
+      transparent 0 55%,
+      rgba($jade-amber, .5) 68%,
+      $jade-accent 86%,
+      transparent 100%
+    ) border-box;
+  animation: mm-spin 5.5s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .author__avatar::before,
-  .layout--single .page__title {
+  .layout--single .page__title,
+  .p-home-intro_body {
     animation: none;
   }
 }
