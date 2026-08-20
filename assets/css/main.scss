@@ -667,7 +667,10 @@ hr {
   max-width: 140px;
   object-fit: cover;
   border-radius: 50%;
-  border: 3px solid rgba(47, 184, 168, 0.45);
+  /* Theme gắn sẵn `padding: 5px` ở breakpoint $large — khe hở đó cộng với
+     viền và vòng sáng làm cả cụm dày lên ~11px. Ép về 0 để vòng mỏng lại. */
+  padding: 0;
+  border: 1.5px solid rgba(47, 184, 168, 0.55);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
 }
 
@@ -722,7 +725,7 @@ hr {
 .author__avatar a::before {
   content: "";
   position: absolute;
-  inset: -3px;
+  inset: -2px;
   border-radius: 50%;
   background: conic-gradient(
     from var(--angle),
