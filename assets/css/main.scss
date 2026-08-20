@@ -707,6 +707,10 @@ hr {
   to { --angle: 360deg; }
 }
 
+.sidebar__sticky {
+  overflow: visible !important;
+}
+
 .author__avatar {
   position: relative;
   overflow: visible !important;
@@ -851,7 +855,7 @@ hr {
    INTRO SECTION — animated border
 ================================ */
 
-.p-home-intro_body {
+.home-intro_body {
   display: block;
   border: 1.5px solid transparent;
   background:
@@ -869,7 +873,7 @@ hr {
 @media (prefers-reduced-motion: reduce) {
   .author__avatar::before,
   .layout--single .page__title,
-  .p-home-intro_body {
+  .home-intro_body {
     animation: none;
   }
 }
