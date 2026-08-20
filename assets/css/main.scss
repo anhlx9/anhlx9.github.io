@@ -693,6 +693,45 @@ hr {
 
 /* Doi sang vuong bo goc: border-radius: 18px; */
 
+/* ================================
+   ANIMATED BORDER — viền sáng chạy quanh khung
+================================ */
+
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes mm-spin {
+  to { --angle: 360deg; }
+}
+
+.author__avatar {
+  position: relative;
+}
+
+.author__avatar::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from var(--angle),
+    transparent 0 55%,
+    rgba($jade-amber, .35) 70%,
+    $jade-accent 86%,
+    transparent 100%
+  );
+  animation: mm-spin 4.5s linear infinite;
+  z-index: 0;
+}
+
+.author__avatar img {
+  position: relative;
+  z-index: 1;
+}
+
 /* site-title đã được thay bằng ảnh logo ở ::before bên dưới,
    nên ẩn thẻ img logo mặc định của theme để không bị lặp 2 logo. */
 
@@ -784,5 +823,32 @@ hr {
   .xinchao-page .page__content p {
     font-size: 1rem;
     line-height: 1.8;
+  }
+}
+
+/* ================================
+   TIÊU ĐỀ BÀI VIẾT — animated border
+================================ */
+
+.layout--single .page__title {
+  padding: 18px 22px;
+  border: 1.5px solid transparent;
+  border-radius: 10px;
+  background:
+    linear-gradient($jade-bg, $jade-bg) padding-box,
+    conic-gradient(
+      from var(--angle),
+      transparent 0 60%,
+      rgba($jade-amber, .4) 74%,
+      $jade-accent 90%,
+      transparent 100%
+    ) border-box;
+  animation: mm-spin 5.5s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .author__avatar::before,
+  .layout--single .page__title {
+    animation: none;
   }
 }
