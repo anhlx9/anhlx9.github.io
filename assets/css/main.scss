@@ -722,7 +722,7 @@ hr {
 .author__avatar a::before {
   content: "";
   position: absolute;
-  inset: -6px;
+  inset: -3px;
   border-radius: 50%;
   background: conic-gradient(
     from var(--angle),
@@ -839,7 +839,13 @@ hr {
    TIÊU ĐỀ BÀI VIẾT — animated border
 ================================ */
 
-.layout--single .page__title {
+/* Chỉ áp cho BÀI VIẾT, không áp cho trang tĩnh (About Me, Xin Chào).
+   Cả hai loại đều mang body class `layout--single` nên không tách được
+   bằng class. Mốc phân biệt: `read_time: true` trong `_config.yml` chỉ bật
+   cho `type: posts`, nên khối `.page__meta` ("8 minute read") chỉ xuất hiện
+   ở bài viết. `:has()` đã được file này dùng sẵn ở dòng ~261. */
+
+.layout--single header:has(.page__meta) .page__title {
   padding: 18px 22px;
   border: 1.5px solid transparent;
   border-radius: 10px;
@@ -879,10 +885,55 @@ hr {
   animation: mm-spin 5.5s linear infinite;
 }
 
+/* ================================
+   KHUNG SIDEBAR — animated border
+================================ */
+
+/* Ghi đè `background` + `border` của rule gốc ở dòng ~277.
+   Nền padding-box dùng $jade-surface cho khớp đúng màu card sidebar. */
+
+.sidebar {
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient($jade-surface, $jade-surface) padding-box,
+    conic-gradient(
+      from var(--angle),
+      transparent 0 58%,
+      rgba($jade-amber, .35) 72%,
+      $jade-accent 88%,
+      transparent 100%
+    ) border-box;
+  animation: mm-spin 6.5s linear infinite;
+}
+
+/* ================================
+   TRANG XIN CHÀO — animated border khối nội dung
+================================ */
+
+/* Tiêu đề trang này KHÔNG chạy viền (đã loại bằng `:has` ở trên),
+   chỉ khối văn bản bên dưới chạy. Ghi đè border/background của rule ~802;
+   `border-radius` và `padding` giữ nguyên theo rule gốc và media query. */
+
+.xinchao-page .page__content {
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient($jade-surface, $jade-surface) padding-box,
+    conic-gradient(
+      from var(--angle),
+      transparent 0 58%,
+      rgba($jade-amber, .45) 72%,
+      $jade-accent 88%,
+      transparent 100%
+    ) border-box;
+  animation: mm-spin 6.5s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .author__avatar a::before,
-  .layout--single .page__title,
-  .home-intro__body {
+  .layout--single header:has(.page__meta) .page__title,
+  .home-intro__body,
+  .sidebar,
+  .xinchao-page .page__content {
     animation: none;
   }
 }
